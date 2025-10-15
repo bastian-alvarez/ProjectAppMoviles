@@ -1,14 +1,16 @@
 package com.example.uinavegacion.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uinavegacion.domain.validateEmail
 import com.example.uinavegacion.domain.validateConfirm
 import com.example.uinavegacion.domain.validateLettersOnly
 import com.example.uinavegacion.domain.validateStrongPassword
 import com.example.uinavegacion.domain.validatePhoneDigitsOnly
-import com.example.uinavegacion.domain.UserRepository
-import com.example.uinavegacion.domain.AdminRepository
+import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.data.repository.AdminRepository
+import com.example.uinavegacion.data.local.database.AppDatabase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +26,8 @@ data class LoginUiState(
     val isSubmitting: Boolean = false, //flag de carga
     val canSubmit: Boolean = false, //visibilidad del botón
     val success: Boolean = false, //resultado ok del formulario
-    val errorMsg: String? = null // error general (credenciales son incorrectas)
+    val errorMsg: String? = null, // error general (credenciales son incorrectas)
+    val isAdmin: Boolean = false // indica si el usuario logueado es administrador
 )
 
 data class RegisterUiState(
@@ -50,12 +53,15 @@ data class RegisterUiState(
 
 
 //clase para manipular la logica de Login y Register
-class AuthViewModel: ViewModel(){
+class AuthViewModel(application: Application): AndroidViewModel(application){
+    // Obtener instancia de la base de datos
+    private val database = AppDatabase.getInstance(application)
+    
     // Repositorio para manejar usuarios
-    private val userRepository = UserRepository()
+    private val userRepository = UserRepository(database.userDao())
+    
     // Repositorio para manejar administradores
-    private val _adminRepository = AdminRepository()
-    val adminRepository: AdminRepository get() = _adminRepository
+    private val adminRepository = AdminRepository(database.adminDao())
     // Flujos de estado para observar desde la UI
     private val _login = MutableStateFlow(LoginUiState())   // Estado interno (Login)
     val login: StateFlow<LoginUiState> = _login             // Exposición inmutable
@@ -87,7 +93,7 @@ class AuthViewModel: ViewModel(){
         val s = _login.value                                // Snapshot del estado
         if (!s.canSubmit || s.isSubmitting) return          // Si no se puede o ya está cargando, salimos
         viewModelScope.launch {                             // Lanzamos corrutina
-            _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) } // Seteamos loading
+            _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false, isAdmin = false) } // Seteamos loading
             delay(500)                                      // Simulamos tiempo de verificación
 
             // Validar credenciales de admin primero
@@ -95,21 +101,22 @@ class AuthViewModel: ViewModel(){
             val isAdmin = admin != null
             
             // Si no es admin, validar usuario normal
-            val user = if (!isAdmin) userRepository.validateUser(s.email, s.pass) else null
-            val ok = isAdmin || user != null
+            val userResult = if (!isAdmin) userRepository.login(s.email, s.pass) else null
+            val ok = isAdmin || (userResult != null && userResult.isSuccess)
 
             _login.update {                                 // Actualizamos con el resultado
                 it.copy(
                     isSubmitting = false,                   // Fin carga
                     success = ok,                           // true si credenciales correctas
-                    errorMsg = if (!ok) "Credenciales inválidas" else null // Mensaje si falla
+                    errorMsg = if (!ok) "Credenciales inválidas" else null, // Mensaje si falla
+                    isAdmin = isAdmin                       // Guardamos si es admin
                 )
             }
         }
     }
 
     fun clearLoginResult() {                                // Limpia banderas tras navegar
-        _login.update { it.copy(success = false, errorMsg = null) }
+        _login.update { it.copy(success = false, errorMsg = null, isAdmin = false) }
     }
 
     // ----------------- REGISTRO: handlers y envío -----------------
@@ -162,11 +169,11 @@ class AuthViewModel: ViewModel(){
             delay(700)                                      // Simulamos IO
 
             // Intentar registrar usuario usando el repositorio
-            val result = userRepository.registerUser(
-                email = s.email.trim(),
+            val result = userRepository.register(
                 name = s.name.trim(),
-                password = s.pass,
-                phone = s.phone.trim()
+                email = s.email.trim(),
+                phone = s.phone.trim(),
+                password = s.pass
             )
 
             if (result.isSuccess) {

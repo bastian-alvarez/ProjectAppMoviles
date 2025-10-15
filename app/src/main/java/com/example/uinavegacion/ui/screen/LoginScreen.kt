@@ -33,9 +33,8 @@ fun LoginScreenVm(
 
     if (state.success) {
         vm.clearLoginResult()
-        // Detectar si es admin usando la validación del AuthViewModel
-        val admin = vm.adminRepository.validateAdmin(state.email, state.pass)
-        if (admin != null) {
+        // Navegar según el tipo de usuario
+        if (state.isAdmin) {
             navController.navigate(Route.AdminDashboard.path)
         } else {
             onLoginOkNavigateHome()

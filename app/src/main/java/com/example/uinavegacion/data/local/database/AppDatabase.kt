@@ -28,6 +28,8 @@ import com.example.uinavegacion.data.local.detalle.DetalleEntity
 import com.example.uinavegacion.data.local.detalle.DetalleDao
 import com.example.uinavegacion.data.local.reserva.ReservaEntity
 import com.example.uinavegacion.data.local.reserva.ReservaDao
+import com.example.uinavegacion.data.local.admin.AdminEntity
+import com.example.uinavegacion.data.local.admin.AdminDao
 
 //registrar las entidades pertenecientes a la BD
 
@@ -35,6 +37,7 @@ import com.example.uinavegacion.data.local.reserva.ReservaDao
 
     entities = [
         UserEntity::class,
+        AdminEntity::class,
         CategoriaEntity::class,
         GeneroEntity::class,
         JuegoEntity::class,
@@ -46,7 +49,7 @@ import com.example.uinavegacion.data.local.reserva.ReservaDao
         ReservaEntity::class
     ],
 
-    version = 1,
+    version = 2,
 
     exportSchema = false
 
@@ -57,6 +60,7 @@ abstract class AppDatabase: RoomDatabase(){
     //exponemos o incluimos los DAO de cada entidad
 
     abstract fun userDao(): UserDao
+    abstract fun adminDao(): AdminDao
     abstract fun categoriaDao(): CategoriaDao
     abstract fun generoDao(): GeneroDao
     abstract fun juegoDao(): JuegoDao
@@ -113,33 +117,34 @@ abstract class AppDatabase: RoomDatabase(){
 
                             CoroutineScope(Dispatchers.IO).launch {
 
-                                val dao = getInstance(context).userDao()
+                                val userDao = getInstance(context).userDao()
+                                val adminDao = getInstance(context).adminDao()
 
                                 //precargamos usuarios
 
-                                val seed = listOf(
+                                val userSeed = listOf(
 
                                     UserEntity(
 
-                                        name = "Admin",
+                                        name = "Usuario Demo",
 
-                                        email = "a@a.cl",
+                                        email = "user1@demo.com",
 
                                         phone = "12345678",
 
-                                        password = "Admin123!"
+                                        password = "Password123!"
 
                                     ),
 
                                     UserEntity(
 
-                                        name = "Jose",
+                                        name = "Usuario Test",
 
-                                        email = "b@b.cl",
+                                        email = "test@test.com",
 
-                                        phone = "12345678",
+                                        phone = "87654321",
 
-                                        password = "Jose123!"
+                                        password = "Password123!"
 
                                     )
 
@@ -147,10 +152,40 @@ abstract class AppDatabase: RoomDatabase(){
 
                                 //insertar solo si la tabla esta vacia
 
-                                if(dao.count() == 0){
+                                if(userDao.count() == 0){
 
-                                    seed.forEach { dao.insert(it) }
+                                    userSeed.forEach { userDao.insert(it) }
 
+                                }
+                                
+                                // Precargamos administradores
+                                val adminSeed = listOf(
+                                    AdminEntity(
+                                        name = "Administrador Principal",
+                                        email = "admin@steamish.com",
+                                        phone = "88776655",
+                                        password = "Admin123!",
+                                        role = "SUPER_ADMIN"
+                                    ),
+                                    AdminEntity(
+                                        name = "Gerente de Juegos",
+                                        email = "manager@steamish.com",
+                                        phone = "77665544",
+                                        password = "Manager456@",
+                                        role = "GAME_MANAGER"
+                                    ),
+                                    AdminEntity(
+                                        name = "Soporte Técnico",
+                                        email = "support@steamish.com",
+                                        phone = "66554433",
+                                        password = "Support789#",
+                                        role = "SUPPORT"
+                                    )
+                                )
+                                
+                                // Insertar admins solo si la tabla está vacía
+                                if(adminDao.count() == 0){
+                                    adminSeed.forEach { adminDao.insert(it) }
                                 }
 
                             }
