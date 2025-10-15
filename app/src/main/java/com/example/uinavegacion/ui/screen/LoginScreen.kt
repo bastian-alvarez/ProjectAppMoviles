@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.screen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.animation.*
 
 @Composable
 fun LoginScreenVm(
@@ -112,10 +114,17 @@ private fun LoginScreen(
                 modifier = Modifier.fillMaxWidth() //tamaño del input
 
             )
-            if(emailError != null){
-                Text(emailError, color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelSmall)
+            AnimatedVisibility(
+                visible = emailError != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ){
+                if(emailError != null){
+                    Text(emailError, color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelSmall)
+                }
             }
+
             Spacer(Modifier.height(8.dp)) // Separación
 
 

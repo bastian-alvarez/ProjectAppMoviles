@@ -1,6 +1,5 @@
 package com.example.uinavegacion.ui.viewmodel
 
-import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uinavegacion.domain.validateEmail
@@ -53,15 +52,11 @@ data class RegisterUiState(
 
 
 //clase para manipular la logica de Login y Register
-class AuthViewModel(application: Application): AndroidViewModel(application){
-    // Obtener instancia de la base de datos
-    private val database = AppDatabase.getInstance(application)
-    
-    // Repositorio para manejar usuarios
-    private val userRepository = UserRepository(database.userDao())
-    
-    // Repositorio para manejar administradores
-    private val adminRepository = AdminRepository(database.adminDao())
+class AuthViewModel(
+    application: android.app.Application,
+    private val userRepository: UserRepository,
+    private val adminRepository: AdminRepository
+): AndroidViewModel(application) {
     // Flujos de estado para observar desde la UI
     private val _login = MutableStateFlow(LoginUiState())   // Estado interno (Login)
     val login: StateFlow<LoginUiState> = _login             // Exposición inmutable
