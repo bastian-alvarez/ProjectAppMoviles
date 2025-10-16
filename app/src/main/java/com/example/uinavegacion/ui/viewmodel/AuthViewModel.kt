@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.uinavegacion.session.SessionManager
 
 
 data class LoginUiState(
@@ -106,6 +107,11 @@ class AuthViewModel(
                     errorMsg = if (!ok) "Credenciales inválidas" else null, // Mensaje si falla
                     isAdmin = isAdmin                       // Guardamos si es admin
                 )
+            }
+
+            // Guardar sesión si login OK y es usuario normal
+            if (ok && !isAdmin) {
+                SessionManager.login(s.email)
             }
         }
     }

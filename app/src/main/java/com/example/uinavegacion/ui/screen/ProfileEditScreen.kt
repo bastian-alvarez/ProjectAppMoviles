@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
 import coil.compose.AsyncImage
+import com.example.uinavegacion.session.SessionManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +63,9 @@ fun ProfileEditScreen(nav: NavHostController) {
             profilePhotoUri = uri.toString()
             // Guardar en DB buscando al usuario por el email del formulario
             scope.launch {
-                val userByEmail = db.userDao().getByEmail(email)
+                val sessionEmail = SessionManager.currentUserEmail.value
+                val lookupEmail = sessionEmail ?: email
+                val userByEmail = db.userDao().getByEmail(lookupEmail)
                 if (userByEmail != null) {
                     userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
                     photoSavedMessage = "Foto guardada"

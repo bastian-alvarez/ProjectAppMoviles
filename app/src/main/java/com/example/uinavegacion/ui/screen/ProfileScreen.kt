@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,12 +16,35 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.*
+import com.example.uinavegacion.session.SessionManager
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.UserRepository
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(nav: NavHostController) {
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val userRepo = remember { UserRepository(db.userDao()) }
+    val currentEmail by SessionManager.currentUserEmail.collectAsState(initial = null)
+    var displayName by remember { mutableStateOf("Usuario Demo") }
+    var displayEmail by remember { mutableStateOf("demo@demo.com") }
+    var photoUri by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(currentEmail) {
+        currentEmail?.let { email ->
+            val u = db.userDao().getByEmail(email)
+            if (u != null) {
+                displayName = u.name
+                displayEmail = u.email
+                photoUri = u.profilePhotoUri
+            }
+        }
+    }
     Scaffold(
         topBar = { 
             TopAppBar(
@@ -57,22 +80,30 @@ fun ProfileScreen(nav: NavHostController) {
                             .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "👤",
-                            style = MaterialTheme.typography.headlineLarge
-                        )
+                        if (photoUri != null) {
+                            AsyncImage(
+                                model = photoUri,
+                                contentDescription = "Foto de perfil",
+                                modifier = Modifier.matchParentSize().clip(CircleShape)
+                            )
+                        } else {
+                            Text(
+                                text = "👤",
+                                style = MaterialTheme.typography.headlineLarge
+                            )
+                        }
                     }
                     
                     Spacer(Modifier.height(16.dp))
                     
                     Text(
-                        text = "Usuario Demo",
+                        text = displayName,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "demo@demo.com",
+                        text = displayEmail,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
