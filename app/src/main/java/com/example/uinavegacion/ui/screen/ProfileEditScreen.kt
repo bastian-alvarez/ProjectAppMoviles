@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,9 +62,7 @@ fun ProfileEditScreen(nav: NavHostController) {
             profilePhotoUri = uri.toString()
             // Guardar en DB buscando al usuario por el email del formulario
             scope.launch {
-                val user = userRepository.login(email, "${'$'}{System.currentTimeMillis()}").getOrNull()
-                // Si login falla por pass, buscamos por email directo
-                val userByEmail = user ?: db.userDao().getByEmail(email)
+                val userByEmail = db.userDao().getByEmail(email)
                 if (userByEmail != null) {
                     userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
                     photoSavedMessage = "Foto guardada"
@@ -112,7 +111,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Avatar placeholder (pendiente de previsualización de URI)
+                    // Avatar con previsualización de URI si existe
                     Box(
                         modifier = Modifier
                             .size(60.dp)
@@ -120,10 +119,18 @@ fun ProfileEditScreen(nav: NavHostController) {
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (profilePhotoUri == null) "📷" else "✅",
-                            style = MaterialTheme.typography.headlineMedium
-                        )
+                        if (profilePhotoUri != null) {
+                            AsyncImage(
+                                model = profilePhotoUri,
+                                contentDescription = "Foto de perfil",
+                                modifier = Modifier.matchParentSize().clip(CircleShape)
+                            )
+                        } else {
+                            Text(
+                                text = "📷",
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+                        }
                     }
                     
                     Spacer(Modifier.width(16.dp))
