@@ -20,6 +20,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.UserRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +44,35 @@ fun ProfileEditScreen(nav: NavHostController) {
     var expanded by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf(false) }
+    var photoSavedMessage by remember { mutableStateOf<String?>(null) }
+    var profilePhotoUri by remember { mutableStateOf<String?>(null) }
+
+    // Repo y corrutinas
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val userRepository = remember { UserRepository(db.userDao()) }
+    val scope = rememberCoroutineScope()
+
+    // Launcher para seleccionar imagen desde galería
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            profilePhotoUri = uri.toString()
+            // Guardar en DB buscando al usuario por el email del formulario
+            scope.launch {
+                val user = userRepository.login(email, "${'$'}{System.currentTimeMillis()}").getOrNull()
+                // Si login falla por pass, buscamos por email directo
+                val userByEmail = user ?: db.userDao().getByEmail(email)
+                if (userByEmail != null) {
+                    userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                    photoSavedMessage = "Foto guardada"
+                } else {
+                    photoSavedMessage = "No se encontró el usuario por email"
+                }
+            }
+        }
+    }
     
     val genderOptions = listOf("Masculino", "Femenino", "Otro", "Prefiero no decir")
     
@@ -72,7 +112,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Avatar placeholder
+                    // Avatar placeholder (pendiente de previsualización de URI)
                     Box(
                         modifier = Modifier
                             .size(60.dp)
@@ -81,7 +121,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "📷",
+                            text = if (profilePhotoUri == null) "📷" else "✅",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
@@ -95,15 +135,15 @@ fun ProfileEditScreen(nav: NavHostController) {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Próximamente disponible",
+                            text = photoSavedMessage ?: if (profilePhotoUri == null) "Selecciona una imagen de tu galería" else "Imagen seleccionada",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     
                     OutlinedButton(
-                        onClick = { /* TODO: Implementar selección de foto */ },
-                        enabled = false
+                        onClick = { photoPickerLauncher.launch("image/*") },
+                        enabled = true
                     ) {
                         Icon(
                             Icons.Default.CameraAlt,

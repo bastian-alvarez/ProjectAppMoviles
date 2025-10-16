@@ -49,7 +49,7 @@ import com.example.uinavegacion.data.local.admin.AdminDao
         ReservaEntity::class
     ],
 
-    version = 2,
+    version = 3,
 
     exportSchema = false
 

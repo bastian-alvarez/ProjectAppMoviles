@@ -37,5 +37,15 @@ class UserRepository(
         }
     }
 
+    //actualizar foto de perfil
+    suspend fun updateProfilePhoto(userId: Long, photoUri: String?): Result<Unit> {
+        return try {
+            userDao.updateProfilePhoto(userId, photoUri)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 
 }
