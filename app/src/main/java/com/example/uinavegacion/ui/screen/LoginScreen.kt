@@ -1,6 +1,5 @@
 package com.example.uinavegacion.ui.screen
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +21,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.animation.*
+import androidx.compose.ui.platform.LocalContext
+import android.app.Application
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.data.repository.AdminRepository
+import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
 
 @Composable
 fun LoginScreenVm(
@@ -30,17 +34,23 @@ fun LoginScreenVm(
     onGoRegister: () -> Unit,
     navController: NavHostController
 ){
-    val vm: AuthViewModel = viewModel()
+    // Crear ViewModel con factory (Room)
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val vm: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(
+            application = context as Application,
+            userRepository = remember { UserRepository(db.userDao()) },
+            adminRepository = remember { AdminRepository(db.adminDao()) }
+        )
+    )
     val state by vm.login.collectAsStateWithLifecycle()
 
     if (state.success) {
         vm.clearLoginResult()
-        // Navegar según el tipo de usuario
-        if (state.isAdmin) {
-            navController.navigate(Route.AdminDashboard.path)
-        } else {
-            onLoginOkNavigateHome()
-        }
+        // Navegar según el tipo de usuario resuelto en el ViewModel
+        if (state.isAdmin) navController.navigate(Route.AdminDashboard.path)
+        else onLoginOkNavigateHome()
     }
     LoginScreen(
         email = state.email,
@@ -75,117 +85,167 @@ private fun LoginScreen(
     onLogin: () -> Unit,
     onGoRegister: () -> Unit
 ) {
-    val bg = MaterialTheme.colorScheme.secondaryContainer // Fondo distinto para contraste
     var showPass by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
-            .fillMaxSize() // Ocupa todo
-            .background(bg) // Fondo
-            .padding(16.dp), // Margen
-        contentAlignment = Alignment.Center // Centro
+            .fillMaxSize()
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.background
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally // Centrado horizontal
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .padding(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
-            Text(
-                text = "Login",
-                style = MaterialTheme.typography.headlineSmall // Título
-            )
-            Spacer(Modifier.height(12.dp)) // Separación
-            Text(
-                text = "Pantalla de Login (demo). Usa la barra superior, el menú lateral o los botones.",
-                textAlign = TextAlign.Center // Alineación centrada
-            )
-            Spacer(Modifier.height(20.dp)) // Separación
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Logo/Título
+                Text(
+                    text = "GameStore Pro",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Inicia sesión en tu cuenta",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(32.dp))
 
-            //agregamos formulario
-            //input del email
-            OutlinedTextField(
-                value = email, // en que variable guarda
-                onValueChange = onEmailChange, //que ejecuta cuando cambie su valor
-                label = { Text("Correo Electronico") }, //texto a mostrar
-                singleLine = true, //input de solo una linea
-                isError = emailError != null, //si hay error
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email, //tipo de teclado a mostrar en el telefono
-                ),
-                modifier = Modifier.fillMaxWidth() //tamaño del input
-
-            )
-            AnimatedVisibility(
-                visible = emailError != null,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ){
+                // Formulario
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = onEmailChange,
+                    label = { Text("Correo Electrónico") },
+                    singleLine = true,
+                    isError = emailError != null,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                )
                 if(emailError != null){
-                    Text(emailError, color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        emailError, 
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-            }
+                Spacer(Modifier.height(16.dp))
 
-            Spacer(Modifier.height(8.dp)) // Separación
+                OutlinedTextField(
+                    value = pass,
+                    onValueChange = onPassChange,
+                    label = { Text("Contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (showPass) VisualTransformation.None
+                    else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPass = !showPass }) {
+                            Icon(
+                                imageVector = if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (showPass) "Ocultar contraseña" else "Mostrar contraseña"
+                            )
+                        }
+                    },
+                    isError = passError != null,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                )
+                if(passError != null){
+                    Text(
+                        passError, 
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
 
-
-            //input para la contraseña
-            OutlinedTextField(
-                value = pass,
-                onValueChange = onPassChange,
-                label = { Text("Contraseña") },
-                singleLine = true,
-                //transformacion del texto visible/tipo password
-                visualTransformation = if (showPass) VisualTransformation.None
-                else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { showPass = !showPass }) {
-                        Icon(
-                            imageVector = if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = if (showPass) "Ocultar contraseña" else "Mostrar contraseña"
+                // Botón de login
+                Button(
+                    onClick = onLogin,
+                    enabled = canSubmit && !isSubmitting,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                ) {
+                    if(isSubmitting){
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp, 
+                            modifier = Modifier.size(18.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Iniciando sesión...")
+                    } else {
+                        Text(
+                            "Iniciar Sesión",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                         )
                     }
-                    },
-                isError = passError != null,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                ),
-
-            )
-            if(passError != null){
-                Text(passError, color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelSmall)
-            }
-            Spacer(Modifier.height(16.dp)) // Separación
-
-            //agregar los borones del formulario
-            Button(
-                onClick = onLogin,
-                enabled = canSubmit && !isSubmitting,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if(isSubmitting){
-                 CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                 Spacer(Modifier.width(8.dp)) // Separación
-                 Text("Iniciando sesion...")
                 }
-                else{
-                    Text("Entrar")
+                
+                if(errorMsg != null){
+                    Spacer(Modifier.height(12.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            errorMsg, 
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(12.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
+                
+                // Botón de registro
+                OutlinedButton(
+                    onClick = onGoRegister,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                ){
+                    Text(
+                        "Crear Cuenta",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                    )
                 }
             }
-            if(errorMsg != null){
-                Spacer(Modifier.height(8.dp)) // Separación
-                Text(errorMsg, color = MaterialTheme.colorScheme.error)
-            }
-            Spacer(Modifier.height(12.dp)) // Separación
-            OutlinedButton(
-                onClick = onGoRegister,
-                modifier = Modifier.fillMaxWidth()
-            ){
-                Text("Crear Cuenta")
-            }
-
-
-
         }
     }
 }

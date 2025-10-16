@@ -58,146 +58,203 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
         matchesCategory && matchesQuery
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Catálogo de Juegos", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Descubre nuestra colección de videojuegos",
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    // Fila de chips de categorías
-                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp)) {
-                        categories.forEach { cat ->
-                            val selected = cat == selectedCategory
-                            FilterChip(
-                                selected = selected,
-                                onClick = { selectedCategory = cat },
-                                label = { Text(cat) },
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                }
-            }
-
-            items(games) { game ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Placeholder para imagen del juego
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.secondaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "🎮",
-                                style = MaterialTheme.typography.headlineLarge
-                            )
-                        }
-
-                        Spacer(Modifier.width(16.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = game.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "ID: ${game.id}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "$${game.price}",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Stock: ${game.stock}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (game.stock > 5) MaterialTheme.colorScheme.onSurfaceVariant 
-                                       else MaterialTheme.colorScheme.error
-                            )
-                        }
-
-                        // Botones de acción
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Button(
-                                onClick = {
-                                    if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
-                                        cartViewModel.addGame(game.id, game.name, game.price)
-                                    }
-                                },
-                                enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
-                                modifier = Modifier.height(36.dp)
-                            ) {
-                                Text(
-                                    if (cartViewModel.isInCart(game.id)) "En Carrito"
-                                    else if (game.stock > 0) "Agregar"
-                                    else "Sin Stock"
-                                )
-                            }
-                            
-                            TextButton(
-                                onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
-                            ) {
-                                Text("Ver Más", style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                Spacer(Modifier.height(16.dp))
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Título principal
                 Text(
-                    text = "Total de juegos: ${games.size}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Catálogo de Juegos",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Descubre nuestra colección de videojuegos",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Spacer(Modifier.height(16.dp))
+
+                // Fila de chips de categorías mejorada
+                Row(
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 4.dp)
+                ) {
+                    categories.forEach { cat ->
+                        val selected = cat == selectedCategory
+                        FilterChip(
+                            selected = selected,
+                            onClick = { selectedCategory = cat },
+                            label = { 
+                                Text(
+                                    cat,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                ) 
+                            },
+                            modifier = Modifier.padding(end = 8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
             }
+        }
+
+        items(games) { game ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Imagen del juego mejorada
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Precio destacado en esquina
+                        Card(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Text(
+                                text = "$${game.price}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                        
+                        Text(
+                            text = "Juego",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                    Spacer(Modifier.width(20.dp))
+
+                    // Información del juego
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = game.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        
+                        // Categoría en chip
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            ),
+                            modifier = Modifier.wrapContentWidth()
+                        ) {
+                            Text(
+                                text = game.category,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                        
+                        Spacer(Modifier.height(8.dp))
+                        
+                        // Stock con indicador visual
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Stock: ",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${game.stock}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (game.stock > 5) MaterialTheme.colorScheme.primary 
+                                       else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                    // Botón de acción mejorado
+                    Button(
+                        onClick = {
+                            if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
+                                cartViewModel.addGame(game.id, game.name, game.price)
+                            }
+                        },
+                        enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
+                        modifier = Modifier.height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (cartViewModel.isInCart(game.id)) 
+                                MaterialTheme.colorScheme.secondary 
+                            else MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            if (cartViewModel.isInCart(game.id)) "En Carrito"
+                            else if (game.stock > 0) "Agregar"
+                            else "Sin Stock",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Total de juegos: ${games.size}",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

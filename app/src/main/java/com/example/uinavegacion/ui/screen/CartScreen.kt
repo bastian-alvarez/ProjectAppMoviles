@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.uinavegacion.viewmodel.CartViewModel
@@ -102,7 +104,7 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                                         .background(MaterialTheme.colorScheme.secondaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("🎮", style = MaterialTheme.typography.titleLarge)
+                                    Text("Juego", style = MaterialTheme.typography.titleLarge)
                                 }
 
                                 Spacer(Modifier.width(12.dp))
@@ -133,33 +135,91 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                                     )
                                 }
 
-                                // Botones de control
+                                // Botones de control mejorados
                                 Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // Botón +
-                                    Button(
-                                        onClick = { cartViewModel.updateQuantity(item.id, item.quantity + 1) },
-                                        modifier = Modifier.size(40.dp)
+                                    // Controles de cantidad
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text("+")
-                                    }
-                                    
-                                    Text("${item.quantity}", fontWeight = FontWeight.Bold)
-                                    
-                                    // Botón -
-                                    Button(
-                                        onClick = { cartViewModel.updateQuantity(item.id, item.quantity - 1) },
-                                        modifier = Modifier.size(40.dp)
-                                    ) {
-                                        Text("-")
+                                        // Botón -
+                                        IconButton(
+                                            onClick = { 
+                                                if (item.quantity > 1) {
+                                                    cartViewModel.updateQuantity(item.id, item.quantity - 1)
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.secondaryContainer,
+                                                    RoundedCornerShape(8.dp)
+                                                )
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Remove,
+                                                contentDescription = "Disminuir cantidad",
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        
+                                        // Cantidad
+                                        Card(
+                                            modifier = Modifier.size(40.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                                            )
+                                        ) {
+                                            Box(
+                                                contentAlignment = Alignment.Center,
+                                                modifier = Modifier.fillMaxSize()
+                                            ) {
+                                                Text(
+                                                    text = "${item.quantity}",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                            }
+                                        }
+                                        
+                                        // Botón +
+                                        IconButton(
+                                            onClick = { cartViewModel.updateQuantity(item.id, item.quantity + 1) },
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.secondaryContainer,
+                                                    RoundedCornerShape(8.dp)
+                                                )
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Add,
+                                                contentDescription = "Aumentar cantidad",
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     }
                                     
                                     // Botón quitar
-                                    TextButton(
-                                        onClick = { cartViewModel.removeGame(item.id) }
+                                    OutlinedButton(
+                                        onClick = { cartViewModel.removeGame(item.id) },
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.error
+                                        ),
+                                        modifier = Modifier.height(32.dp)
                                     ) {
-                                        Text("Quitar", color = MaterialTheme.colorScheme.error)
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Eliminar",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Quitar", style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
