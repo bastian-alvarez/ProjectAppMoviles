@@ -411,7 +411,7 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                             // Barra de progreso para descargas/actualizaciones
                             if (game.status == "Descargando" || game.status == "Actualizando") {
                                 LinearProgressIndicator(
-                                    progress = 0.7f,
+                                    progress = { 0.7f },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 16.dp, vertical = 8.dp),

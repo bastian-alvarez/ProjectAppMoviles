@@ -41,7 +41,7 @@ fun AppDrawer(
             Text(if (isAdmin) "admin@steamish.com" else "demo@correo.cl", style = MaterialTheme.typography.bodySmall)
         }
 
-        Divider()
+        HorizontalDivider()
 
         // 2. Items de navegación funcionales
         Column(modifier = Modifier.padding(12.dp)) {
@@ -71,7 +71,7 @@ fun AppDrawer(
                     label = { Text("Cerrar Sesión") },
                     selected = false, // El logout nunca está "seleccionado"
                     onClick = onLogout, // Llama a la función de logout del NavGraph
-                    icon = { Icon(Icons.Filled.ExitToApp, contentDescription = "Cerrar Sesión") },
+                    icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             } else {
@@ -136,12 +136,12 @@ fun AppDrawer(
 
         // 4. Footer con acción de logout funcional
         Column(modifier = Modifier.padding(12.dp)) {
-            Divider()
+            HorizontalDivider()
             NavigationDrawerItem(
                 label = { Text("Cerrar Sesión") },
                 selected = false, // El logout nunca está "seleccionado"
                 onClick = onLogout, // Llama a la función de logout del NavGraph
-                icon = { Icon(Icons.Filled.ExitToApp, contentDescription = "Cerrar Sesión") },
+                icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión") },
                 modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
             )
             Spacer(modifier = Modifier.height(8.dp))

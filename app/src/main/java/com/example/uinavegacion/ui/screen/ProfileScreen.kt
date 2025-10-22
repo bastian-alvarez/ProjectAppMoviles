@@ -252,7 +252,7 @@ fun ProfileScreen(nav: NavHostController) {
                     
                     Spacer(Modifier.height(12.dp))
                     
-                    Divider(modifier = Modifier.fillMaxWidth())
+                    HorizontalDivider(modifier = Modifier.fillMaxWidth())
                     
                     Spacer(Modifier.height(12.dp))
                     
