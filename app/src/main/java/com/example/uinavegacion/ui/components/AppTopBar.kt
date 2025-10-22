@@ -24,6 +24,11 @@ import androidx.compose.material3.MaterialTheme // Tema Material
 import androidx.compose.material3.Text // Texto
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.* // remember / mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.debounce
 import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,9 +51,20 @@ fun AppTopBar(
             MaterialTheme.colorScheme.primary
         ),
         title = {
+            var localQuery by remember { mutableStateOf(currentQuery) }
+
+            // Debounce localQuery and propagate after 300ms
+            LaunchedEffect(localQuery) {
+                // small debounce
+                delay(300)
+                if (localQuery != currentQuery) {
+                    onQueryChanged(localQuery)
+                }
+            }
+
             OutlinedTextField(
-                value = currentQuery,
-                onValueChange = { new -> onQueryChanged(new) },
+                value = localQuery,
+                onValueChange = { new -> localQuery = new },
                 placeholder = { Text("Buscar juegos...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onSurface) },
                 singleLine = true,
@@ -62,6 +78,16 @@ fun AppTopBar(
                     focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                     unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
                 ),
+                trailingIcon = {
+                    if (localQuery.isNotBlank()) {
+                        IconButton(onClick = {
+                            localQuery = ""
+                            onQueryChanged("")
+                        }) {
+                            Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "Limpiar")
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
