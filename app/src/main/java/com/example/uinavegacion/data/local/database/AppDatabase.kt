@@ -46,8 +46,10 @@ import kotlinx.coroutines.launch
         OrdenCompraEntity::class,
         DetalleEntity::class,
         ReservaEntity::class
+        ,
+        com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 4, // Ya está en 4, lo dejamos así.
+    version = 5, // Se añade tabla biblioteca
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -63,6 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun ordenCompraDao(): OrdenCompraDao
     abstract fun detalleDao(): DetalleDao
     abstract fun reservaDao(): ReservaDao
+    abstract fun libraryDao(): com.example.uinavegacion.data.local.library.LibraryDao
 
     companion object {
         @Volatile

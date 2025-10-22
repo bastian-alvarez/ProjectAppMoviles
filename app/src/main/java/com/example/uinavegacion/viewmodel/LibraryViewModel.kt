@@ -1,8 +1,14 @@
 package com.example.uinavegacion.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.local.library.LibraryEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -16,34 +22,53 @@ data class LibraryGame(
     val genre: String = "Acción" // Género por defecto
 )
 
-class LibraryViewModel : ViewModel() {
+class LibraryViewModel(application: Application) : AndroidViewModel(application) {
     private val _games = MutableStateFlow<List<LibraryGame>>(emptyList())
     val games: StateFlow<List<LibraryGame>> = _games
 
     // Formato de fecha
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    // Agregar juegos comprados a la biblioteca
+    // Agregar juegos comprados a la biblioteca y persistir en Room
     fun addPurchasedGames(cartItems: List<com.example.uinavegacion.viewmodel.CartItem>) {
-        val currentGames = _games.value.toMutableList()
+        val dao = AppDatabase.getInstance(getApplication()).libraryDao()
         val currentDate = dateFormat.format(Date())
-        
-        cartItems.forEach { item ->
-            // Verificar que el juego no esté ya en la biblioteca
-            if (!currentGames.any { it.id == item.id }) {
-                val newGame = LibraryGame(
-                    id = item.id,
-                    name = item.name,
-                    price = item.price,
-                    dateAdded = currentDate,
-                    status = "Disponible",
-                    genre = getGenreForGame(item.name)
-                )
-                currentGames.add(newGame)
+
+        viewModelScope.launch {
+            cartItems.forEach { item ->
+                val exists = dao.exists(item.id) > 0
+                if (!exists) {
+                    val entity = LibraryEntity(
+                        id = item.id,
+                        name = item.name,
+                        price = item.price,
+                        dateAdded = currentDate,
+                        status = "Disponible",
+                        genre = getGenreForGame(item.name)
+                    )
+                    dao.insert(entity)
+                }
             }
         }
-        
-        _games.value = currentGames
+    }
+
+    init {
+        // Cargar biblioteca desde la base de datos
+        val dao = AppDatabase.getInstance(getApplication()).libraryDao()
+        viewModelScope.launch {
+            dao.getAll().collect { list ->
+                _games.value = list.map { e ->
+                    LibraryGame(
+                        id = e.id,
+                        name = e.name,
+                        price = e.price,
+                        dateAdded = e.dateAdded,
+                        status = e.status,
+                        genre = e.genre
+                    )
+                }
+            }
+        }
     }
 
     // Cambiar estado de un juego (para simular descarga/instalación)

@@ -17,7 +17,9 @@ import com.example.uinavegacion.ui.components.*
 import com.example.uinavegacion.ui.screen.*
 import com.example.uinavegacion.ui.utils.*
 import com.example.uinavegacion.viewmodel.CartViewModel
+import com.example.uinavegacion.viewmodel.LibraryViewModel
 import com.example.uinavegacion.viewmodel.SearchViewModel
+import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,6 +33,7 @@ fun AppNavGraph(navController: NavHostController) {
 
     // ViewModel compartidos
     val cartViewModel: CartViewModel = viewModel()
+    val libraryViewModel: LibraryViewModel = viewModel()
     val searchViewModel: SearchViewModel = viewModel()
 
     // Obtener la ruta actual para saber qué pantalla está activa
@@ -72,16 +75,17 @@ fun AppNavGraph(navController: NavHostController) {
                     cartCount = cartViewModel.getTotalItems()
                 )
                 
-                AdaptiveScaffold(
-                    windowInfo = windowInfo,
-                    navController = navController,
-                    currentRoute = currentRoute,
-                    isAdminView = isAdminView,
-                    cartViewModel = cartViewModel,
-                    searchViewModel = searchViewModel,
-                    showNavigationElements = false,
-                    modifier = Modifier.weight(1f)
-                )
+                            AdaptiveScaffold(
+                                windowInfo = windowInfo,
+                                navController = navController,
+                                currentRoute = currentRoute,
+                                isAdminView = isAdminView,
+                                cartViewModel = cartViewModel,
+                                libraryViewModel = libraryViewModel,
+                                searchViewModel = searchViewModel,
+                                showNavigationElements = false,
+                                modifier = Modifier.weight(1f)
+                            )
             }
         }
         
@@ -109,6 +113,7 @@ fun AppNavGraph(navController: NavHostController) {
                     currentRoute = currentRoute,
                     isAdminView = isAdminView,
                     cartViewModel = cartViewModel,
+                    libraryViewModel = libraryViewModel,
                     searchViewModel = searchViewModel,
                     showNavigationElements = true,
                     modifier = Modifier.weight(1f)
@@ -126,6 +131,7 @@ fun AppNavGraph(navController: NavHostController) {
                     currentRoute = currentRoute,
                     isAdminView = isAdminView,
                     cartViewModel = cartViewModel,
+                    libraryViewModel = libraryViewModel,
                     searchViewModel = searchViewModel,
                     showNavigationElements = true,
                     onOpenDrawer = null // No drawer para admin
@@ -150,6 +156,7 @@ fun AppNavGraph(navController: NavHostController) {
                         currentRoute = currentRoute,
                         isAdminView = isAdminView,
                         cartViewModel = cartViewModel,
+                        libraryViewModel = libraryViewModel,
                         searchViewModel = searchViewModel,
                         showNavigationElements = true,
                         onOpenDrawer = { scope.launch { drawerState.open() } }
@@ -168,6 +175,7 @@ private fun AdaptiveScaffold(
     isAdminView: Boolean,
     cartViewModel: CartViewModel,
     searchViewModel: SearchViewModel,
+    libraryViewModel: com.example.uinavegacion.viewmodel.LibraryViewModel,
     showNavigationElements: Boolean,
     modifier: Modifier = Modifier,
     onOpenDrawer: (() -> Unit)? = null
@@ -186,7 +194,8 @@ private fun AdaptiveScaffold(
                     onHome = { navController.navigate(Route.Home.path) },
                     onLogin = { navController.navigate(Route.Login.path) },
                     onRegister = { navController.navigate(Route.Register.path) },
-                    onSearch = { query ->
+                    currentQuery = searchViewModel.query.collectAsState().value,
+                    onQueryChanged = { query ->
                         searchViewModel.setQuery(query)
                         if (query.isNotBlank()) {
                             navController.navigate(Route.Games.path)
@@ -268,10 +277,10 @@ private fun AdaptiveScaffold(
                     val gameId = backStack.arguments?.getString("gameId").orEmpty()
                     GameDetailScreen(navController, gameId, cartViewModel)
                 }
-                composable(Route.Library.path) { LibraryScreen(navController) }
+                composable(Route.Library.path) { LibraryScreen(navController, libraryViewModel) }
 
                 // ===== Tienda =====
-                composable(Route.Cart.path) { CartScreen(navController, cartViewModel) }
+                composable(Route.Cart.path) { CartScreen(navController, cartViewModel, libraryViewModel) }
                 composable(Route.Checkout.path) { CheckoutScreen(navController) }
 
                 // ===== Ajustes =====

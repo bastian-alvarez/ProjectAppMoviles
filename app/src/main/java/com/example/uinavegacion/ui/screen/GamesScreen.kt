@@ -445,7 +445,9 @@ private fun GameListItem(
                     }
                 },
                 enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
-                modifier = Modifier.height(if (windowInfo.isTablet) 56.dp else 48.dp),
+                modifier = Modifier
+                    .height(if (windowInfo.isTablet) 56.dp else 48.dp)
+                    .widthIn(min = if (windowInfo.isTablet) 180.dp else 140.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (cartViewModel.isInCart(game.id)) 
                         MaterialTheme.colorScheme.secondary 
@@ -454,7 +456,7 @@ private fun GameListItem(
             ) {
                 Text(
                     if (cartViewModel.isInCart(game.id)) "En Carrito"
-                    else if (game.stock > 0) "Agregar"
+                    else if (game.stock > 0) "Agregar al carrito"
                     else "Sin Stock",
                     fontWeight = FontWeight.Bold
                 )
@@ -574,7 +576,8 @@ private fun GameGridItem(
                     enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp),
+                        .height(if (windowInfo.isTablet) 44.dp else 40.dp)
+                        .widthIn(min = if (windowInfo.isTablet) 160.dp else 120.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (cartViewModel.isInCart(game.id)) 
                             MaterialTheme.colorScheme.secondary 
@@ -583,7 +586,7 @@ private fun GameGridItem(
                 ) {
                     Text(
                         if (cartViewModel.isInCart(game.id)) "✓ En Carrito"
-                        else if (game.stock > 0) "Agregar"
+                        else if (game.stock > 0) "Agregar al carrito"
                         else "Sin Stock",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold

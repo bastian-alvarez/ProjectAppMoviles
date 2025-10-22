@@ -33,7 +33,8 @@ fun AppTopBar(
     onHome: () -> Unit,       // Navega a Home
     onLogin: () -> Unit,      // Navega a Login
     onRegister: () -> Unit,   // Navega a Registro
-    onSearch: (String) -> Unit = {}, // Callback cuando cambia la búsqueda
+    currentQuery: String = "",
+    onQueryChanged: (String) -> Unit = {},
     showHamburger: Boolean = true // Controla si mostrar el botón hamburguesa
 ) {
     //lo que hace es crear una variable de estado recordada que le dice a la interfaz
@@ -45,13 +46,9 @@ fun AppTopBar(
             MaterialTheme.colorScheme.primary
         ),
         title = {
-            var query by remember { mutableStateOf("") }
             OutlinedTextField(
-                value = query,
-                onValueChange = {
-                    query = it
-                    onSearch(it)
-                },
+                value = currentQuery,
+                onValueChange = { new -> onQueryChanged(new) },
                 placeholder = { Text("Buscar juegos...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onSurface) },
                 singleLine = true,
