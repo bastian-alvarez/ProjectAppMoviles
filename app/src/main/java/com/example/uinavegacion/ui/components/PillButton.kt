@@ -8,10 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.uinavegacion.ui.components.AnimatedOutlinedButton
 
 @Composable
 fun PillButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
-    OutlinedButton(
+    AnimatedOutlinedButton(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(50),

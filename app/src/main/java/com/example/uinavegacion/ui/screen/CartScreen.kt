@@ -22,6 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.*
 import com.example.uinavegacion.ui.utils.*
+import com.example.uinavegacion.ui.components.AnimatedButton
+import com.example.uinavegacion.ui.components.AnimatedOutlinedButton
+import com.example.uinavegacion.ui.components.AnimatedIconButton
+import com.example.uinavegacion.ui.components.AnimatedTextButton
+import com.example.uinavegacion.ui.components.AnimatedFloatingActionButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,14 +48,36 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
         }
     ) { innerPadding ->
         if (cartItems.isEmpty()) {
-            // Carrito vacío - Mismo diseño para todos los dispositivos
-            EmptyCartContent(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
-                onExploreGames = { nav.navigate(Route.Games.path) }
-            )
+            // Carrito vacío - centrar en tablets
+            if (windowInfo.isTablet) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyCartContent(
+                        modifier = Modifier
+                            .widthIn(max = AdaptiveUtils.getMaxContentWidth(windowInfo))
+                            .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
+                        onExploreGames = { nav.navigate(Route.Games.path) }
+                    )
+                }
+            } else {
+                // Mobile / default
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    EmptyCartContent(
+                        modifier = Modifier.fillMaxWidth(),
+                        onExploreGames = { nav.navigate(Route.Games.path) }
+                    )
+                }
+            }
         } else {
             // Carrito con productos - Diseño adaptativo
             if (AdaptiveUtils.shouldUseTwoPaneLayout(windowInfo)) {
@@ -223,21 +250,21 @@ private fun TwoPaneCartContent(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Button(
+                    AnimatedButton(
                         onClick = onCompletePurchase,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Comprar Ahora", style = MaterialTheme.typography.titleMedium)
                     }
-                    
-                    OutlinedButton(
+
+                    AnimatedOutlinedButton(
                         onClick = onNavigateToGames,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Seguir Comprando")
                     }
-                    
-                    OutlinedButton(
+
+                    AnimatedOutlinedButton(
                         onClick = { cartViewModel.clearCart() },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.outlinedButtonColors(
@@ -310,7 +337,7 @@ private fun SinglePaneCartContent(
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
+                AnimatedButton(
                     onClick = onCompletePurchase,
                     modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
@@ -321,14 +348,14 @@ private fun SinglePaneCartContent(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedButton(
+                    AnimatedOutlinedButton(
                         onClick = onNavigateToGames,
                         modifier = Modifier.weight(1f).height(48.dp)
                     ) {
                         Text("Seguir Comprando")
                     }
                     
-                    OutlinedButton(
+                    AnimatedOutlinedButton(
                         onClick = { cartViewModel.clearCart() },
                         modifier = Modifier.weight(1f).height(48.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
@@ -345,14 +372,14 @@ private fun SinglePaneCartContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedButton(
+                AnimatedOutlinedButton(
                     onClick = onNavigateToGames,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Seguir Comprando")
                 }
-                
-                Button(
+
+                AnimatedButton(
                     onClick = onCompletePurchase,
                     modifier = Modifier.weight(1f)
                 ) {
@@ -360,7 +387,7 @@ private fun SinglePaneCartContent(
                 }
             }
             
-            OutlinedButton(
+            AnimatedOutlinedButton(
                 onClick = { cartViewModel.clearCart() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(
@@ -461,7 +488,7 @@ private fun TabletCartItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    IconButton(
+                    AnimatedIconButton(
                         onClick = { 
                             if (item.quantity > 1) {
                                 cartViewModel.updateQuantity(item.id, item.quantity - 1)
@@ -501,7 +528,7 @@ private fun TabletCartItem(
                         }
                     }
                     
-                    IconButton(
+                    AnimatedIconButton(
                         onClick = { cartViewModel.updateQuantity(item.id, item.quantity + 1) },
                         modifier = Modifier
                             .size(44.dp)
@@ -520,7 +547,7 @@ private fun TabletCartItem(
                 }
                 
                 // Botón eliminar más grande
-                OutlinedButton(
+                AnimatedOutlinedButton(
                     onClick = { cartViewModel.removeGame(item.id) },
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
@@ -603,7 +630,7 @@ private fun MobileCartItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    IconButton(
+                    AnimatedIconButton(
                         onClick = { 
                             if (item.quantity > 1) {
                                 cartViewModel.updateQuantity(item.id, item.quantity - 1)
@@ -642,7 +669,7 @@ private fun MobileCartItem(
                         }
                     }
                     
-                    IconButton(
+                    AnimatedIconButton(
                         onClick = { cartViewModel.updateQuantity(item.id, item.quantity + 1) },
                         modifier = Modifier
                             .size(36.dp)
@@ -660,7 +687,7 @@ private fun MobileCartItem(
                     }
                 }
                 
-                OutlinedButton(
+                AnimatedOutlinedButton(
                     onClick = { cartViewModel.removeGame(item.id) },
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
