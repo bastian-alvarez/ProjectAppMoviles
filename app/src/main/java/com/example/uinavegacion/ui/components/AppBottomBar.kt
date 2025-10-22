@@ -4,11 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
@@ -36,8 +32,26 @@ fun AppBottomBar(
         NavigationBarItem(
             selected = currentRoute?.contains("cart") == true,
             onClick = onCart,
-            icon = { Icon(Icons.Filled.ShoppingCart, contentDescription = "Carrito") },
-            label = { Text(if (cartCount > 0) "Carrito (${cartCount})" else "Carrito") }
+            icon = {
+                BadgedBox(
+                    badge = {
+                        if (cartCount > 0) {
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            ) {
+                                Text(
+                                    text = if (cartCount > 99) "99+" else cartCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Icon(Icons.Filled.ShoppingCart, contentDescription = "Carrito")
+                }
+            },
+            label = { Text("Carrito") }
         )
     }
 }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dimensiones para tablets medianos (720dp+) -->
+    <dimen name="padding_small">16dp</dimen>
+    <dimen name="padding_medium">24dp</dimen>
+    <dimen name="padding_large">32dp</dimen>
+    <dimen name="padding_extra_large">40dp</dimen>
+    
+    <dimen name="margin_small">16dp</dimen>
+    <dimen name="margin_medium">24dp</dimen>
+    <dimen name="margin_large">32dp</dimen>
+    
+    <dimen name="card_elevation">10dp</dimen>
+    <dimen name="card_corner_radius">16dp</dimen>
+    
+    <!-- Tamaños de texto específicos para tablets medianos -->
+    <dimen name="text_size_small">18sp</dimen>
+    <dimen name="text_size_medium">20sp</dimen>
+    <dimen name="text_size_large">28sp</dimen>
+    <dimen name="text_size_extra_large">36sp</dimen>
+    
+    <!-- Dimensiones específicas para componentes -->
+    <dimen name="app_bar_height">80dp</dimen>
+    <dimen name="bottom_nav_height">88dp</dimen>
+    <dimen name="nav_rail_width">88dp</dimen>
+    <dimen name="permanent_drawer_width">320dp</dimen>
+    
+    <!-- Grid y listas -->
+    <dimen name="grid_spacing">20dp</dimen>
+    <dimen name="list_item_height">88dp</dimen>
+    
+    <!-- Cards de juegos -->
+    <dimen name="game_card_width">220dp</dimen>
+    <dimen name="game_card_height">280dp</dimen>
+</resources>

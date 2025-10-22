@@ -1,5 +1,9 @@
 package com.example.uinavegacion.ui.screen
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,75 +13,124 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
+import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
-import coil.compose.AsyncImage
-import com.example.uinavegacion.session.SessionManager
+import kotlinx.coroutines.launch
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileEditScreen(nav: NavHostController) {
     var name by remember { mutableStateOf("Usuario Demo") }
     var phone by remember { mutableStateOf("+1 234 567 8900") }
-    var email by remember { mutableStateOf("demo@ejemplo.com") }
+    var email by remember { mutableStateOf("user1@demo.com") }
     var gender by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
     
     var expanded by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf(false) }
     var photoSavedMessage by remember { mutableStateOf<String?>(null) }
     var profilePhotoUri by remember { mutableStateOf<String?>(null) }
+    var showPhotoOptionsDialog by remember { mutableStateOf(false) }
 
-    // Repo y corrutinas
-    val context = LocalContext.current.applicationContext
+    val context = LocalContext.current
     val db = remember { AppDatabase.getInstance(context) }
     val userRepository = remember { UserRepository(db.userDao()) }
     val scope = rememberCoroutineScope()
 
-    // Launcher para seleccionar imagen desde galería
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            profilePhotoUri = uri.toString()
-            // Guardar en DB buscando al usuario por el email del formulario
+    // Crear archivo temporal para foto
+    fun createImageFile(): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "JPEG_${timeStamp}_"
+        val storageDir = File(context.getExternalFilesDir(null), "Pictures")
+        storageDir.mkdirs()
+        return File.createTempFile(imageFileName, ".jpg", storageDir)
+    }
+
+    // Crear URI para la cámara
+    val photoFile = remember { createImageFile() }
+    val photoUri = remember {
+        FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            photoFile
+        )
+    }
+
+    // Launcher para tomar foto con cámara
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            profilePhotoUri = photoUri.toString()
             scope.launch {
-                val sessionEmail = SessionManager.currentUserEmail.value
-                val lookupEmail = sessionEmail ?: email
-                val userByEmail = db.userDao().getByEmail(lookupEmail)
+                val userByEmail = db.userDao().getByEmail(email)
                 if (userByEmail != null) {
                     userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
-                    photoSavedMessage = "Foto guardada"
+                    photoSavedMessage = "Foto tomada y guardada"
                 } else {
-                    photoSavedMessage = "No se encontró el usuario por email"
+                    photoSavedMessage = "Error: Usuario no encontrado"
                 }
             }
         }
     }
-    
+
+    // Launcher para seleccionar imagen desde galería
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            profilePhotoUri = uri.toString()
+            scope.launch {
+                val userByEmail = db.userDao().getByEmail(email)
+                if (userByEmail != null) {
+                    userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                    photoSavedMessage = "Foto de galería guardada"
+                } else {
+                    photoSavedMessage = "Error: Usuario no encontrado"
+                }
+            }
+        }
+    }
+
+    // Launcher para pedir permisos
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(photoUri)
+        } else {
+            photoSavedMessage = "Permiso de cámara denegado"
+        }
+    }
+
+    // Cargar foto actual del usuario
+    LaunchedEffect(Unit) {
+        val userByEmail = db.userDao().getByEmail(email)
+        userByEmail?.profilePhotoUri?.let { uri ->
+            profilePhotoUri = uri
+        }
+    }
+
     val genderOptions = listOf("Masculino", "Femenino", "Otro", "Prefiero no decir")
-    
+
     Scaffold(
         topBar = { 
             TopAppBar(
@@ -89,7 +142,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
@@ -105,66 +158,140 @@ fun ProfileEditScreen(nav: NavHostController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Foto de perfil compacta
+            // Sección de foto de perfil mejorada
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Avatar con previsualización de URI si existe
+                    Text(
+                        text = "Foto de Perfil",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    // Avatar circular grande con previsualización
                     Box(
                         modifier = Modifier
-                            .size(60.dp)
+                            .size(120.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .border(
+                                3.dp, 
+                                MaterialTheme.colorScheme.primary, 
+                                CircleShape
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         if (profilePhotoUri != null) {
                             AsyncImage(
                                 model = profilePhotoUri,
                                 contentDescription = "Foto de perfil",
-                                modifier = Modifier.matchParentSize().clip(CircleShape)
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clip(CircleShape)
                             )
                         } else {
-                            Text(
-                                text = "📷",
-                                style = MaterialTheme.typography.headlineMedium
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "Sin foto",
+                                modifier = Modifier.size(60.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
                     
-                    Spacer(Modifier.width(16.dp))
+                    Spacer(Modifier.height(16.dp))
                     
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Foto de Perfil",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = photoSavedMessage ?: if (profilePhotoUri == null) "Selecciona una imagen de tu galería" else "Imagen seleccionada",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    // Mensaje de estado
+                    if (photoSavedMessage != null) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (photoSavedMessage!!.contains("Error")) 
+                                    MaterialTheme.colorScheme.errorContainer 
+                                else 
+                                    MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Text(
+                                text = photoSavedMessage!!,
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (photoSavedMessage!!.contains("Error")) 
+                                    MaterialTheme.colorScheme.onErrorContainer 
+                                else 
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
                     }
                     
-                    OutlinedButton(
-                        onClick = { photoPickerLauncher.launch("image/*") },
-                        enabled = true
+                    // Botones para tomar foto o seleccionar desde galería
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = "Agregar foto",
-                            modifier = Modifier.size(16.dp)
-                        )
+                        OutlinedButton(
+                            onClick = { 
+                                permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                Icons.Default.CameraAlt,
+                                contentDescription = "Cámara",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Cámara")
+                        }
+                        
+                        Button(
+                            onClick = { galleryLauncher.launch("image/*") },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                Icons.Default.PhotoLibrary,
+                                contentDescription = "Galería",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Galería")
+                        }
+                    }
+                    
+                    // Botón para eliminar foto
+                    if (profilePhotoUri != null) {
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(
+                            onClick = {
+                                profilePhotoUri = null
+                                scope.launch {
+                                    val userByEmail = db.userDao().getByEmail(email)
+                                    if (userByEmail != null) {
+                                        userRepository.updateProfilePhoto(userByEmail.id, null)
+                                        photoSavedMessage = "Foto eliminada"
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Eliminar",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Eliminar Foto")
+                        }
                     }
                 }
             }
 
-            // Información personal compacta
+            // Información personal
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -256,7 +383,6 @@ fun ProfileEditScreen(nav: NavHostController) {
                 }
             }
 
-
             // Mensaje de éxito
             if (showSuccessMessage) {
                 Card(
@@ -299,9 +425,29 @@ fun ProfileEditScreen(nav: NavHostController) {
                 Button(
                     onClick = {
                         isLoading = true
-                        // Simular guardado
-                        showSuccessMessage = true
-                        isLoading = false
+                        scope.launch {
+                            // Guardar cambios del perfil
+                            try {
+                                val userByEmail = db.userDao().getByEmail(email)
+                                if (userByEmail != null) {
+                                    db.userDao().update(
+                                        id = userByEmail.id,
+                                        name = name,
+                                        email = email,
+                                        phone = phone,
+                                        password = userByEmail.password
+                                    )
+                                    showSuccessMessage = true
+                                    isLoading = false
+                                } else {
+                                    photoSavedMessage = "Error: Usuario no encontrado"
+                                    isLoading = false
+                                }
+                            } catch (e: Exception) {
+                                photoSavedMessage = "Error al guardar: ${e.message}"
+                                isLoading = false
+                            }
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     enabled = !isLoading

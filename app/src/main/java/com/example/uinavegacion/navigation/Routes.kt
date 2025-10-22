@@ -31,13 +31,9 @@ sealed class Route(val path: String) {
     }
     data object Library : Route("library")
 
-    // Tienda / Órdenes
+    // Tienda
     data object Cart : Route("cart")
     data object Checkout : Route("checkout")
-    data object Orders : Route("orders")
-    data object OrderDetail : Route("orders/{orderId}") {
-        fun build(orderId: String) = "orders/$orderId"
-    }
 
     // Ajustes
     data object Settings : Route("settings")

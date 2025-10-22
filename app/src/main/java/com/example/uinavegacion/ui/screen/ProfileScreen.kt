@@ -16,7 +16,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.*
-import com.example.uinavegacion.session.SessionManager
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
 import androidx.compose.ui.platform.LocalContext
@@ -30,19 +29,18 @@ fun ProfileScreen(nav: NavHostController) {
     val context = LocalContext.current.applicationContext
     val db = remember { AppDatabase.getInstance(context) }
     val userRepo = remember { UserRepository(db.userDao()) }
-    val currentEmail by SessionManager.currentUserEmail.collectAsState(initial = null)
+    // Usuario demo por defecto - SessionManager removido
     var displayName by remember { mutableStateOf("Usuario Demo") }
-    var displayEmail by remember { mutableStateOf("demo@demo.com") }
+    var displayEmail by remember { mutableStateOf("user1@demo.com") }
     var photoUri by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(currentEmail) {
-        currentEmail?.let { email ->
-            val u = db.userDao().getByEmail(email)
-            if (u != null) {
-                displayName = u.name
-                displayEmail = u.email
-                photoUri = u.profilePhotoUri
-            }
+    // Cargar usuario demo por defecto - SessionManager removido
+    LaunchedEffect(Unit) {
+        val u = db.userDao().getByEmail("user1@demo.com")
+        if (u != null) {
+            displayName = u.name
+            displayEmail = u.email
+            photoUri = u.profilePhotoUri
         }
     }
     Scaffold(
@@ -141,7 +139,7 @@ fun ProfileScreen(nav: NavHostController) {
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("5", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                            Text("Órdenes", style = MaterialTheme.typography.bodySmall)
+                            Text("Compras", style = MaterialTheme.typography.bodySmall)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("3", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -215,22 +213,11 @@ fun ProfileScreen(nav: NavHostController) {
             }
 
             // Acciones adicionales
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            OutlinedButton(
+                onClick = { nav.navigate(Route.Library.path) },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedButton(
-                    onClick = { nav.navigate(Route.Library.path) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Mi Biblioteca")
-                }
-                OutlinedButton(
-                    onClick = { nav.navigate(Route.Orders.path) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Mis Órdenes")
-                }
+                Text("Mi Biblioteca")
             }
 
             // Información de la aplicación

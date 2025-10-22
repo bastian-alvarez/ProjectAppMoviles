@@ -1,10 +1,7 @@
 package com.example.uinavegacion.navigation
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -16,17 +13,19 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
-import com.example.uinavegacion.ui.components.AppBottomBar
-import com.example.uinavegacion.ui.components.AppDrawer
-import com.example.uinavegacion.ui.components.AppTopBar
+import com.example.uinavegacion.ui.components.*
 import com.example.uinavegacion.ui.screen.*
+import com.example.uinavegacion.ui.utils.*
 import com.example.uinavegacion.viewmodel.CartViewModel
 import com.example.uinavegacion.viewmodel.SearchViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
-
+    
+    // Información del tamaño de ventana para diseño adaptativo
+    val windowInfo = rememberWindowInfo()
+    
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -60,61 +59,165 @@ fun AppNavGraph(navController: NavHostController) {
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            // --- MENÚ DE HAMBURGUESA TOTALMENTE FUNCIONAL ---
-            AppDrawer(
-                currentRoute = currentRoute,
-                onNavigate = navigateAndCloseDrawer, // Usamos la función genérica
-                onLogout = onLogout, // Pasamos la acción de logout
-                isAdmin = isAdminView
-            )
-        }
-    ) {
-        Scaffold(
-            topBar = {
-                // Ocultamos la TopBar en las pantallas de autenticación y splash
-                val showTopBar = currentRoute !in listOf(
-                    Route.Splash.path, Route.Login.path, Route.Register.path, Route.ForgotPassword.path, Route.VerifyEmail.path
-                ) && !isAdminView // Ocultar hamburguesa en admin
-                if (showTopBar) {
-                    AppTopBar(
-                        onOpenDrawer = { scope.launch { drawerState.open() } },
-                        onHome = { navController.navigate(Route.Home.path) },
-                        onLogin = { navController.navigate(Route.Login.path) },
-                        onRegister = { navController.navigate(Route.Register.path) },
-                        onSearch = { query ->
-                            searchViewModel.setQuery(query)
-                            if (query.isNotBlank()) {
-                                navController.navigate(Route.Games.path)
-                            }
-                        }
-                    )
-                }
-            },
-            bottomBar = {
-                // Ocultamos la BottomBar donde no sea necesaria
-                val showBottomBar = currentRoute in listOf(
-                    Route.Home.path, Route.Games.path, Route.Library.path, Route.Cart.path, Route.Profile.path
+    // Configurar navegación según el tipo de dispositivo
+    when (windowInfo.navigationType) {
+        NavigationType.PERMANENT_NAVIGATION_DRAWER -> {
+            // Drawer permanente para tablets grandes y desktop
+            Row(modifier = Modifier.fillMaxSize()) {
+                AppPermanentNavigationDrawer(
+                    currentRoute = currentRoute,
+                    onNavigate = navigateAndCloseDrawer,
+                    onLogout = onLogout,
+                    isAdmin = isAdminView,
+                    cartCount = cartViewModel.getTotalItems()
                 )
-                if (showBottomBar) {
-                    AppBottomBar(
+                
+                AdaptiveScaffold(
+                    windowInfo = windowInfo,
+                    navController = navController,
+                    currentRoute = currentRoute,
+                    isAdminView = isAdminView,
+                    cartViewModel = cartViewModel,
+                    searchViewModel = searchViewModel,
+                    showNavigationElements = false,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        
+        NavigationType.NAVIGATION_RAIL -> {
+            // Navigation Rail para tablets medianos
+            Row(modifier = Modifier.fillMaxSize()) {
+                val showNavigationRail = currentRoute in listOf(
+                    Route.Home.path, Route.Games.path, Route.Library.path, Route.Cart.path, Route.Profile.path
+                ) && !isAdminView
+                
+                if (showNavigationRail) {
+                    AppNavigationRail(
                         currentRoute = currentRoute,
                         onHome = { navController.navigate(Route.Home.path) { launchSingleTop = true } },
                         onGames = { navController.navigate(Route.Games.path) { launchSingleTop = true } },
                         onCart = { navController.navigate(Route.Cart.path) { launchSingleTop = true } },
+                        onProfile = { navController.navigate(Route.Profile.path) { launchSingleTop = true } },
                         cartCount = cartViewModel.getTotalItems()
                     )
                 }
+                
+                AdaptiveScaffold(
+                    windowInfo = windowInfo,
+                    navController = navController,
+                    currentRoute = currentRoute,
+                    isAdminView = isAdminView,
+                    cartViewModel = cartViewModel,
+                    searchViewModel = searchViewModel,
+                    showNavigationElements = true,
+                    modifier = Modifier.weight(1f)
+                )
             }
-        ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                // --- PUNTO DE INICIO CAMBIADO A LOGIN ---
-                startDestination = Route.Login.path,
-                modifier = Modifier.padding(innerPadding)
-            ) {
+        }
+        
+        NavigationType.BOTTOM_NAVIGATION -> {
+            // Navegación tradicional con drawer modal para teléfonos
+            if (isAdminView) {
+                // Para administradores: Sin drawer modal
+                AdaptiveScaffold(
+                    windowInfo = windowInfo,
+                    navController = navController,
+                    currentRoute = currentRoute,
+                    isAdminView = isAdminView,
+                    cartViewModel = cartViewModel,
+                    searchViewModel = searchViewModel,
+                    showNavigationElements = true,
+                    onOpenDrawer = null // No drawer para admin
+                )
+            } else {
+                // Para usuarios normales: Con drawer modal
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        AppDrawer(
+                            currentRoute = currentRoute,
+                            onNavigate = navigateAndCloseDrawer,
+                            onLogout = onLogout,
+                            isAdmin = isAdminView,
+                            cartCount = cartViewModel.getTotalItems()
+                        )
+                    }
+                ) {
+                    AdaptiveScaffold(
+                        windowInfo = windowInfo,
+                        navController = navController,
+                        currentRoute = currentRoute,
+                        isAdminView = isAdminView,
+                        cartViewModel = cartViewModel,
+                        searchViewModel = searchViewModel,
+                        showNavigationElements = true,
+                        onOpenDrawer = { scope.launch { drawerState.open() } }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdaptiveScaffold(
+    windowInfo: WindowInfo,
+    navController: NavHostController,
+    currentRoute: String?,
+    isAdminView: Boolean,
+    cartViewModel: CartViewModel,
+    searchViewModel: SearchViewModel,
+    showNavigationElements: Boolean,
+    modifier: Modifier = Modifier,
+    onOpenDrawer: (() -> Unit)? = null
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            // Ocultamos la TopBar en las pantallas de autenticación y splash
+            val showTopBar = currentRoute !in listOf(
+                Route.Splash.path, Route.Login.path, Route.Register.path, Route.ForgotPassword.path, Route.VerifyEmail.path
+            ) && !isAdminView && showNavigationElements
+            
+            if (showTopBar) {
+                AppTopBar(
+                    onOpenDrawer = onOpenDrawer,
+                    onHome = { navController.navigate(Route.Home.path) },
+                    onLogin = { navController.navigate(Route.Login.path) },
+                    onRegister = { navController.navigate(Route.Register.path) },
+                    onSearch = { query ->
+                        searchViewModel.setQuery(query)
+                        if (query.isNotBlank()) {
+                            navController.navigate(Route.Games.path)
+                        }
+                    },
+                    showHamburger = windowInfo.navigationType == NavigationType.BOTTOM_NAVIGATION
+                )
+            }
+        },
+        bottomBar = {
+            // Solo mostrar bottom bar en navegación de tipo BOTTOM_NAVIGATION
+            val showBottomBar = currentRoute in listOf(
+                Route.Home.path, Route.Games.path, Route.Library.path, Route.Cart.path, Route.Profile.path
+            ) && windowInfo.navigationType == NavigationType.BOTTOM_NAVIGATION && !isAdminView
+            
+            if (showBottomBar) {
+                AppBottomBar(
+                    currentRoute = currentRoute,
+                    onHome = { navController.navigate(Route.Home.path) { launchSingleTop = true } },
+                    onGames = { navController.navigate(Route.Games.path) { launchSingleTop = true } },
+                    onCart = { navController.navigate(Route.Cart.path) { launchSingleTop = true } },
+                    cartCount = cartViewModel.getTotalItems()
+                )
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Route.Login.path,
+            modifier = Modifier.padding(innerPadding)
+        ) {
                 // Todas tus rutas se mantienen exactamente igual que antes
                 // ===== Core =====
                 composable(Route.Splash.path) { SplashScreen(navController) }
@@ -167,17 +270,9 @@ fun AppNavGraph(navController: NavHostController) {
                 }
                 composable(Route.Library.path) { LibraryScreen(navController) }
 
-                // ===== Tienda / Órdenes =====
+                // ===== Tienda =====
                 composable(Route.Cart.path) { CartScreen(navController, cartViewModel) }
                 composable(Route.Checkout.path) { CheckoutScreen(navController) }
-                composable(Route.Orders.path) { OrdersScreen(navController) }
-                composable(
-                    route = Route.OrderDetail.path,
-                    arguments = listOf(navArgument("orderId") { type = NavType.StringType })
-                ) { backStack ->
-                    val orderId = backStack.arguments?.getString("orderId").orEmpty()
-                    OrderDetailScreen(navController, orderId)
-                }
 
                 // ===== Ajustes =====
                 composable(Route.Settings.path) { SettingsScreen(navController) }
@@ -185,18 +280,8 @@ fun AppNavGraph(navController: NavHostController) {
 
                 // ===== Administrador =====
                 composable(Route.AdminDashboard.path) { AdminDashboardScreen(navController) }
-                composable(Route.AdminGames.path) { AdminGamesScreen(navController) }
-                // <-- CORRECCIÓN 2: Se pasa explícitamente null al gameId para el modo "Añadir"
-                composable(Route.AdminAddGame.path) { AdminAddGameScreen(navController, gameId = null) }
-                composable(
-                    route = Route.AdminEditGame.path,
-                    arguments = listOf(navArgument("gameId") { type = NavType.StringType })
-                ) { backStack ->
-                    val gameId = backStack.arguments?.getString("gameId").orEmpty()
-                    // Se reutiliza la misma pantalla, pasando el ID para el modo "Editar"
-                    AdminAddGameScreen(navController, gameId = gameId)
-                }
-                composable(Route.AdminUsers.path) { AdminUsersScreen(navController) }
+                composable(Route.AdminGames.path) { GameManagementScreen(navController) }
+                composable(Route.AdminUsers.path) { UserManagementScreen(navController) }
 
                 // ===== Estados / Errores =====
                 composable(Route.NoConnection.path) { NoConnectionScreen(navController) }
@@ -205,4 +290,3 @@ fun AppNavGraph(navController: NavHostController) {
             }
         }
     }
-}

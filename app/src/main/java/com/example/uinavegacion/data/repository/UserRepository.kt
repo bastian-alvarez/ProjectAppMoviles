@@ -1,5 +1,6 @@
 package com.example.uinavegacion.data.repository
 
+import android.util.Log
 import com.example.uinavegacion.data.local.user.UserDao
 import com.example.uinavegacion.data.local.user.UserEntity
 
@@ -10,12 +11,20 @@ class UserRepository(
 ){
     //manipular login (email y pass coincidan)
     suspend fun login(email: String, password: String): Result<UserEntity>{
+        Log.d("UserRepository", "Attempting login for email: [$email]")
         val user = userDao.getByEmail(email)
-        return if(user != null && user.password == password){
-            Result.success(user)
-        }else{
-            Result.failure(Exception("credenciales invalidas"))
-
+        if (user != null) {
+            Log.d("UserRepository", "User found in DB. Stored pass: [${user.password}], Provided pass: [$password]")
+            if (user.password == password) {
+                Log.d("UserRepository", "Password matches. Login success.")
+                return Result.success(user)
+            } else {
+                Log.d("UserRepository", "Password does NOT match. Login failed.")
+                return Result.failure(Exception("credenciales invalidas"))
+            }
+        } else {
+            Log.d("UserRepository", "User with email [$email] not found in DB.")
+            return Result.failure(Exception("credenciales invalidas"))
         }
 
     }
@@ -47,5 +56,8 @@ class UserRepository(
         }
     }
 
-
+    //obtener todos los usuarios (para administradores)
+    suspend fun getAllUsers(): List<UserEntity> {
+        return userDao.getAll()
+    }
 }

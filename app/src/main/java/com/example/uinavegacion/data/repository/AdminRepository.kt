@@ -1,5 +1,6 @@
 package com.example.uinavegacion.data.repository
 
+import android.util.Log
 import com.example.uinavegacion.data.local.admin.AdminDao
 import com.example.uinavegacion.data.local.admin.AdminEntity
 
@@ -14,7 +15,14 @@ class AdminRepository(
      * Valida las credenciales de un administrador
      */
     suspend fun validateAdmin(email: String, password: String): AdminEntity? {
-        return adminDao.validateAdmin(email, password)
+        Log.d("AdminRepository", "Attempting to validate admin with email: [$email]")
+        val admin = adminDao.validateAdmin(email, password)
+        if (admin != null) {
+            Log.d("AdminRepository", "Admin found in DB for email: [$email]")
+        } else {
+            Log.d("AdminRepository", "Admin NOT found in DB for email: [$email] with provided password.")
+        }
+        return admin
     }
     
     /**

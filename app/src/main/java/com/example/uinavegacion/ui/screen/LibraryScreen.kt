@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uinavegacion.viewmodel.LibraryViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,24 +23,12 @@ import com.example.uinavegacion.navigation.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(nav: NavHostController) {
-    val allGames = listOf(
-        GameData("Cyberpunk 2077", "RPG", "2024-01-15", "Instalado", 89.99),
-        GameData("The Witcher 3", "RPG", "2024-01-10", "Instalado", 29.99),
-        GameData("Minecraft", "Sandbox", "2024-01-20", "Descargando", 19.99),
-        GameData("Among Us", "Multijugador", "2024-01-25", "Disponible", 4.99),
-        GameData("Valorant", "FPS", "2024-01-12", "Instalado", 0.0),
-        GameData("Fortnite", "Battle Royale", "2024-01-18", "Actualizando", 0.0)
-    )
-    
+fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = viewModel()) {
+    val games by libraryViewModel.games.collectAsState()
+    val libraryStats = libraryViewModel.getLibraryStats()
     var selectedFilter by remember { mutableStateOf("Todos") }
     
-    val games = when (selectedFilter) {
-        "Instalados" -> allGames.filter { it.status == "Instalado" }
-        "Disponibles" -> allGames.filter { it.status == "Disponible" }
-        "Descargando" -> allGames.filter { it.status == "Descargando" || it.status == "Actualizando" }
-        else -> allGames
-    }
+    val filteredGames = libraryViewModel.getGamesByStatus(selectedFilter)
     
     Scaffold(
         topBar = { 
@@ -78,7 +68,7 @@ fun LibraryScreen(nav: NavHostController) {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "${games.size}",
+                            "${libraryStats.totalGames}",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -91,7 +81,7 @@ fun LibraryScreen(nav: NavHostController) {
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "${games.count { it.status == "Instalado" }}",
+                            "${libraryStats.installedGames}",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -104,7 +94,7 @@ fun LibraryScreen(nav: NavHostController) {
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "${games.count { it.status == "Disponible" }}",
+                            "${libraryStats.availableGames}",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -206,7 +196,7 @@ fun LibraryScreen(nav: NavHostController) {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(games) { game ->
+                    items(filteredGames) { game ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -299,6 +289,70 @@ fun LibraryScreen(nav: NavHostController) {
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                    }
+                                    
+                                    Spacer(Modifier.height(8.dp))
+                                    
+                                    // Botón de acción según el estado
+                                    when (game.status) {
+                                        "Disponible" -> {
+                                            OutlinedButton(
+                                                onClick = { libraryViewModel.installGame(game.id) },
+                                                modifier = Modifier.height(32.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Download,
+                                                    contentDescription = "Instalar",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Instalar", style = MaterialTheme.typography.bodySmall)
+                                            }
+                                        }
+                                        "Instalado" -> {
+                                            Button(
+                                                onClick = { /* Abrir juego */ },
+                                                modifier = Modifier.height(32.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.PlayArrow,
+                                                    contentDescription = "Jugar",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Jugar", style = MaterialTheme.typography.bodySmall)
+                                            }
+                                        }
+                                        "Descargando" -> {
+                                            OutlinedButton(
+                                                onClick = { /* Pausar descarga */ },
+                                                modifier = Modifier.height(32.dp),
+                                                enabled = false
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Pause,
+                                                    contentDescription = "Descargando",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Descargando", style = MaterialTheme.typography.bodySmall)
+                                            }
+                                        }
+                                        "Actualizando" -> {
+                                            OutlinedButton(
+                                                onClick = { /* Pausar actualización */ },
+                                                modifier = Modifier.height(32.dp),
+                                                enabled = false
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Update,
+                                                    contentDescription = "Actualizando",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Actualizando", style = MaterialTheme.typography.bodySmall)
+                                            }
+                                        }
                                     }
                                 }
                             }

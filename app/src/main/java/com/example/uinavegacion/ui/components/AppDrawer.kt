@@ -17,6 +17,7 @@ fun AppDrawer(
     onNavigate: (String) -> Unit,   // Función para navegar a cualquier pantalla
     onLogout: () -> Unit,           // Función para cerrar la sesión
     isAdmin: Boolean = false,
+    cartCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     ModalDrawerSheet(modifier = modifier) {
@@ -99,14 +100,25 @@ fun AppDrawer(
                     label = { Text("Carrito") },
                     selected = currentRoute == Route.Cart.path,
                     onClick = { onNavigate(Route.Cart.path) },
-                    icon = { Icon(Icons.Filled.ShoppingCart, contentDescription = "Carrito") },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    label = { Text("Mis Pedidos") },
-                    selected = currentRoute == Route.Orders.path,
-                    onClick = { onNavigate(Route.Orders.path) },
-                    icon = { Icon(Icons.Filled.Receipt, contentDescription = "Pedidos") },
+                    icon = {
+                        BadgedBox(
+                            badge = {
+                                if (cartCount > 0) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ) {
+                                        Text(
+                                            text = if (cartCount > 99) "99+" else cartCount.toString(),
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Carrito")
+                        }
+                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(

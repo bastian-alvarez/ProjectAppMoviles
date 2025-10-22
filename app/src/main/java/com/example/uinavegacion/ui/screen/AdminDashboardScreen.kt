@@ -9,21 +9,47 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.Route
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.AdminStatsRepository
+import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModel
+import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(navController: NavHostController) {
+    // Configurar ViewModel con dependencias
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val adminStatsRepository = remember { 
+        AdminStatsRepository(
+            userDao = db.userDao(),
+            juegoDao = db.juegoDao(),
+            ordenCompraDao = db.ordenCompraDao(),
+            adminDao = db.adminDao()
+        )
+    }
+    
+    val viewModel: AdminDashboardViewModel = viewModel(
+        factory = AdminDashboardViewModelFactory(adminStatsRepository)
+    )
+    
+    // Observar estados
+    val dashboardStats by viewModel.dashboardStats.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -114,7 +140,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
                             }
                             
                             Button(
-                                onClick = { /* TODO: Configuraciones */ },
+                                onClick = { navController.navigate(Route.Settings.path) },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.onPrimary,
                                     contentColor = MaterialTheme.colorScheme.primary
@@ -186,12 +212,20 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Text(
-                                    "1,234", 
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                } else {
+                                    Text(
+                                        "${dashboardStats.totalUsers}", 
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
                                 Text(
                                     "Usuarios", 
                                     style = MaterialTheme.typography.bodySmall,
@@ -219,12 +253,20 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Text(
-                                    "89", 
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                } else {
+                                    Text(
+                                        "${dashboardStats.totalGames}", 
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
                                 Text(
                                     "Juegos", 
                                     style = MaterialTheme.typography.bodySmall,
@@ -252,12 +294,20 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Text(
-                                    "567", 
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                } else {
+                                    Text(
+                                        "${dashboardStats.totalOrders}", 
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
                                 Text(
                                     "Órdenes", 
                                     style = MaterialTheme.typography.bodySmall,
@@ -485,57 +535,6 @@ fun AdminDashboardScreen(navController: NavHostController) {
                             Text("Configurar")
                         }
                     }
-                }
-            }
-        }
-
-        item {
-            // Información del sistema
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = "Info",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "Información del Sistema",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    
-                    Spacer(Modifier.height(8.dp))
-                    
-                    Text(
-                        text = "Última actualización: Hoy",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Estado del servidor: Online",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Versión: 1.2.5",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uinavegacion.domain.validateEmail
@@ -15,7 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.example.uinavegacion.session.SessionManager
+
 
 
 data class LoginUiState(
@@ -92,12 +93,16 @@ class AuthViewModel(
             _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false, isAdmin = false) } // Seteamos loading
             delay(500)                                      // Simulamos tiempo de verificación
 
+            val email = s.email.trim()
+            val pass = s.pass.trim()
+            Log.d("AuthViewModel", "Attempting login with email: [$email], pass: [$pass]")
+
             // Validar credenciales de admin primero
-            val admin = adminRepository.validateAdmin(s.email, s.pass)
+            val admin = adminRepository.validateAdmin(email, pass)
             val isAdmin = admin != null
             
             // Si no es admin, validar usuario normal
-            val userResult = if (!isAdmin) userRepository.login(s.email, s.pass) else null
+            val userResult = if (!isAdmin) userRepository.login(email, pass) else null
             val ok = isAdmin || (userResult != null && userResult.isSuccess)
 
             _login.update {                                 // Actualizamos con el resultado
@@ -109,10 +114,8 @@ class AuthViewModel(
                 )
             }
 
-            // Guardar sesión si login OK y es usuario normal
-            if (ok && !isAdmin) {
-                SessionManager.login(s.email)
-            }
+            // Login exitoso - no necesitamos SessionManager
+            // El estado success=true es suficiente para manejar la navegación
         }
     }
 

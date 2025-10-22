@@ -29,11 +29,12 @@ import androidx.compose.ui.text.style.TextOverflow
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable // Composable reutilizable: barra superior
 fun AppTopBar(
-    onOpenDrawer: () -> Unit, // Abre el drawer (hamburguesa)
+    onOpenDrawer: (() -> Unit)? = null, // Abre el drawer (hamburguesa) - nullable para tablets
     onHome: () -> Unit,       // Navega a Home
     onLogin: () -> Unit,      // Navega a Login
     onRegister: () -> Unit,   // Navega a Registro
-    onSearch: (String) -> Unit = {} // Callback cuando cambia la búsqueda
+    onSearch: (String) -> Unit = {}, // Callback cuando cambia la búsqueda
+    showHamburger: Boolean = true // Controla si mostrar el botón hamburguesa
 ) {
     //lo que hace es crear una variable de estado recordada que le dice a la interfaz
     // si el menú desplegable de 3 puntitos debe estar visible (true) o oculto (false).
@@ -51,12 +52,18 @@ fun AppTopBar(
                     query = it
                     onSearch(it)
                 },
-                placeholder = { Text("Buscar juegos...", color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.primary) },
+                placeholder = { Text("Buscar juegos...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onSurface) },
                 singleLine = true,
                 shape = RoundedCornerShape(50),
                 colors = TextFieldDefaults.colors(
-                    MaterialTheme.colorScheme.primaryContainer
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -65,8 +72,10 @@ fun AppTopBar(
             )
         },
         navigationIcon = { // Ícono a la izquierda (hamburguesa)
-            IconButton(onClick = onOpenDrawer) { // Al presionar, abre drawer
-                Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menú") // Ícono
+            if (showHamburger && onOpenDrawer != null) {
+                IconButton(onClick = onOpenDrawer) { // Al presionar, abre drawer
+                    Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menú") // Ícono
+                }
             }
         },
         actions = { /* acciones removidas: no mostrar iconos adicionales */ }

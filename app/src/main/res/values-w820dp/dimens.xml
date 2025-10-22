@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dimensiones para tablets grandes y desktop (820dp+) -->
+    <dimen name="padding_small">20dp</dimen>
+    <dimen name="padding_medium">28dp</dimen>
+    <dimen name="padding_large">36dp</dimen>
+    <dimen name="padding_extra_large">48dp</dimen>
+    
+    <dimen name="margin_small">20dp</dimen>
+    <dimen name="margin_medium">28dp</dimen>
+    <dimen name="margin_large">36dp</dimen>
+    
+    <dimen name="card_elevation">12dp</dimen>
+    <dimen name="card_corner_radius">20dp</dimen>
+    
+    <!-- Tamaños de texto específicos para tablets grandes -->
+    <dimen name="text_size_small">20sp</dimen>
+    <dimen name="text_size_medium">22sp</dimen>
+    <dimen name="text_size_large">32sp</dimen>
+    <dimen name="text_size_extra_large">40sp</dimen>
+    
+    <!-- Dimensiones específicas para componentes -->
+    <dimen name="app_bar_height">88dp</dimen>
+    <dimen name="bottom_nav_height">96dp</dimen>
+    <dimen name="nav_rail_width">96dp</dimen>
+    <dimen name="permanent_drawer_width">360dp</dimen>
+    
+    <!-- Grid y listas -->
+    <dimen name="grid_spacing">24dp</dimen>
+    <dimen name="list_item_height">96dp</dimen>
+    
+    <!-- Cards de juegos -->
+    <dimen name="game_card_width">240dp</dimen>
+    <dimen name="game_card_height">300dp</dimen>
+    
+    <!-- Contenido máximo para evitar líneas muy largas -->
+    <dimen name="max_content_width">800dp</dimen>
+</resources>
