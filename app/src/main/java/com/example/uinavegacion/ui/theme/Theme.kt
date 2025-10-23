@@ -13,36 +13,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color4,
-    secondary = Color2,
-    tertiary = Color5,
-    background = Color1,
-    surface = Color2,
+    primary = Color4, // Azul claro
+    secondary = Color3, // Azul medio
+    tertiary = Color5, // Azul muy claro
+    background = Color1, // Azul muy oscuro
+    surface = Color2, // Azul oscuro
+    surfaceVariant = Color3, // Azul medio
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onTertiary = Color.White,
+    onTertiary = Color1, // Texto oscuro sobre azul claro
     onBackground = Color.White,
-    onSurface = Color.White
+    onSurface = Color.White,
+    onSurfaceVariant = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color4,
-    secondary = Color2,
-    tertiary = Color5,
+    primary = Color3, // Azul medio para mejor contraste
+    secondary = Color4, // Azul claro
+    tertiary = Color5, // Azul muy claro
     background = Color.White,
     surface = Color.White,
+    surfaceVariant = Color5, // Azul muy claro
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color1,
-    onSurface = Color1
+    onTertiary = Color1, // Texto oscuro sobre azul claro
+    onBackground = Color1, // Texto azul oscuro
+    onSurface = Color1, // Texto azul oscuro
+    onSurfaceVariant = Color1 // Texto azul oscuro
 )
 
 @Composable
 fun UINavegacionTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color disabled to use our custom blue colors
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
