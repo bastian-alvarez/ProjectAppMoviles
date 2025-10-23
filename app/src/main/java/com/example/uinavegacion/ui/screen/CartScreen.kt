@@ -48,35 +48,26 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
         }
     ) { innerPadding ->
         if (cartItems.isEmpty()) {
-            // Carrito vacío - centrar en tablets
-            if (windowInfo.isTablet) {
-                Box(
+            // Carrito vacío - centrado completo en tablets
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyCartContent(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    EmptyCartContent(
-                        modifier = Modifier
-                            .widthIn(max = AdaptiveUtils.getMaxContentWidth(windowInfo))
-                            .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
-                        onExploreGames = { nav.navigate(Route.Games.path) }
-                    )
-                }
-            } else {
-                // Mobile / default
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
+                        .then(
+                            if (windowInfo.isTablet) {
+                                Modifier.widthIn(max = AdaptiveUtils.getMaxContentWidth(windowInfo))
+                            } else {
+                                Modifier.fillMaxWidth()
+                            }
+                        )
                         .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    EmptyCartContent(
-                        modifier = Modifier.fillMaxWidth(),
-                        onExploreGames = { nav.navigate(Route.Games.path) }
-                    )
-                }
+                    onExploreGames = { nav.navigate(Route.Games.path) },
+                    isTablet = windowInfo.isTablet
+                )
             }
         } else {
             // Carrito con productos - Diseño adaptativo
@@ -139,43 +130,45 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
 @Composable
 private fun EmptyCartContent(
     modifier: Modifier = Modifier,
-    onExploreGames: () -> Unit
+    onExploreGames: () -> Unit,
+    isTablet: Boolean = false
 ) {
-    Column(
+    Card(
         modifier = modifier,
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isTablet) 8.dp else 4.dp)
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        Column(
+            modifier = Modifier.padding(if (isTablet) 48.dp else 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier.padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Text(
+                text = "🛒",
+                style = if (isTablet) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displayMedium
+            )
+            Spacer(Modifier.height(if (isTablet) 24.dp else 16.dp))
+            Text(
+                text = "Tu carrito está vacío",
+                style = if (isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(if (isTablet) 12.dp else 8.dp))
+            Text(
+                text = "Agrega algunos juegos para comenzar",
+                style = if (isTablet) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(if (isTablet) 24.dp else 16.dp))
+            Button(
+                onClick = onExploreGames,
+                modifier = Modifier.then(if (isTablet) Modifier.height(56.dp) else Modifier)
             ) {
                 Text(
-                    text = "🛒",
-                    style = MaterialTheme.typography.displayLarge
+                    "Explorar Juegos",
+                    style = if (isTablet) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge
                 )
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = "Tu carrito está vacío",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "Agrega algunos juegos para comenzar",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = onExploreGames
-                ) {
-                    Text("Explorar Juegos")
-                }
             }
         }
     }
