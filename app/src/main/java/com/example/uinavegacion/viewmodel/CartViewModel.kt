@@ -9,7 +9,8 @@ data class CartItem(
     val id: String,
     val name: String,
     val price: Double,
-    val quantity: Int
+    val quantity: Int,
+    val imageUrl: String = ""
 )
 
 class CartViewModel : ViewModel() {
@@ -17,7 +18,7 @@ class CartViewModel : ViewModel() {
     val items: StateFlow<List<CartItem>> = _items
 
     // Agregar juego al carrito
-    fun addGame(id: String, name: String, price: Double) {
+    fun addGame(id: String, name: String, price: Double, imageUrl: String = "") {
         val currentItems = _items.value.toMutableList()
         val existingIndex = currentItems.indexOfFirst { it.id == id }
         
@@ -28,7 +29,7 @@ class CartViewModel : ViewModel() {
             )
         } else {
             // Si no existe, agregarlo
-            currentItems.add(CartItem(id, name, price, 1))
+            currentItems.add(CartItem(id, name, price, 1, imageUrl))
         }
         _items.value = currentItems
     }

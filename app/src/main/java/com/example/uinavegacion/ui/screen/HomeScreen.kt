@@ -23,21 +23,22 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.Route
 import com.example.uinavegacion.ui.utils.*
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel()) {
     val windowInfo = rememberWindowInfo()
     
-    val featuredGames = listOf(
-        Triple("Super Mario Bros", "$29.99", "Plataformas"),
-        Triple("The Legend of Zelda", "$39.99", "Aventura"),
-        Triple("Pokémon Red", "$24.99", "RPG"),
-        Triple("Minecraft", "$26.99", "Aventura"),
-        Triple("Call of Duty", "$59.99", "Acción"),
-        Triple("Overwatch 2", "$39.99", "Acción"),
-        Triple("FIFA 24", "$69.99", "Deportes"),
-        Triple("Assassin's Creed", "$49.99", "Aventura")
+    // Juegos en oferta con 20% de descuento
+    val gamesOnSale = listOf(
+        Game("10", "The Witcher 3", 39.99, "RPG", 6, "Aventura de Geralt de Rivia", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ume.jpg", discount = 20),
+        Game("12", "Cyberpunk 2077", 59.99, "RPG", 9, "Futuro cyberpunk", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2of0.jpg", discount = 20),
+        Game("13", "Red Dead Redemption 2", 49.99, "Aventura", 11, "Western épico", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg", discount = 20),
+        Game("16", "Assassin's Creed Valhalla", 59.99, "Aventura", 13, "Aventura vikinga", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2jqn.jpg", discount = 20)
     )
 
     val categories = listOf("Acción", "Aventura", "RPG", "Plataformas", "Deportes", "Estrategia")
@@ -47,7 +48,7 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
         DeviceType.PHONE_PORTRAIT, DeviceType.PHONE_LANDSCAPE -> {
             PhoneHomeLayout(
                 nav = nav,
-                featuredGames = featuredGames,
+                gamesOnSale = gamesOnSale,
                 categories = categories,
                 windowInfo = windowInfo
             )
@@ -55,7 +56,7 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
         DeviceType.TABLET_PORTRAIT, DeviceType.TABLET_LANDSCAPE, DeviceType.DESKTOP -> {
             TabletHomeLayout(
                 nav = nav,
-                featuredGames = featuredGames,
+                gamesOnSale = gamesOnSale,
                 categories = categories,
                 windowInfo = windowInfo
             )
@@ -66,7 +67,7 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
 @Composable
 private fun PhoneHomeLayout(
     nav: NavHostController,
-    featuredGames: List<Triple<String, String, String>>,
+    gamesOnSale: List<Game>,
     categories: List<String>,
     windowInfo: WindowInfo
 ) {
@@ -95,13 +96,13 @@ private fun PhoneHomeLayout(
         }
 
         // Juegos destacados
-        SectionHeader(title = "Juegos Destacados", onSeeAll = { nav.navigate(Route.Games.path) })
+        SectionHeader(title = "🔥 Juegos en Oferta - 20% OFF", onSeeAll = { nav.navigate(Route.Games.path) })
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
             contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
-            items(featuredGames) { game ->
+            items(gamesOnSale) { game ->
                 GameCard(
                     game = game,
                     onClick = { nav.navigate(Route.Games.path) },
@@ -115,7 +116,7 @@ private fun PhoneHomeLayout(
 @Composable
 private fun TabletHomeLayout(
     nav: NavHostController,
-    featuredGames: List<Triple<String, String, String>>,
+    gamesOnSale: List<Game>,
     categories: List<String>,
     windowInfo: WindowInfo
 ) {
@@ -232,7 +233,7 @@ private fun TabletHomeLayout(
             }
 
             // Juegos destacados en grid para tablets
-            SectionHeader(title = "Juegos Destacados", onSeeAll = { nav.navigate(Route.Games.path) })
+            SectionHeader(title = "🔥 Juegos en Oferta - 20% OFF", onSeeAll = { nav.navigate(Route.Games.path) })
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(AdaptiveUtils.getGridColumns(windowInfo)),
@@ -240,7 +241,7 @@ private fun TabletHomeLayout(
                 horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
                 modifier = Modifier.height(600.dp)
             ) {
-                items(featuredGames) { game ->
+                items(gamesOnSale) { game ->
                     GameCard(
                         game = game,
                         onClick = { nav.navigate(Route.Games.path) },
@@ -353,11 +354,10 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
 
 @Composable
 private fun GameCard(
-    game: Triple<String, String, String>,
+    game: Game,
     onClick: () -> Unit,
     windowInfo: WindowInfo
 ) {
-    val (name, price, category) = game
     val cardWidth = when (windowInfo.deviceType) {
         DeviceType.PHONE_PORTRAIT, DeviceType.PHONE_LANDSCAPE -> 200.dp
         else -> 180.dp
@@ -385,40 +385,78 @@ private fun GameCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.secondaryContainer
-                            )
-                        )
-                    ),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                // Precio destacado en la esquina
+                // Imagen del juego con AsyncImage
+                if (game.imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = game.imageUrl,
+                        contentDescription = game.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = "Sin imagen",
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                // Precio con descuento si aplica
+                if (game.hasDiscount) {
+                    // Badge de descuento
+                    Card(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFE74C3C) // Rojo para descuento
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Text(
+                            text = "-${game.discount}%",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+                
+                // Precio (tachado si hay descuento)
                 Card(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = if (game.hasDiscount) Color(0xFF27AE60) else MaterialTheme.colorScheme.primary
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text(
-                        text = price,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Column(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        if (game.hasDiscount) {
+                            Text(
+                                text = "$${String.format("%.2f", game.price)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.7f),
+                                textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                            )
+                        }
+                        Text(
+                            text = if (game.price == 0.0) "Gratis" else "$${String.format("%.2f", game.discountedPrice)}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
-                
-                // Icono del juego
-                Text(
-                    text = "🎮",
-                    style = MaterialTheme.typography.headlineLarge
-                )
             }
             
             // Información del juego
@@ -430,7 +468,7 @@ private fun GameCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = name,
+                    text = game.name,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
@@ -440,7 +478,7 @@ private fun GameCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = category,
+                    text = game.category,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium,

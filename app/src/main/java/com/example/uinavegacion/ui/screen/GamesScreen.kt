@@ -41,8 +41,15 @@ data class Game(
     val category: String, 
     val stock: Int,
     val description: String = "Descripción del juego",
-    val imageUrl: String = "" // URL de la imagen del juego
-)
+    val imageUrl: String = "", // URL de la imagen del juego
+    val discount: Int = 0 // Descuento en porcentaje (0-100)
+) {
+    val discountedPrice: Double
+        get() = if (discount > 0) price * (1 - discount / 100.0) else price
+    
+    val hasDiscount: Boolean
+        get() = discount > 0
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,22 +58,22 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
     
     // Lista ampliada de juegos con stock e imágenes
     val allGames = listOf(
-        Game("1", "Super Mario Bros", 29.99, "Plataformas", 15, "El clásico juego de plataformas", "https://picsum.photos/seed/mario/400/300.webp"),
-        Game("2", "The Legend of Zelda", 39.99, "Aventura", 8, "Épica aventura en Hyrule", "https://picsum.photos/seed/zelda/400/300.webp"),
-        Game("3", "Pokémon Red", 24.99, "RPG", 20, "Conviértete en maestro Pokémon", "https://picsum.photos/seed/pokemon/400/300.webp"),
-        Game("4", "Sonic the Hedgehog", 19.99, "Plataformas", 12, "Velocidad supersónica", "https://picsum.photos/seed/sonic/400/300.webp"),
-        Game("5", "Final Fantasy VII", 49.99, "RPG", 5, "RPG épico de Square Enix", "https://picsum.photos/seed/ff7/400/300.webp"),
-        Game("6", "Street Fighter II", 14.99, "Arcade", 10, "El mejor juego de lucha", "https://picsum.photos/seed/streetfighter/400/300.webp"),
-        Game("7", "Minecraft", 26.99, "Aventura", 25, "Construye tu mundo", "https://picsum.photos/seed/minecraft/400/300.webp"),
-        Game("8", "Call of Duty", 59.99, "Acción", 7, "Acción militar intensa", "https://picsum.photos/seed/cod/400/300.webp"),
-        Game("9", "FIFA 24", 69.99, "Deportes", 18, "El mejor fútbol virtual", "https://picsum.photos/seed/fifa/400/300.webp"),
-        Game("10", "The Witcher 3", 39.99, "RPG", 6, "Aventura de Geralt de Rivia", "https://picsum.photos/seed/witcher/400/300.webp"),
-        Game("11", "Overwatch 2", 39.99, "Acción", 14, "Shooter por equipos", "https://picsum.photos/seed/overwatch/400/300.webp"),
-        Game("12", "Cyberpunk 2077", 59.99, "RPG", 9, "Futuro cyberpunk", "https://picsum.photos/seed/cyberpunk/400/300.webp"),
-        Game("13", "Red Dead Redemption 2", 49.99, "Aventura", 11, "Western épico", "https://picsum.photos/seed/rdr2/400/300.webp"),
-        Game("14", "Among Us", 4.99, "Arcade", 30, "Encuentra al impostor", "https://picsum.photos/seed/amongus/400/300.webp"),
-        Game("15", "Valorant", 0.0, "Acción", 100, "Shooter táctico gratis", "https://picsum.photos/seed/valorant/400/300.webp"),
-        Game("16", "Assassin's Creed Valhalla", 59.99, "Aventura", 13, "Aventura vikinga", "https://picsum.photos/seed/acvalhalla/400/300.webp")
+        Game("1", "Super Mario Bros", 29.99, "Plataformas", 15, "El clásico juego de plataformas", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wq8.jpg"),
+        Game("2", "The Legend of Zelda", 39.99, "Aventura", 8, "Épica aventura en Hyrule", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg"),
+        Game("3", "Pokémon Red", 24.99, "RPG", 20, "Conviértete en maestro Pokémon", "https://images.igdb.com/igdb/image/upload/t_cover_big/co49lh.jpg"),
+        Game("4", "Sonic the Hedgehog", 19.99, "Plataformas", 12, "Velocidad supersónica", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mq6.jpg"),
+        Game("5", "Final Fantasy VII", 49.99, "RPG", 5, "RPG épico de Square Enix", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p3d.jpg"),
+        Game("6", "Street Fighter II", 14.99, "Arcade", 10, "El mejor juego de lucha", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2a.jpg"),
+        Game("7", "Minecraft", 26.99, "Aventura", 25, "Construye tu mundo", "https://images.igdb.com/igdb/image/upload/t_cover_big/co49x0.jpg"),
+        Game("8", "Call of Duty", 59.99, "Acción", 7, "Acción militar intensa", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5w4k.jpg"),
+        Game("9", "FIFA 24", 69.99, "Deportes", 18, "El mejor fútbol virtual", "https://images.igdb.com/igdb/image/upload/t_cover_big/co7kun.jpg"),
+        Game("10", "The Witcher 3", 39.99, "RPG", 6, "Aventura de Geralt de Rivia", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ume.jpg"),
+        Game("11", "Overwatch 2", 39.99, "Acción", 14, "Shooter por equipos", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5s7g.jpg"),
+        Game("12", "Cyberpunk 2077", 59.99, "RPG", 9, "Futuro cyberpunk", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2of0.jpg"),
+        Game("13", "Red Dead Redemption 2", 49.99, "Aventura", 11, "Western épico", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg"),
+        Game("14", "Among Us", 4.99, "Arcade", 30, "Encuentra al impostor", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2eud.jpg"),
+        Game("15", "Valorant", 0.0, "Acción", 100, "Shooter táctico gratis", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvt.jpg"),
+        Game("16", "Assassin's Creed Valhalla", 59.99, "Aventura", 13, "Aventura vikinga", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2jqn.jpg")
     )
     val query by searchViewModel.query.collectAsState()
     
@@ -461,7 +468,7 @@ private fun GameListItem(
             Button(
                 onClick = {
                     if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
-                        cartViewModel.addGame(game.id, game.name, game.price)
+                        cartViewModel.addGame(game.id, game.name, game.price, game.imageUrl)
                     }
                 },
                 enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
