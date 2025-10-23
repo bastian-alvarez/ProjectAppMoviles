@@ -33,7 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable // Composable reutilizable: barra superior
+@Composable // Composable reutilizable: barra superior con búsqueda
 fun AppTopBar(
     onOpenDrawer: (() -> Unit)? = null, // Abre el drawer (hamburguesa) - nullable para tablets
     onHome: () -> Unit,       // Navega a Home
@@ -43,67 +43,81 @@ fun AppTopBar(
     onQueryChanged: (String) -> Unit = {},
     showHamburger: Boolean = true // Controla si mostrar el botón hamburguesa
 ) {
-    //lo que hace es crear una variable de estado recordada que le dice a la interfaz
-    // si el menú desplegable de 3 puntitos debe estar visible (true) o oculto (false).
-    var showMenu by remember { mutableStateOf(false) } // Estado del menú overflow
+    var localQuery by remember { mutableStateOf(currentQuery) }
 
-    CenterAlignedTopAppBar( // Barra alineada al centro
+    // Sincronizar el estado local con el estado externo
+    LaunchedEffect(currentQuery) {
+        if (currentQuery != localQuery) {
+            localQuery = currentQuery
+        }
+    }
+
+    // Debounce para mejor rendimiento
+    LaunchedEffect(localQuery) {
+        delay(100)
+        if (localQuery != currentQuery) {
+            onQueryChanged(localQuery)
+        }
+    }
+
+    CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
         ),
         title = {
-            var localQuery by remember { mutableStateOf(currentQuery) }
-
-            // Debounce localQuery and propagate immediately for better responsiveness
-            LaunchedEffect(localQuery) {
-                // Minimal debounce for smoother typing experience
-                delay(100)
-                if (localQuery != currentQuery) {
-                    onQueryChanged(localQuery)
-                }
-            }
-
+            // Barra de búsqueda mejorada
             OutlinedTextField(
                 value = localQuery,
-                onValueChange = { new -> localQuery = new },
-                placeholder = { Text("Buscar juegos...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onSurface) },
+                onValueChange = { newValue -> localQuery = newValue },
+                placeholder = { 
+                    Text(
+                        "Buscar juegos",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyLarge
+                    ) 
+                },
+                leadingIcon = { 
+                    Icon(
+                        imageVector = Icons.Filled.Search, 
+                        contentDescription = "Buscar",
+                        tint = MaterialTheme.colorScheme.primary
+                    ) 
+                },
                 singleLine = true,
-                shape = RoundedCornerShape(50),
+                shape = RoundedCornerShape(28.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
                     focusedTextColor = Color.Black,
                     unfocusedTextColor = Color.Black,
                     cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
                     focusedPlaceholderColor = Color.Gray,
                     unfocusedPlaceholderColor = Color.Gray
                 ),
-                trailingIcon = {
-                    if (localQuery.isNotBlank()) {
-                        IconButton(onClick = {
-                            localQuery = ""
-                            onQueryChanged("")
-                        }) {
-                            Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "Limpiar")
-                        }
-                    }
-                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
-                    .padding(vertical = 6.dp)
+                    .height(56.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             )
         },
-        navigationIcon = { // Ícono a la izquierda (hamburguesa)
+        navigationIcon = {
             if (showHamburger && onOpenDrawer != null) {
-                IconButton(onClick = onOpenDrawer) { // Al presionar, abre drawer
-                    Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menú") // Ícono
+                IconButton(onClick = onOpenDrawer) {
+                    Icon(
+                        imageVector = Icons.Filled.Menu, 
+                        contentDescription = "Menú",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
         },
-        actions = { /* acciones removidas: no mostrar iconos adicionales */ }
+        actions = { }
     )
 }
