@@ -43,16 +43,16 @@ fun AppTopBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp), // Altura aumentada para dar más espacio
+            .height(80.dp), // Altura aumentada significativamente
         color = MaterialTheme.colorScheme.primary,
         shadowElevation = 4.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp), // Padding aumentado
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Botón de menú hamburguesa
             if (showHamburger && onOpenDrawer != null) {
@@ -104,8 +104,8 @@ fun AppTopBar(
                 ),
                 textStyle = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
-                    .weight(1f) // Toma todo el espacio disponible
-                    .height(48.dp) // Altura mayor para evitar que se corte
+                    .weight(1f)
+                    .height(56.dp) // Altura aumentada significativamente
             )
         }
     }
