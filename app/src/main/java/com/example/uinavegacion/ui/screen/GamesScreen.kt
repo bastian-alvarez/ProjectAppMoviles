@@ -55,6 +55,20 @@ data class Game(
 @Composable
 fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewModel(), cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel = viewModel()) {
     val windowInfo = rememberWindowInfo()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val errorMessage by cartViewModel.errorMessage.collectAsState()
+    
+    // Mostrar Snackbar cuando hay error
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            cartViewModel.clearErrorMessage()
+        }
+    }
     
     // Lista ampliada de juegos con stock e imágenes
     val allGames = listOf(
@@ -97,7 +111,8 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
                 onCategorySelect = { selectedCategory = it },
                 nav = nav,
                 cartViewModel = cartViewModel,
-                windowInfo = windowInfo
+                windowInfo = windowInfo,
+                snackbarHostState = snackbarHostState
             )
         }
         DeviceType.TABLET_PORTRAIT, DeviceType.TABLET_LANDSCAPE, DeviceType.DESKTOP -> {
@@ -108,7 +123,8 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
                 onCategorySelect = { selectedCategory = it },
                 nav = nav,
                 cartViewModel = cartViewModel,
-                windowInfo = windowInfo
+                windowInfo = windowInfo,
+                snackbarHostState = snackbarHostState
             )
         }
     }
@@ -123,14 +139,19 @@ private fun PhoneGamesLayout(
     onCategorySelect: (String) -> Unit,
     nav: NavHostController,
     cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel,
-    windowInfo: WindowInfo
+    windowInfo: WindowInfo,
+    snackbarHostState: SnackbarHostState
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         item {
             GamesHeader(
                 categories = categories,
@@ -149,14 +170,15 @@ private fun PhoneGamesLayout(
             )
         }
 
-        item {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = "Total de juegos: ${games.size}",
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
+            item {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Total de juegos: ${games.size}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -170,15 +192,21 @@ private fun TabletGamesLayout(
     onCategorySelect: (String) -> Unit,
     nav: NavHostController,
     cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel,
-    windowInfo: WindowInfo
+    windowInfo: WindowInfo,
+    snackbarHostState: SnackbarHostState
 ) {
     val maxContentWidth = AdaptiveUtils.getMaxContentWidth(windowInfo)
     val horizontalPadding = AdaptiveUtils.getHorizontalPadding(windowInfo)
     
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
+        ) {
         Column(
             modifier = Modifier
                 .widthIn(max = maxContentWidth)
@@ -214,6 +242,7 @@ private fun TabletGamesLayout(
                     Spacer(Modifier.height(16.dp))
                 }
             }
+        }
         }
     }
 }

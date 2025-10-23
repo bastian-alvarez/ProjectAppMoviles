@@ -35,8 +35,23 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     val totalPrice = cartViewModel.getTotalPrice()
     val totalItems = cartViewModel.getTotalItems()
     val windowInfo = rememberWindowInfo()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val errorMessage by cartViewModel.errorMessage.collectAsState()
+    
+    // Mostrar Snackbar cuando hay error
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            cartViewModel.clearErrorMessage()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { 
             TopAppBar(
                 title = { Text("Mi Carrito ($totalItems)", fontWeight = FontWeight.Bold) },

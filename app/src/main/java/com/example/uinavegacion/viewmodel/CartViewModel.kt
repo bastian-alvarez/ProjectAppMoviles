@@ -16,22 +16,52 @@ data class CartItem(
 class CartViewModel : ViewModel() {
     private val _items = MutableStateFlow<List<CartItem>>(emptyList())
     val items: StateFlow<List<CartItem>> = _items
+    
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+    
+    companion object {
+        const val MAX_LICENSES_PER_PURCHASE = 3
+    }
 
     // Agregar juego al carrito
-    fun addGame(id: String, name: String, price: Double, imageUrl: String = "") {
+    fun addGame(id: String, name: String, price: Double, imageUrl: String = ""): Boolean {
         val currentItems = _items.value.toMutableList()
         val existingIndex = currentItems.indexOfFirst { it.id == id }
         
+        // Calcular el total de licencias actual
+        val currentTotalLicenses = currentItems.sumOf { it.quantity }
+        
         if (existingIndex >= 0) {
-            // Si ya existe, aumentar cantidad
+            // Si ya existe, verificar si se puede aumentar cantidad
+            val newQuantity = currentItems[existingIndex].quantity + 1
+            
+            if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
+                _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
+                return false
+            }
+            
             currentItems[existingIndex] = currentItems[existingIndex].copy(
-                quantity = currentItems[existingIndex].quantity + 1
+                quantity = newQuantity
             )
         } else {
-            // Si no existe, agregarlo
+            // Si no existe, verificar si hay espacio para agregarlo
+            if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
+                _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
+                return false
+            }
+            
+            // Agregarlo
             currentItems.add(CartItem(id, name, price, 1, imageUrl))
         }
         _items.value = currentItems
+        _errorMessage.value = null
+        return true
+    }
+    
+    // Limpiar mensaje de error
+    fun clearErrorMessage() {
+        _errorMessage.value = null
     }
 
     // Remover juego del carrito
@@ -40,15 +70,26 @@ class CartViewModel : ViewModel() {
     }
 
     // Cambiar cantidad
-    fun updateQuantity(id: String, newQuantity: Int) {
+    fun updateQuantity(id: String, newQuantity: Int): Boolean {
         if (newQuantity <= 0) {
             removeGame(id)
-            return
+            return true
+        }
+        
+        // Calcular el total de licencias sin contar el item actual
+        val currentTotalLicenses = _items.value.filter { it.id != id }.sumOf { it.quantity }
+        
+        // Verificar si el nuevo total excede el límite
+        if (currentTotalLicenses + newQuantity > MAX_LICENSES_PER_PURCHASE) {
+            _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
+            return false
         }
         
         _items.value = _items.value.map {
             if (it.id == id) it.copy(quantity = newQuantity) else it
         }
+        _errorMessage.value = null
+        return true
     }
 
     // Limpiar carrito
