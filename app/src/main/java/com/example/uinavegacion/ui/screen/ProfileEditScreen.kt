@@ -41,9 +41,9 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileEditScreen(nav: NavHostController) {
-    var name by remember { mutableStateOf("Usuario Demo") }
-    var phone by remember { mutableStateOf("+1 234 567 8900") }
-    var email by remember { mutableStateOf("user1@demo.com") }
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("") }
     
     var expanded by remember { mutableStateOf(false) }
@@ -134,11 +134,17 @@ fun ProfileEditScreen(nav: NavHostController) {
         }
     }
 
-    // Cargar foto actual del usuario
+    // Cargar datos del usuario desde SessionManager
     LaunchedEffect(Unit) {
-        val userByEmail = db.userDao().getByEmail(email)
-        userByEmail?.profilePhotoUri?.let { uri ->
-            profilePhotoUri = uri
+        val currentUserEmail = SessionManager.getCurrentUserEmail()
+        if (currentUserEmail != null) {
+            val userByEmail = db.userDao().getByEmail(currentUserEmail)
+            if (userByEmail != null) {
+                name = userByEmail.name
+                email = userByEmail.email
+                phone = userByEmail.phone.ifEmpty { "+56 9 " }
+                profilePhotoUri = userByEmail.profilePhotoUri
+            }
         }
     }
 
@@ -337,6 +343,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                         value = phone,
                         onValueChange = { phone = it },
                         label = { Text("Teléfono") },
+                        placeholder = { Text("+56 9 1234 5678") },
                         leadingIcon = {
                             Icon(Icons.Default.Phone, contentDescription = "Teléfono", modifier = Modifier.size(20.dp))
                         },
@@ -451,6 +458,11 @@ fun ProfileEditScreen(nav: NavHostController) {
                                         phone = phone,
                                         password = userByEmail.password
                                     )
+                                    // Actualizar SessionManager con los nuevos datos
+                                    val updatedUser = db.userDao().getByEmail(email)
+                                    if (updatedUser != null) {
+                                        SessionManager.loginUser(updatedUser)
+                                    }
                                     showSuccessMessage = true
                                     isLoading = false
                                 } else {
