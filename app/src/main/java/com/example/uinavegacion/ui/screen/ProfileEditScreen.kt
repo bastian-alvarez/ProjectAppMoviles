@@ -212,6 +212,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                             AsyncImage(
                                 model = profilePhotoUri,
                                 contentDescription = "Foto de perfil",
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 modifier = Modifier
                                     .matchParentSize()
                                     .clip(CircleShape)

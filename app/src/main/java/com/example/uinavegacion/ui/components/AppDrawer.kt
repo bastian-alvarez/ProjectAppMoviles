@@ -75,6 +75,7 @@ fun AppDrawer(
                     AsyncImage(
                         model = profilePhotoUri,
                         contentDescription = "Foto de perfil",
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)

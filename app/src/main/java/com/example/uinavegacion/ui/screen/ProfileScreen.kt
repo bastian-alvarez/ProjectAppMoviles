@@ -94,6 +94,7 @@ fun ProfileScreen(nav: NavHostController) {
                             AsyncImage(
                                 model = photoUri,
                                 contentDescription = "Foto de perfil",
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 modifier = Modifier.matchParentSize().clip(CircleShape)
                             )
                         } else {
