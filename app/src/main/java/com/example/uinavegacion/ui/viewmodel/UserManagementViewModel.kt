@@ -99,4 +99,30 @@ class UserManagementViewModel(
         _error.value = null
         _successMessage.value = null
     }
+    
+    /**
+     * Bloquear/Desbloquear un usuario
+     */
+    fun toggleUserBlockStatus(userId: Long, currentlyBlocked: Boolean) {
+        viewModelScope.launch {
+            try {
+                val newStatus = !currentlyBlocked
+                val result = userRepository.toggleBlockStatus(userId, newStatus)
+                
+                if (result.isSuccess) {
+                    _successMessage.value = if (newStatus) {
+                        "Usuario bloqueado exitosamente"
+                    } else {
+                        "Usuario desbloqueado exitosamente"
+                    }
+                    // Recargar la lista de usuarios
+                    loadUsers()
+                } else {
+                    _error.value = "Error al ${if (newStatus) "bloquear" else "desbloquear"} usuario"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error: ${e.message}"
+            }
+        }
+    }
 }

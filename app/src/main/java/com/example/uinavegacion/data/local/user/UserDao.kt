@@ -40,5 +40,13 @@ interface UserDao{
     //eliminar el usuario
     @Query("DELETE FROM users WHERE id = :id")
     suspend fun delete(id: Long)
+    
+    //bloquear/desbloquear usuario
+    @Query("UPDATE users SET isBlocked = :isBlocked WHERE id = :id")
+    suspend fun updateBlockStatus(id: Long, isBlocked: Boolean)
+    
+    //obtener estado de bloqueo del usuario
+    @Query("SELECT isBlocked FROM users WHERE id = :id")
+    suspend fun isUserBlocked(id: Long): Boolean?
 
 }

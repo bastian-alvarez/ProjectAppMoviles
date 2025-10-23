@@ -84,4 +84,19 @@ class UserRepository(
     suspend fun getUserByEmail(email: String): UserEntity? {
         return userDao.getByEmail(email)
     }
+    
+    //bloquear/desbloquear usuario
+    suspend fun toggleBlockStatus(userId: Long, isBlocked: Boolean): Result<Unit> {
+        return try {
+            userDao.updateBlockStatus(userId, isBlocked)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    //verificar si un usuario está bloqueado
+    suspend fun isUserBlocked(userId: Long): Boolean {
+        return userDao.isUserBlocked(userId) ?: false
+    }
 }

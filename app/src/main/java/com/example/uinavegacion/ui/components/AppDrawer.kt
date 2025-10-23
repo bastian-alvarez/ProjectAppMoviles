@@ -1,5 +1,7 @@
 package com.example.uinavegacion.ui.components
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -10,15 +12,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.navigation.Route
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppDrawer(
@@ -204,5 +209,64 @@ fun AppDrawer(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
+    }
+}
+
+// Componente animado para NavigationDrawerItem
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun AnimatedNavigationDrawerItem(
+    label: @Composable () -> Unit,
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    index: Int = 0
+) {
+    var visible by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay((index * 50).toLong())
+        visible = true
+    }
+    
+    // Animación de escala al hacer hover/click
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "drawer_item_scale"
+    )
+    
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(animationSpec = tween(300)) + 
+                slideInHorizontally(
+                    initialOffsetX = { -it },
+                    animationSpec = tween(300)
+                ),
+        exit = fadeOut() + slideOutHorizontally()
+    ) {
+        NavigationDrawerItem(
+            label = label,
+            selected = selected,
+            onClick = {
+                isPressed = true
+                onClick()
+                scope.launch {
+                    kotlinx.coroutines.delay(100)
+                    isPressed = false
+                }
+            },
+            icon = icon,
+            modifier = modifier.graphicsLayer(
+                scaleX = scale,
+                scaleY = scale
+            )
+        )
     }
 }
