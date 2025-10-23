@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.UINavegacion" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.UINavegacion" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/color_3</item>
+        <item name="android:colorPrimaryDark">@color/color_1</item>
+        <item name="android:colorAccent">@color/color_4</item>
+        <item name="android:colorBackground">@color/white</item>
+        <item name="android:textColorPrimary">@color/color_1</item>
+        <item name="android:textColorSecondary">@color/color_3</item>
+    </style>
 </resources>

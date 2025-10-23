@@ -13,41 +13,41 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color4, // Azul claro
-    secondary = Color3, // Azul medio
-    tertiary = Color5, // Azul muy claro
-    background = Color1, // Azul muy oscuro
-    surface = Color2, // Azul oscuro
-    surfaceVariant = Color3, // Azul medio
-    primaryContainer = Color3, // Azul medio para contenedores
-    secondaryContainer = Color5, // Azul muy claro para contenedores secundarios
+    primary = Color(0xFF415A77), // Azul medio
+    secondary = Color(0xFF778DA9), // Azul claro
+    tertiary = Color(0xFFE0E1DD), // Azul muy claro
+    background = Color(0xFF0D1B2A), // Azul muy oscuro
+    surface = Color(0xFF1B263B), // Azul oscuro
+    surfaceVariant = Color(0xFF415A77), // Azul medio
+    primaryContainer = Color(0xFF415A77), // Azul medio para contenedores
+    secondaryContainer = Color(0xFFE0E1DD), // Azul muy claro para contenedores secundarios
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onTertiary = Color1, // Texto oscuro sobre azul claro
+    onTertiary = Color(0xFF0D1B2A), // Texto oscuro sobre azul claro
     onBackground = Color.White,
     onSurface = Color.White,
     onSurfaceVariant = Color.White,
-    onPrimaryContainer = Color1, // Texto azul oscuro sobre contenedor primario
-    onSecondaryContainer = Color1 // Texto azul oscuro sobre contenedor secundario
+    onPrimaryContainer = Color(0xFF0D1B2A), // Texto azul oscuro sobre contenedor primario
+    onSecondaryContainer = Color(0xFF0D1B2A) // Texto azul oscuro sobre contenedor secundario
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color3, // Azul medio para mejor contraste
-    secondary = Color4, // Azul claro
-    tertiary = Color5, // Azul muy claro
+    primary = Color(0xFF415A77), // Azul medio para mejor contraste
+    secondary = Color(0xFF778DA9), // Azul claro
+    tertiary = Color(0xFFE0E1DD), // Azul muy claro
     background = Color.White,
     surface = Color.White,
-    surfaceVariant = Color5, // Azul muy claro
-    primaryContainer = Color5, // Azul muy claro para contenedores primarios
-    secondaryContainer = Color5, // Azul muy claro para contenedores secundarios
+    surfaceVariant = Color(0xFFE0E1DD), // Azul muy claro
+    primaryContainer = Color(0xFFE0E1DD), // Azul muy claro para contenedores primarios
+    secondaryContainer = Color(0xFFE0E1DD), // Azul muy claro para contenedores secundarios
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onTertiary = Color1, // Texto oscuro sobre azul claro
-    onBackground = Color1, // Texto azul oscuro
-    onSurface = Color1, // Texto azul oscuro
-    onSurfaceVariant = Color1, // Texto azul oscuro
-    onPrimaryContainer = Color1, // Texto azul oscuro sobre contenedor primario
-    onSecondaryContainer = Color1 // Texto azul oscuro sobre contenedor secundario
+    onTertiary = Color(0xFF0D1B2A), // Texto oscuro sobre azul claro
+    onBackground = Color(0xFF0D1B2A), // Texto azul oscuro
+    onSurface = Color(0xFF0D1B2A), // Texto azul oscuro
+    onSurfaceVariant = Color(0xFF0D1B2A), // Texto azul oscuro
+    onPrimaryContainer = Color(0xFF0D1B2A), // Texto azul oscuro sobre contenedor primario
+    onSecondaryContainer = Color(0xFF0D1B2A) // Texto azul oscuro sobre contenedor secundario
 )
 
 @Composable
