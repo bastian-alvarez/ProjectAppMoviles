@@ -541,20 +541,24 @@ private fun GameGridItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.4f)
-                    .padding(12.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         text = game.name,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         text = game.category,
                         style = MaterialTheme.typography.bodySmall,
@@ -562,21 +566,9 @@ private fun GameGridItem(
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
                     )
-                    
-                    if (windowInfo.deviceType == DeviceType.DESKTOP) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = game.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
                 }
                 
-                // Botón de acción con icono
+                // Botón de acción compacto con icono
                 Button(
                     onClick = {
                         if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
@@ -586,28 +578,36 @@ private fun GameGridItem(
                     enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(if (windowInfo.isTablet) 48.dp else 40.dp),
+                        .height(if (windowInfo.isTablet) 44.dp else 36.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (cartViewModel.isInCart(game.id)) 
                             MaterialTheme.colorScheme.secondary 
                         else MaterialTheme.colorScheme.primary
-                    )
+                    ),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                 ) {
-                    Icon(
-                        imageVector = if (cartViewModel.isInCart(game.id)) 
-                            Icons.Default.Done 
-                        else Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(if (windowInfo.isTablet) 18.dp else 16.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        if (cartViewModel.isInCart(game.id)) "En Carrito"
-                        else if (game.stock > 0) "Agregar"
-                        else "Sin Stock",
-                        style = if (windowInfo.isTablet) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = if (cartViewModel.isInCart(game.id)) 
+                                Icons.Default.Done 
+                            else Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = if (cartViewModel.isInCart(game.id)) "✓ Añadido"
+                            else if (game.stock > 0) "Agregar"
+                            else "Agotado",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
