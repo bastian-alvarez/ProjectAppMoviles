@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel
 import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
 import kotlinx.coroutines.delay
@@ -38,8 +39,8 @@ fun ChangePasswordScreen(nav: NavHostController) {
     var showNewPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
     
-    // Usuario demo por defecto - mismo que ProfileScreen
-    val userEmail = "user1@demo.com"
+    // Obtener el email del usuario logueado desde SessionManager
+    val userEmail = SessionManager.getCurrentUserEmail() ?: "user1@demo.com"
     
     // Efecto para manejar el logout automático después del cambio exitoso
     LaunchedEffect(changePasswordState.success) {
