@@ -9,11 +9,11 @@ import androidx.compose.material.icons.filled.Person // Ícono Registro
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.TextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.ui.unit.dp
 import androidx.compose.material3.CenterAlignedTopAppBar // TopAppBar centrada
 import androidx.compose.material3.DropdownMenu // Menú desplegable
 import androidx.compose.material3.DropdownMenuItem // Opción del menú
@@ -68,7 +68,7 @@ fun AppTopBar(
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary
         ),
         title = {
-            // Barra de búsqueda mejorada
+            // Barra de búsqueda compacta
             OutlinedTextField(
                 value = localQuery,
                 onValueChange = { newValue -> localQuery = newValue },
@@ -76,18 +76,19 @@ fun AppTopBar(
                     Text(
                         "Buscar juegos",
                         color = Color.Gray,
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyMedium
                     ) 
                 },
                 leadingIcon = { 
                     Icon(
                         imageVector = Icons.Filled.Search, 
                         contentDescription = "Buscar",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
                     ) 
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -101,10 +102,10 @@ fun AppTopBar(
                     focusedPlaceholderColor = Color.Gray,
                     unfocusedPlaceholderColor = Color.Gray
                 ),
+                textStyle = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .fillMaxWidth(0.95f)
+                    .height(44.dp)
             )
         },
         navigationIcon = {
