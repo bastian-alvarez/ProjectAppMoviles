@@ -6,9 +6,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.navigation.Route
 
 @Composable
@@ -21,24 +29,50 @@ fun AppDrawer(
     modifier: Modifier = Modifier
 ) {
     ModalDrawerSheet(modifier = modifier) {
-        // 1. Header con información del usuario (se mantiene como lo tenías)
+        // 1. Header con información del usuario y foto de perfil
         Column(modifier = Modifier.padding(16.dp)) {
+            val context = LocalContext.current
+            val db = remember { AppDatabase.getInstance(context) }
+            var profilePhotoUri by remember { mutableStateOf<String?>(null) }
+            var displayName by remember { mutableStateOf("Usuario Demo") }
+            var displayEmail by remember { mutableStateOf("user1@demo.com") }
+            
+            // Cargar datos del usuario
+            LaunchedEffect(Unit) {
+                val user = db.userDao().getByEmail(if (isAdmin) "admin@steamish.com" else "user1@demo.com")
+                if (user != null) {
+                    displayName = user.name
+                    displayEmail = user.email
+                    profilePhotoUri = user.profilePhotoUri
+                }
+            }
+            
             Surface(
                 modifier = Modifier
                     .size(72.dp)
                     .clip(CircleShape),
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
-                Icon(
-                    Icons.Filled.AccountCircle,
-                    contentDescription = "Avatar",
-                    modifier = Modifier.padding(12.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                if (profilePhotoUri != null) {
+                    AsyncImage(
+                        model = profilePhotoUri,
+                        contentDescription = "Foto de perfil",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Icon(
+                        Icons.Filled.AccountCircle,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.padding(12.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(if (isAdmin) "Administrador" else "Usuario Demo", style = MaterialTheme.typography.titleMedium)
-            Text(if (isAdmin) "admin@steamish.com" else "demo@correo.cl", style = MaterialTheme.typography.bodySmall)
+            Text(if (isAdmin) "Administrador" else displayName, style = MaterialTheme.typography.titleMedium)
+            Text(if (isAdmin) "admin@steamish.com" else displayEmail, style = MaterialTheme.typography.bodySmall)
         }
 
         HorizontalDivider()
