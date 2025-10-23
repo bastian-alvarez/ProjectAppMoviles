@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -330,14 +331,14 @@ private fun GameListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(if (windowInfo.isTablet) 20.dp else 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen del juego mejorada
             Box(
                 modifier = Modifier
-                    .size(if (windowInfo.isTablet) 120.dp else 100.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(if (windowInfo.isTablet) 120.dp else 80.dp)
+                    .clip(RoundedCornerShape(if (windowInfo.isTablet) 12.dp else 8.dp))
                     .background(
                         brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                             colors = listOf(
@@ -360,20 +361,20 @@ private fun GameListItem(
                 ) {
                     Text(
                         text = if (game.price == 0.0) "Gratis" else "$${game.price}",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = if (windowInfo.isTablet) MaterialTheme.typography.bodySmall else MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = if (windowInfo.isTablet) 6.dp else 4.dp, vertical = 2.dp)
                     )
                 }
                 
                 Text(
                     text = "🎮",
-                    style = if (windowInfo.isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium
+                    style = if (windowInfo.isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineSmall
                 )
             }
 
-            Spacer(Modifier.width(20.dp))
+            Spacer(Modifier.width(if (windowInfo.isTablet) 20.dp else 12.dp))
 
             // Información del juego
             Column(
@@ -381,13 +382,13 @@ private fun GameListItem(
             ) {
                 Text(
                     text = game.name,
-                    style = if (windowInfo.isTablet) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+                    style = if (windowInfo.isTablet) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
+                    maxLines = if (windowInfo.isTablet) 2 else 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(if (windowInfo.isTablet) 6.dp else 4.dp))
                 
                 if (windowInfo.isTablet) {
                     Text(
@@ -409,35 +410,46 @@ private fun GameListItem(
                 ) {
                     Text(
                         text = game.category,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = if (windowInfo.isTablet) MaterialTheme.typography.bodySmall else MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = if (windowInfo.isTablet) 8.dp else 6.dp, vertical = if (windowInfo.isTablet) 4.dp else 2.dp)
                     )
                 }
                 
-                Spacer(Modifier.height(8.dp))
-                
-                // Stock con indicador visual
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                if (!windowInfo.isTablet) {
+                    Spacer(Modifier.height(4.dp))
+                    // Stock compacto para móviles
                     Text(
-                        text = "Stock: ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${game.stock}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Stock: ${game.stock}",
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (game.stock > 5) MaterialTheme.colorScheme.primary 
                                else MaterialTheme.colorScheme.error
                     )
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                    // Stock con indicador visual para tablets
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Stock: ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${game.stock}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (game.stock > 5) MaterialTheme.colorScheme.primary 
+                                   else MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 
-            // Botón de acción mejorado
+            // Botón de acción optimizado
             Button(
                 onClick = {
                     if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
@@ -445,19 +457,50 @@ private fun GameListItem(
                     }
                 },
                 enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
-                modifier = Modifier.height(if (windowInfo.isTablet) 56.dp else 48.dp),
+                modifier = Modifier
+                    .height(if (windowInfo.isTablet) 56.dp else 40.dp)
+                    .widthIn(min = if (windowInfo.isTablet) 200.dp else 100.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (cartViewModel.isInCart(game.id)) 
                         MaterialTheme.colorScheme.secondary 
                     else MaterialTheme.colorScheme.primary
+                ),
+                contentPadding = PaddingValues(
+                    horizontal = if (windowInfo.isTablet) 16.dp else 8.dp,
+                    vertical = if (windowInfo.isTablet) 12.dp else 8.dp
                 )
             ) {
-                Text(
-                    if (cartViewModel.isInCart(game.id)) "En Carrito"
-                    else if (game.stock > 0) "Agregar"
-                    else "Sin Stock",
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = if (cartViewModel.isInCart(game.id)) 
+                            Icons.Default.Done 
+                        else Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(if (windowInfo.isTablet) 20.dp else 18.dp)
+                    )
+                    if (windowInfo.isTablet) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            if (cartViewModel.isInCart(game.id)) "En Carrito"
+                            else if (game.stock > 0) "Agregar"
+                            else "Sin Stock",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            if (cartViewModel.isInCart(game.id)) "✓"
+                            else "+",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
             }
         }
     }
@@ -529,20 +572,24 @@ private fun GameGridItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.4f)
-                    .padding(12.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         text = game.name,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         text = game.category,
                         style = MaterialTheme.typography.bodySmall,
@@ -550,21 +597,9 @@ private fun GameGridItem(
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
                     )
-                    
-                    if (windowInfo.deviceType == DeviceType.DESKTOP) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = game.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
                 }
                 
-                // Botón de acción
+                // Botón de acción compacto con icono
                 Button(
                     onClick = {
                         if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
@@ -574,20 +609,36 @@ private fun GameGridItem(
                     enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp),
+                        .height(if (windowInfo.isTablet) 44.dp else 36.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (cartViewModel.isInCart(game.id)) 
                             MaterialTheme.colorScheme.secondary 
                         else MaterialTheme.colorScheme.primary
-                    )
+                    ),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                 ) {
-                    Text(
-                        if (cartViewModel.isInCart(game.id)) "✓ En Carrito"
-                        else if (game.stock > 0) "Agregar"
-                        else "Sin Stock",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = if (cartViewModel.isInCart(game.id)) 
+                                Icons.Default.Done 
+                            else Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = if (cartViewModel.isInCart(game.id)) "✓ Añadido"
+                            else if (game.stock > 0) "Agregar"
+                            else "Agotado",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }

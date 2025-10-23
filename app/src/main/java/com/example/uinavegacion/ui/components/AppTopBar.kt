@@ -1,83 +1,112 @@
 package com.example.uinavegacion.ui.components
 
-import androidx.compose.material.icons.Icons // Conjunto de íconos Material
-import androidx.compose.material.icons.filled.Home // Ícono Home
-import androidx.compose.material.icons.filled.AccountCircle // Ícono Login
-import androidx.compose.material.icons.filled.Menu // Ícono hamburguesa
-import androidx.compose.material.icons.filled.MoreVert // Ícono 3 puntitos (overflow)
-import androidx.compose.material.icons.filled.Person // Ícono Registro
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.TextField
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.CenterAlignedTopAppBar // TopAppBar centrada
-import androidx.compose.material3.DropdownMenu // Menú desplegable
-import androidx.compose.material3.DropdownMenuItem // Opción del menú
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon // Para mostrar íconos
-import androidx.compose.material3.IconButton // Botones con ícono
-import androidx.compose.material3.MaterialTheme // Tema Material
-import androidx.compose.material3.Text // Texto
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.* // remember / mutableStateOf
-import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable // Composable reutilizable: barra superior
+@Composable
 fun AppTopBar(
-    onOpenDrawer: (() -> Unit)? = null, // Abre el drawer (hamburguesa) - nullable para tablets
-    onHome: () -> Unit,       // Navega a Home
-    onLogin: () -> Unit,      // Navega a Login
-    onRegister: () -> Unit,   // Navega a Registro
-    onSearch: (String) -> Unit = {}, // Callback cuando cambia la búsqueda
-    showHamburger: Boolean = true // Controla si mostrar el botón hamburguesa
+    onOpenDrawer: (() -> Unit)? = null,
+    onHome: () -> Unit,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit,
+    currentQuery: String = "",
+    onQueryChanged: (String) -> Unit = {},
+    showHamburger: Boolean = true
 ) {
-    //lo que hace es crear una variable de estado recordada que le dice a la interfaz
-    // si el menú desplegable de 3 puntitos debe estar visible (true) o oculto (false).
-    var showMenu by remember { mutableStateOf(false) } // Estado del menú overflow
+    var localQuery by remember { mutableStateOf(currentQuery) }
 
-    CenterAlignedTopAppBar( // Barra alineada al centro
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            MaterialTheme.colorScheme.primary
-        ),
-        title = {
-            var query by remember { mutableStateOf("") }
-            OutlinedTextField(
-                value = query,
-                onValueChange = {
-                    query = it
-                    onSearch(it)
-                },
-                placeholder = { Text("Buscar juegos...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onSurface) },
-                singleLine = true,
-                shape = RoundedCornerShape(50),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .padding(vertical = 6.dp)
-            )
-        },
-        navigationIcon = { // Ícono a la izquierda (hamburguesa)
+    LaunchedEffect(currentQuery) {
+        if (currentQuery != localQuery) {
+            localQuery = currentQuery
+        }
+    }
+
+    LaunchedEffect(localQuery) {
+        delay(100)
+        if (localQuery != currentQuery) {
+            onQueryChanged(localQuery)
+        }
+    }
+
+    // Surface personalizada para tener control total del espacio
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp), // Altura aumentada significativamente
+        color = MaterialTheme.colorScheme.primary,
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 12.dp), // Padding aumentado
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Botón de menú hamburguesa
             if (showHamburger && onOpenDrawer != null) {
-                IconButton(onClick = onOpenDrawer) { // Al presionar, abre drawer
-                    Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menú") // Ícono
+                IconButton(
+                    onClick = onOpenDrawer,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Menu,
+                        contentDescription = "Menú",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
-        },
-        actions = { /* acciones removidas: no mostrar iconos adicionales */ }
-    )
+
+            // Barra de búsqueda con espacio completo
+            OutlinedTextField(
+                value = localQuery,
+                onValueChange = { newValue -> localQuery = newValue },
+                placeholder = {
+                    Text(
+                        "Buscar juegos",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = "Buscar",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(28.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedPlaceholderColor = Color.Gray,
+                    unfocusedPlaceholderColor = Color.Gray
+                ),
+                textStyle = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp) // Altura aumentada significativamente
+            )
+        }
+    }
 }

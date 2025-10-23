@@ -20,6 +20,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.*
+import com.example.uinavegacion.ui.utils.rememberWindowInfo
+import com.example.uinavegacion.ui.utils.AdaptiveUtils
+import com.example.uinavegacion.ui.components.AnimatedButton
+import com.example.uinavegacion.ui.components.AnimatedOutlinedButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +54,8 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
             ) 
         }
     ) { innerPadding ->
+        val windowInfo = rememberWindowInfo()
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -57,88 +63,141 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Estadísticas de la biblioteca
+            // Estadísticas de la biblioteca - Adaptado para tablets
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${libraryStats.totalGames}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Total Juegos",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${libraryStats.installedGames}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Instalados",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                    // Total Juegos
+                    StatsColumn(
+                        value = libraryStats.totalGames,
+                        label = "Total Juegos",
+                        icon = Icons.Default.SportsEsports,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Divisor vertical
+                    if (windowInfo.isTablet) {
+                        VerticalDivider(
+                            modifier = Modifier
+                                .height(60.dp)
+                                .width(1.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
                         )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${libraryStats.availableGames}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Disponibles",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                    
+                    // Instalados
+                    StatsColumn(
+                        value = libraryStats.installedGames,
+                        label = "Instalados",
+                        icon = Icons.Default.CheckCircle,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Divisor vertical
+                    if (windowInfo.isTablet) {
+                        VerticalDivider(
+                            modifier = Modifier
+                                .height(60.dp)
+                                .width(1.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
                         )
                     }
+                    
+                    // Disponibles
+                    StatsColumn(
+                        value = libraryStats.availableGames,
+                        label = "Disponibles",
+                        icon = Icons.Default.Download,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
             if (games.isEmpty()) {
-                // Estado vacío
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                // Estado vacío — centrar en tablets
+                if (windowInfo.isTablet) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "🎮",
-                            style = MaterialTheme.typography.displayLarge
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = "Tu biblioteca está vacía",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "Compra algunos juegos para comenzar tu colección",
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = { nav.navigate(Route.Games.path) }
+                        Card(
+                            modifier = Modifier
+                                .widthIn(max = AdaptiveUtils.getMaxContentWidth(windowInfo))
+                                .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
-                            Text("Explorar Juegos")
+                            Column(
+                                modifier = Modifier.padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "🎮",
+                                    style = MaterialTheme.typography.displayLarge
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    text = "Tu biblioteca está vacía",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "Compra algunos juegos para comenzar tu colección",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                AnimatedButton(
+                                    onClick = { nav.navigate(Route.Games.path) }
+                                ) {
+                                    Text("Explorar Juegos")
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Mobile / phone behavior (unchanged)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "🎮",
+                                style = MaterialTheme.typography.displayLarge
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = "Tu biblioteca está vacía",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Compra algunos juegos para comenzar tu colección",
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Button(
+                                onClick = { nav.navigate(Route.Games.path) }
+                            ) {
+                                Text("Explorar Juegos")
+                            }
                         }
                     }
                 }
@@ -206,18 +265,18 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Imagen del juego
-                                Box(
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.secondaryContainer),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "🎮",
-                                        style = MaterialTheme.typography.headlineMedium
-                                    )
-                                }
+                                        AnimatedButton(
+                                            onClick = { libraryViewModel.installGame(game.id) },
+                                            modifier = Modifier.height(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Download,
+                                                contentDescription = "Instalar",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Instalar", style = MaterialTheme.typography.bodySmall)
+                                        }
 
                                 Spacer(Modifier.width(12.dp))
 
@@ -324,7 +383,7 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                                             }
                                         }
                                         "Descargando" -> {
-                                            OutlinedButton(
+                                            AnimatedOutlinedButton(
                                                 onClick = { /* Pausar descarga */ },
                                                 modifier = Modifier.height(32.dp),
                                                 enabled = false
@@ -339,7 +398,7 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                                             }
                                         }
                                         "Actualizando" -> {
-                                            OutlinedButton(
+                                            AnimatedOutlinedButton(
                                                 onClick = { /* Pausar actualización */ },
                                                 modifier = Modifier.height(32.dp),
                                                 enabled = false
@@ -360,7 +419,7 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                             // Barra de progreso para descargas/actualizaciones
                             if (game.status == "Descargando" || game.status == "Actualizando") {
                                 LinearProgressIndicator(
-                                    progress = 0.7f,
+                                    progress = { 0.7f },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -372,6 +431,41 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StatsColumn(
+    value: Int,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(32.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "$value",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            textAlign = TextAlign.Center
+        )
     }
 }
 

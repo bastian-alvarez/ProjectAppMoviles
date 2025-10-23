@@ -117,43 +117,23 @@ fun AdminDashboardScreen(navController: NavHostController) {
                         
                         Spacer(Modifier.height(20.dp))
                         
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        OutlinedButton(
+                            onClick = { navController.navigate(Route.Home.path) },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp, 
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+                            )
                         ) {
-                            OutlinedButton(
-                                onClick = { navController.navigate(Route.Home.path) },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp, 
-                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
-                                )
-                            ) {
-                                Icon(
-                                    Icons.Default.ExitToApp,
-                                    contentDescription = "Salir",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text("Salir del Panel")
-                            }
-                            
-                            Button(
-                                onClick = { navController.navigate(Route.Settings.path) },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.onPrimary,
-                                    contentColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(
-                                    Icons.Default.Settings,
-                                    contentDescription = "Configurar",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text("Configurar")
-                            }
+                            Icon(
+                                Icons.Default.ExitToApp,
+                                contentDescription = "Salir",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Salir del Panel")
                         }
                     }
                 }
@@ -434,105 +414,6 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
                             )
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            // Acciones rápidas mejoradas
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.FlashOn,
-                            contentDescription = "Acciones",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "Acciones Rápidas",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    
-                    Spacer(Modifier.height(16.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = { navController.navigate(Route.AdminAddGame.path) },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = "Agregar",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Agregar Juego")
-                        }
-                        
-                        OutlinedButton(
-                            onClick = { navController.navigate(Route.AdminUsers.path) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                Icons.Default.People,
-                                contentDescription = "Usuarios",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Ver Usuarios")
-                        }
-                    }
-                    
-                    Spacer(Modifier.height(12.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { /* TODO: Reportes */ },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                Icons.Default.Assessment,
-                                contentDescription = "Reportes",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Reportes")
-                        }
-                        
-                        OutlinedButton(
-                            onClick = { /* TODO: Configuración */ },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                Icons.Default.Settings,
-                                contentDescription = "Configurar",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Configurar")
                         }
                     }
                 }

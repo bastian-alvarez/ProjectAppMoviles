@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,6 +32,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.data.SessionManager
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -38,9 +41,9 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileEditScreen(nav: NavHostController) {
-    var name by remember { mutableStateOf("Usuario Demo") }
-    var phone by remember { mutableStateOf("+1 234 567 8900") }
-    var email by remember { mutableStateOf("user1@demo.com") }
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("") }
     
     var expanded by remember { mutableStateOf(false) }
@@ -84,6 +87,11 @@ fun ProfileEditScreen(nav: NavHostController) {
                 val userByEmail = db.userDao().getByEmail(email)
                 if (userByEmail != null) {
                     userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                    // Actualizar SessionManager con la nueva foto
+                    val updatedUser = db.userDao().getByEmail(email)
+                    if (updatedUser != null) {
+                        SessionManager.loginUser(updatedUser)
+                    }
                     photoSavedMessage = "Foto tomada y guardada"
                 } else {
                     photoSavedMessage = "Error: Usuario no encontrado"
@@ -102,6 +110,11 @@ fun ProfileEditScreen(nav: NavHostController) {
                 val userByEmail = db.userDao().getByEmail(email)
                 if (userByEmail != null) {
                     userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                    // Actualizar SessionManager con la nueva foto
+                    val updatedUser = db.userDao().getByEmail(email)
+                    if (updatedUser != null) {
+                        SessionManager.loginUser(updatedUser)
+                    }
                     photoSavedMessage = "Foto de galería guardada"
                 } else {
                     photoSavedMessage = "Error: Usuario no encontrado"
@@ -121,11 +134,17 @@ fun ProfileEditScreen(nav: NavHostController) {
         }
     }
 
-    // Cargar foto actual del usuario
+    // Cargar datos del usuario desde SessionManager
     LaunchedEffect(Unit) {
-        val userByEmail = db.userDao().getByEmail(email)
-        userByEmail?.profilePhotoUri?.let { uri ->
-            profilePhotoUri = uri
+        val currentUserEmail = SessionManager.getCurrentUserEmail()
+        if (currentUserEmail != null) {
+            val userByEmail = db.userDao().getByEmail(currentUserEmail)
+            if (userByEmail != null) {
+                name = userByEmail.name
+                email = userByEmail.email
+                phone = userByEmail.phone.ifEmpty { "+56 9 " }
+                profilePhotoUri = userByEmail.profilePhotoUri
+            }
         }
     }
 
@@ -155,6 +174,7 @@ fun ProfileEditScreen(nav: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -178,7 +198,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                     // Avatar circular grande con previsualización
                     Box(
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(180.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primaryContainer)
                             .border(
@@ -323,6 +343,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                         value = phone,
                         onValueChange = { phone = it },
                         label = { Text("Teléfono") },
+                        placeholder = { Text("+56 9 1234 5678") },
                         leadingIcon = {
                             Icon(Icons.Default.Phone, contentDescription = "Teléfono", modifier = Modifier.size(20.dp))
                         },
@@ -437,6 +458,11 @@ fun ProfileEditScreen(nav: NavHostController) {
                                         phone = phone,
                                         password = userByEmail.password
                                     )
+                                    // Actualizar SessionManager con los nuevos datos
+                                    val updatedUser = db.userDao().getByEmail(email)
+                                    if (updatedUser != null) {
+                                        SessionManager.loginUser(updatedUser)
+                                    }
                                     showSuccessMessage = true
                                     isLoading = false
                                 } else {

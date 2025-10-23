@@ -60,4 +60,28 @@ class UserRepository(
     suspend fun getAllUsers(): List<UserEntity> {
         return userDao.getAll()
     }
+
+    //cambiar contraseña de usuario
+    suspend fun changePassword(email: String, currentPassword: String, newPassword: String): Result<Unit> {
+        return try {
+            val user = userDao.getByEmail(email)
+            if (user == null) {
+                return Result.failure(Exception("Usuario no encontrado"))
+            }
+            
+            if (user.password != currentPassword) {
+                return Result.failure(Exception("La contraseña actual es incorrecta"))
+            }
+            
+            userDao.updatePassword(user.id, newPassword)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    //obtener usuario por email (para SessionManager)
+    suspend fun getUserByEmail(email: String): UserEntity? {
+        return userDao.getByEmail(email)
+    }
 }

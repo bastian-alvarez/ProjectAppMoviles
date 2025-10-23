@@ -11,6 +11,7 @@ import com.example.uinavegacion.domain.validatePhoneDigitsOnly
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +53,20 @@ data class RegisterUiState(
 
 )
 
+data class ChangePasswordUiState(
+    val currentPassword: String = "",
+    val newPassword: String = "",
+    val confirmPassword: String = "",
+    val currentPasswordError: String? = null,
+    val newPasswordError: String? = null,
+    val confirmPasswordError: String? = null,
+    val isSubmitting: Boolean = false,
+    val canSubmit: Boolean = false,
+    val success: Boolean = false,
+    val errorMsg: String? = null,
+    val successMsg: String? = null
+)
+
 
 //clase para manipular la logica de Login y Register
 class AuthViewModel(
@@ -65,6 +80,9 @@ class AuthViewModel(
 
     private val _register = MutableStateFlow(RegisterUiState()) // Estado interno (Registro)
     val register: StateFlow<RegisterUiState> = _register        // Exposición inmutable
+
+    private val _changePassword = MutableStateFlow(ChangePasswordUiState()) // Estado interno (Cambio de contraseña)
+    val changePassword: StateFlow<ChangePasswordUiState> = _changePassword  // Exposición inmutable
 
     // ----------------- LOGIN: handlers y envío -----------------
 
@@ -105,6 +123,19 @@ class AuthViewModel(
             val userResult = if (!isAdmin) userRepository.login(email, pass) else null
             val ok = isAdmin || (userResult != null && userResult.isSuccess)
 
+            // Si el login es exitoso, guardar en SessionManager
+            if (ok) {
+                if (isAdmin && admin != null) {
+                    SessionManager.loginAdmin(admin)
+                } else if (userResult != null && userResult.isSuccess) {
+                    // Obtener el usuario completo de la base de datos
+                    val user = userRepository.getUserByEmail(email)
+                    if (user != null) {
+                        SessionManager.loginUser(user)
+                    }
+                }
+            }
+
             _login.update {                                 // Actualizamos con el resultado
                 it.copy(
                     isSubmitting = false,                   // Fin carga
@@ -113,14 +144,15 @@ class AuthViewModel(
                     isAdmin = isAdmin                       // Guardamos si es admin
                 )
             }
-
-            // Login exitoso - no necesitamos SessionManager
-            // El estado success=true es suficiente para manejar la navegación
         }
     }
 
     fun clearLoginResult() {                                // Limpia banderas tras navegar
         _login.update { it.copy(success = false, errorMsg = null, isAdmin = false) }
+    }
+
+    fun logout() {                                          // Función para cerrar sesión
+        SessionManager.logout()
     }
 
     // ----------------- REGISTRO: handlers y envío -----------------
@@ -198,5 +230,101 @@ class AuthViewModel(
 
     fun clearRegisterResult() {                             // Limpia banderas tras navegar
         _register.update { it.copy(success = false, errorMsg = null) }
+    }
+
+    // ----------------- CAMBIO DE CONTRASEÑA: handlers y envío -----------------
+
+    fun onCurrentPasswordChange(value: String) {
+        _changePassword.update { 
+            it.copy(currentPassword = value, currentPasswordError = null) 
+        }
+        recomputeChangePasswordCanSubmit()
+    }
+
+    fun onNewPasswordChange(value: String) {
+        _changePassword.update { 
+            it.copy(
+                newPassword = value, 
+                newPasswordError = validateStrongPassword(value),
+                confirmPasswordError = validateConfirm(value, it.confirmPassword)
+            ) 
+        }
+        recomputeChangePasswordCanSubmit()
+    }
+
+    fun onConfirmPasswordChange(value: String) {
+        _changePassword.update { 
+            it.copy(
+                confirmPassword = value, 
+                confirmPasswordError = validateConfirm(it.newPassword, value)
+            ) 
+        }
+        recomputeChangePasswordCanSubmit()
+    }
+
+    private fun recomputeChangePasswordCanSubmit() {
+        val s = _changePassword.value
+        val noErrors = listOf(s.currentPasswordError, s.newPasswordError, s.confirmPasswordError).all { it == null }
+        val filled = s.currentPassword.isNotBlank() && s.newPassword.isNotBlank() && s.confirmPassword.isNotBlank()
+        val passwordsMatch = s.newPassword == s.confirmPassword
+        val differentPasswords = s.currentPassword != s.newPassword
+        
+        _changePassword.update { 
+            it.copy(canSubmit = noErrors && filled && passwordsMatch && differentPasswords) 
+        }
+    }
+
+    fun submitChangePassword(userEmail: String) {
+        val s = _changePassword.value
+        if (!s.canSubmit || s.isSubmitting) return
+        
+        viewModelScope.launch {
+            _changePassword.update { 
+                it.copy(isSubmitting = true, errorMsg = null, successMsg = null, success = false) 
+            }
+            
+            try {
+                val result = userRepository.changePassword(
+                    email = userEmail,
+                    currentPassword = s.currentPassword,
+                    newPassword = s.newPassword
+                )
+                
+                if (result.isSuccess) {
+                    _changePassword.update {
+                        it.copy(
+                            isSubmitting = false,
+                            success = true,
+                            successMsg = "Contraseña actualizada exitosamente. Serás redirigido al login...",
+                            errorMsg = null
+                        )
+                    }
+                } else {
+                    _changePassword.update {
+                        it.copy(
+                            isSubmitting = false,
+                            success = false,
+                            errorMsg = result.exceptionOrNull()?.message ?: "Error al cambiar la contraseña",
+                            successMsg = null
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _changePassword.update {
+                    it.copy(
+                        isSubmitting = false,
+                        success = false,
+                        errorMsg = e.message ?: "Error inesperado",
+                        successMsg = null
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearChangePasswordResult() {
+        _changePassword.update { 
+            it.copy(success = false, errorMsg = null, successMsg = null) 
+        }
     }
 }

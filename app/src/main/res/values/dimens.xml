@@ -21,10 +21,12 @@
     <dimen name="text_size_medium">14sp</dimen>
     <dimen name="text_size_large">16sp</dimen>
     <dimen name="text_size_title">18sp</dimen>
+    <dimen name="text_size_extra_large">24sp</dimen>
     
     <!-- Navegación -->
     <dimen name="nav_rail_width">80dp</dimen>
     <dimen name="nav_drawer_width">280dp</dimen>
+    <dimen name="permanent_drawer_width">280dp</dimen>
     
     <!-- Grid y listas -->
     <dimen name="grid_spacing">8dp</dimen>
@@ -38,6 +40,7 @@
     <!-- Alturas específicas -->
     <dimen name="app_bar_height">56dp</dimen>
     <dimen name="bottom_bar_height">56dp</dimen>
+    <dimen name="bottom_nav_height">56dp</dimen>
     
     <!-- Responsive breakpoints -->
     <dimen name="content_max_width">800dp</dimen>
