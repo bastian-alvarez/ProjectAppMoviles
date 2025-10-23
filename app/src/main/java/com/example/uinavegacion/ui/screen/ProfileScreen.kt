@@ -37,17 +37,14 @@ fun ProfileScreen(nav: NavHostController) {
 
     // Cargar datos del usuario logueado desde SessionManager
     LaunchedEffect(Unit) {
-        val currentUser = SessionManager.getCurrentUser()
-        val currentAdmin = SessionManager.getCurrentAdmin()
+        val email = SessionManager.getCurrentUserEmail()
+        val name = SessionManager.getCurrentUserName()
+        val photoUriFromSession = SessionManager.getCurrentUserPhotoUri()
         
-        if (currentUser != null) {
-            displayName = currentUser.name
-            displayEmail = currentUser.email
-            photoUri = currentUser.profilePhotoUri
-        } else if (currentAdmin != null) {
-            displayName = currentAdmin.name
-            displayEmail = currentAdmin.email
-            photoUri = null // Los admins no tienen foto de perfil
+        if (email != null) {
+            displayName = name ?: "Usuario"
+            displayEmail = email
+            photoUri = photoUriFromSession
         } else {
             // Si no hay sesión, intentar cargar usuario demo
             val u = db.userDao().getByEmail("user1@demo.com")
