@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,6 +32,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.data.SessionManager
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -84,6 +87,11 @@ fun ProfileEditScreen(nav: NavHostController) {
                 val userByEmail = db.userDao().getByEmail(email)
                 if (userByEmail != null) {
                     userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                    // Actualizar SessionManager con la nueva foto
+                    val updatedUser = db.userDao().getByEmail(email)
+                    if (updatedUser != null) {
+                        SessionManager.loginUser(updatedUser)
+                    }
                     photoSavedMessage = "Foto tomada y guardada"
                 } else {
                     photoSavedMessage = "Error: Usuario no encontrado"
@@ -102,6 +110,11 @@ fun ProfileEditScreen(nav: NavHostController) {
                 val userByEmail = db.userDao().getByEmail(email)
                 if (userByEmail != null) {
                     userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                    // Actualizar SessionManager con la nueva foto
+                    val updatedUser = db.userDao().getByEmail(email)
+                    if (updatedUser != null) {
+                        SessionManager.loginUser(updatedUser)
+                    }
                     photoSavedMessage = "Foto de galería guardada"
                 } else {
                     photoSavedMessage = "Error: Usuario no encontrado"
@@ -155,6 +168,7 @@ fun ProfileEditScreen(nav: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -178,7 +192,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                     // Avatar circular grande con previsualización
                     Box(
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(180.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primaryContainer)
                             .border(

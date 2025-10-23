@@ -39,7 +39,8 @@ fun AppDrawer(
             var displayEmail by remember { mutableStateOf("user1@demo.com") }
             
             // Cargar datos del usuario desde SessionManager
-            LaunchedEffect(Unit) {
+            // Se actualiza cuando cambia la ruta (por ejemplo, al volver de editar perfil)
+            LaunchedEffect(currentRoute) {
                 val currentUserEmail = SessionManager.getCurrentUserEmail()
                 if (currentUserEmail != null) {
                     val user = db.userDao().getByEmail(currentUserEmail)
