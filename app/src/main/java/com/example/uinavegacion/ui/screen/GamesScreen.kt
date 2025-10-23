@@ -651,7 +651,7 @@ private fun GameGridItem(
                 Button(
                     onClick = {
                         if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
-                            cartViewModel.addGame(game.id, game.name, game.price)
+                            cartViewModel.addGame(game.id, game.name, game.price, game.imageUrl)
                         }
                     },
                     enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),

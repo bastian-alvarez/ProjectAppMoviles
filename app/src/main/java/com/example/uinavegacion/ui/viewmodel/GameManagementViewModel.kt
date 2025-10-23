@@ -57,6 +57,53 @@ class GameManagementViewModel(
     }
     
     /**
+     * Agrega un nuevo juego
+     */
+    fun addGame(nombre: String, descripcion: String, precio: Double, stock: Int, categoria: String, imageUrl: String) {
+        viewModelScope.launch {
+            try {
+                val nuevoJuego = JuegoEntity(
+                    id = 0L,
+                    nombre = nombre,
+                    descripcion = descripcion,
+                    precio = precio,
+                    stock = stock,
+                    categoria = categoria,
+                    imageUrl = imageUrl
+                )
+                val result = gameRepository.insertGame(nuevoJuego)
+                if (result.isSuccess) {
+                    _successMessage.value = "Juego agregado correctamente"
+                    loadGames() // Recargar la lista
+                } else {
+                    _error.value = "Error al agregar juego: ${result.exceptionOrNull()?.message}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al agregar juego: ${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * Actualiza un juego existente
+     */
+    fun updateGame(game: JuegoEntity) {
+        viewModelScope.launch {
+            try {
+                val result = gameRepository.updateGame(game)
+                if (result.isSuccess) {
+                    _successMessage.value = "Juego actualizado correctamente"
+                    loadGames() // Recargar la lista
+                } else {
+                    _error.value = "Error al actualizar juego: ${result.exceptionOrNull()?.message}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al actualizar juego: ${e.message}"
+            }
+        }
+    }
+    
+    /**
      * Elimina un juego
      */
     fun deleteGame(gameId: Long) {

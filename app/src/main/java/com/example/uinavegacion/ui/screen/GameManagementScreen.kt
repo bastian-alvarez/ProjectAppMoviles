@@ -43,6 +43,10 @@ fun GameManagementScreen(navController: NavHostController) {
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     
+    // Estado para diálogo
+    var showDialog by remember { mutableStateOf(false) }
+    var gameToEdit by remember { mutableStateOf<JuegoEntity?>(null) }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,7 +66,8 @@ fun GameManagementScreen(navController: NavHostController) {
                 },
                 actions = {
                     IconButton(onClick = { 
-                        // TODO: Navegar a agregar juego
+                        gameToEdit = null
+                        showDialog = true
                     }) {
                         Icon(
                             Icons.Default.Add,
@@ -75,7 +80,8 @@ fun GameManagementScreen(navController: NavHostController) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { 
-                    // TODO: Navegar a agregar juego
+                    gameToEdit = null
+                    showDialog = true
                 }
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar juego")
@@ -220,7 +226,8 @@ fun GameManagementScreen(navController: NavHostController) {
                             GameManagementItem(
                                 game = game,
                                 onEdit = { 
-                                    // TODO: Navegar a editar juego
+                                    gameToEdit = game
+                                    showDialog = true
                                 },
                                 onDelete = { 
                                     viewModel.deleteGame(game.id)
@@ -232,6 +239,159 @@ fun GameManagementScreen(navController: NavHostController) {
             }
         }
     }
+    
+    // Diálogo para agregar/editar juego
+    if (showDialog) {
+        AddEditGameDialog(
+            game = gameToEdit,
+            onDismiss = { showDialog = false },
+            onSave = { nombre, descripcion, precio, stock, categoria, imageUrl ->
+                if (gameToEdit != null) {
+                    viewModel.updateGame(
+                        gameToEdit!!.copy(
+                            nombre = nombre,
+                            descripcion = descripcion,
+                            precio = precio,
+                            stock = stock,
+                            categoria = categoria,
+                            imageUrl = imageUrl
+                        )
+                    )
+                } else {
+                    viewModel.addGame(nombre, descripcion, precio, stock, categoria, imageUrl)
+                }
+                showDialog = false
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddEditGameDialog(
+    game: JuegoEntity?,
+    onDismiss: () -> Unit,
+    onSave: (String, String, Double, Int, String, String) -> Unit
+) {
+    var nombre by remember { mutableStateOf(game?.nombre ?: "") }
+    var descripcion by remember { mutableStateOf(game?.descripcion ?: "") }
+    var precio by remember { mutableStateOf(game?.precio?.toString() ?: "") }
+    var stock by remember { mutableStateOf(game?.stock?.toString() ?: "") }
+    var categoria by remember { mutableStateOf(game?.categoria ?: "Acción") }
+    var imageUrl by remember { mutableStateOf(game?.imageUrl ?: "") }
+    var expandedCategory by remember { mutableStateOf(false) }
+    
+    val categorias = listOf("Acción", "Aventura", "RPG", "Deportes", "Estrategia", "Arcade", "Plataformas")
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(if (game == null) "Agregar Juego" else "Editar Juego")
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nombre del juego") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+                
+                OutlinedTextField(
+                    value = precio,
+                    onValueChange = { precio = it },
+                    label = { Text("Precio") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    prefix = { Text("$") }
+                )
+                
+                OutlinedTextField(
+                    value = stock,
+                    onValueChange = { stock = it },
+                    label = { Text("Stock") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                ExposedDropdownMenuBox(
+                    expanded = expandedCategory,
+                    onExpandedChange = { expandedCategory = it }
+                ) {
+                    OutlinedTextField(
+                        value = categoria,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Categoría") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedCategory,
+                        onDismissRequest = { expandedCategory = false }
+                    ) {
+                        categorias.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(cat) },
+                                onClick = {
+                                    categoria = cat
+                                    expandedCategory = false
+                                }
+                            )
+                        }
+                    }
+                }
+                
+                OutlinedTextField(
+                    value = imageUrl,
+                    onValueChange = { imageUrl = it },
+                    label = { Text("URL de imagen (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("https://...") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val precioDouble = precio.toDoubleOrNull() ?: 0.0
+                    val stockInt = stock.toIntOrNull() ?: 0
+                    if (nombre.isNotBlank() && precioDouble > 0 && stockInt >= 0) {
+                        onSave(nombre, descripcion, precioDouble, stockInt, categoria, imageUrl)
+                    }
+                },
+                enabled = nombre.isNotBlank() && 
+                         (precio.toDoubleOrNull() ?: 0.0) > 0 && 
+                         (stock.toIntOrNull() ?: 0) >= 0
+            ) {
+                Text(if (game == null) "Agregar" else "Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 @Composable
