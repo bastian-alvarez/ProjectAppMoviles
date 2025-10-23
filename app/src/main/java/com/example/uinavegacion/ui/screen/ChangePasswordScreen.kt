@@ -30,7 +30,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
     val db = remember { AppDatabase.getInstance(context) }
     val userRepo = remember { UserRepository(db.userDao()) }
     val adminRepo = remember { AdminRepository(db.adminDao()) }
-    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(context.applicationContext, userRepo, adminRepo))
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(context.applicationContext as android.app.Application, userRepo, adminRepo))
     
     val changePasswordState by authViewModel.changePassword.collectAsState()
     
@@ -224,7 +224,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
                     }
 
                     // Mensajes de error y éxito mejorados
-                    if (changePasswordState.errorMsg != null) {
+                    changePasswordState.errorMsg?.let { errorMsg ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -242,7 +242,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    text = changePasswordState.errorMsg,
+                                    text = errorMsg,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     fontWeight = FontWeight.Medium
@@ -251,7 +251,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
                         }
                     }
 
-                    if (changePasswordState.successMsg != null) {
+                    changePasswordState.successMsg?.let { successMsg ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -269,7 +269,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    text = changePasswordState.successMsg,
+                                    text = successMsg,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     fontWeight = FontWeight.Medium

@@ -26,6 +26,7 @@
     <!-- Navegación -->
     <dimen name="nav_rail_width">80dp</dimen>
     <dimen name="nav_drawer_width">280dp</dimen>
+    <dimen name="permanent_drawer_width">280dp</dimen>
     
     <!-- Grid y listas -->
     <dimen name="grid_spacing">8dp</dimen>
