@@ -34,6 +34,9 @@ interface UserDao{
     //actualizar la foto de perfil
     @Query("UPDATE users SET profilePhotoUri = :photoUri WHERE id = :id")
     suspend fun updateProfilePhoto(id: Long, photoUri: String?)
+    //actualizar solo la contraseña
+    @Query("UPDATE users SET password = :newPassword WHERE id = :id")
+    suspend fun updatePassword(id: Long, newPassword: String)
     //eliminar el usuario
     @Query("DELETE FROM users WHERE id = :id")
     suspend fun delete(id: Long)

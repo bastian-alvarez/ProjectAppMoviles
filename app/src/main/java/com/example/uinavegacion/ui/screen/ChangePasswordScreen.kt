@@ -8,54 +8,45 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.AdminRepository
+import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.ui.viewmodel.AuthViewModel
+import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangePasswordScreen(nav: NavHostController) {
-    var currentPassword by remember { mutableStateOf("") }
-    var newPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val userRepo = remember { UserRepository(db.userDao()) }
+    val adminRepo = remember { AdminRepository(db.adminDao()) }
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(context.applicationContext, userRepo, adminRepo))
+    
+    val changePasswordState by authViewModel.changePassword.collectAsState()
     
     var showCurrentPassword by remember { mutableStateOf(false) }
     var showNewPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
     
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    var successMessage by remember { mutableStateOf("") }
+    // Usuario demo por defecto - mismo que ProfileScreen
+    val userEmail = "user1@demo.com"
     
-    // Función para validar contraseña actual (simulada)
-    fun validateCurrentPassword(password: String): Boolean {
-        // En una app real, aquí verificarías contra la base de datos
-        // Por ahora simulamos que la contraseña actual es "123456"
-        return password == "123456"
-    }
-    
-    // Función para cambiar contraseña y hacer logout
-    fun changePasswordAndLogout() {
-        isLoading = true
-        // Simular cambio de contraseña exitoso
-        successMessage = "Contraseña actualizada exitosamente. Serás redirigido al login..."
-    }
-    
-    // Efecto para manejar el logout automático
-    LaunchedEffect(successMessage) {
-        if (successMessage.isNotEmpty() && successMessage.contains("redirigido")) {
+    // Efecto para manejar el logout automático después del cambio exitoso
+    LaunchedEffect(changePasswordState.success) {
+        if (changePasswordState.success && changePasswordState.successMsg?.contains("redirigido") == true) {
             delay(2000)
-            // Limpiar datos de sesión (simulado)
-            currentPassword = ""
-            newPassword = ""
-            confirmPassword = ""
-            isLoading = false
-            successMessage = ""
-            errorMessage = ""
+            // Limpiar estado del cambio de contraseña
+            authViewModel.clearChangePasswordResult()
             
             // Redirigir al login
             nav.navigate("login") {
@@ -150,8 +141,8 @@ fun ChangePasswordScreen(nav: NavHostController) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         OutlinedTextField(
-                            value = currentPassword,
-                            onValueChange = { currentPassword = it },
+                            value = changePasswordState.currentPassword,
+                            onValueChange = { authViewModel.onCurrentPasswordChange(it) },
                             placeholder = { Text("Ingresa tu contraseña actual") },
                             visualTransformation = if (showCurrentPassword) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
@@ -164,7 +155,8 @@ fun ChangePasswordScreen(nav: NavHostController) {
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            isError = errorMessage.isNotEmpty() && currentPassword.isEmpty(),
+                            isError = changePasswordState.currentPasswordError != null,
+                            supportingText = changePasswordState.currentPasswordError?.let { { Text(it) } },
                             shape = RoundedCornerShape(12.dp)
                         )
                     }
@@ -180,8 +172,8 @@ fun ChangePasswordScreen(nav: NavHostController) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         OutlinedTextField(
-                            value = newPassword,
-                            onValueChange = { newPassword = it },
+                            value = changePasswordState.newPassword,
+                            onValueChange = { authViewModel.onNewPasswordChange(it) },
                             placeholder = { Text("Ingresa tu nueva contraseña") },
                             visualTransformation = if (showNewPassword) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
@@ -194,7 +186,8 @@ fun ChangePasswordScreen(nav: NavHostController) {
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            isError = errorMessage.isNotEmpty() && newPassword.isEmpty(),
+                            isError = changePasswordState.newPasswordError != null,
+                            supportingText = changePasswordState.newPasswordError?.let { { Text(it) } },
                             shape = RoundedCornerShape(12.dp)
                         )
                     }
@@ -210,8 +203,8 @@ fun ChangePasswordScreen(nav: NavHostController) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
+                            value = changePasswordState.confirmPassword,
+                            onValueChange = { authViewModel.onConfirmPasswordChange(it) },
                             placeholder = { Text("Confirma tu nueva contraseña") },
                             visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
@@ -224,13 +217,14 @@ fun ChangePasswordScreen(nav: NavHostController) {
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            isError = errorMessage.isNotEmpty() && (confirmPassword.isEmpty() || newPassword != confirmPassword),
+                            isError = changePasswordState.confirmPasswordError != null,
+                            supportingText = changePasswordState.confirmPasswordError?.let { { Text(it) } },
                             shape = RoundedCornerShape(12.dp)
                         )
                     }
 
                     // Mensajes de error y éxito mejorados
-                    if (errorMessage.isNotEmpty()) {
+                    if (changePasswordState.errorMsg != null) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -248,7 +242,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    text = errorMessage,
+                                    text = changePasswordState.errorMsg,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     fontWeight = FontWeight.Medium
@@ -257,7 +251,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
                         }
                     }
 
-                    if (successMessage.isNotEmpty()) {
+                    if (changePasswordState.successMsg != null) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -275,7 +269,7 @@ fun ChangePasswordScreen(nav: NavHostController) {
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    text = successMessage,
+                                    text = changePasswordState.successMsg,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     fontWeight = FontWeight.Medium
@@ -301,28 +295,13 @@ fun ChangePasswordScreen(nav: NavHostController) {
                         
                         Button(
                             onClick = {
-                                // Validaciones mejoradas
-                                errorMessage = ""
-                                successMessage = ""
-                                
-                                when {
-                                    currentPassword.isEmpty() -> errorMessage = "Debes ingresar tu contraseña actual"
-                                    !validateCurrentPassword(currentPassword) -> errorMessage = "La contraseña actual es incorrecta"
-                                    newPassword.isEmpty() -> errorMessage = "Debes ingresar una nueva contraseña"
-                                    confirmPassword.isEmpty() -> errorMessage = "Debes confirmar la nueva contraseña"
-                                    newPassword != confirmPassword -> errorMessage = "Las contraseñas no coinciden"
-                                    newPassword.length < 6 -> errorMessage = "La nueva contraseña debe tener al menos 6 caracteres"
-                                    currentPassword == newPassword -> errorMessage = "La nueva contraseña debe ser diferente a la actual"
-                                    else -> {
-                                        changePasswordAndLogout()
-                                    }
-                                }
+                                authViewModel.submitChangePassword(userEmail)
                             },
                             modifier = Modifier.weight(1f).height(48.dp),
-                            enabled = !isLoading,
+                            enabled = changePasswordState.canSubmit && !changePasswordState.isSubmitting,
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            if (isLoading) {
+                            if (changePasswordState.isSubmitting) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
