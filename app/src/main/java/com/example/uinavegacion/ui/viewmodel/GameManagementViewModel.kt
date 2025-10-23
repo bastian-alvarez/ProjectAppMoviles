@@ -74,7 +74,7 @@ class GameManagementViewModel(
                     categoriaId = 1L, // Categoría por defecto
                     generoId = 1L // Género por defecto
                 )
-                val result = gameRepository.insertGame(nuevoJuego)
+                val result = gameRepository.addGame(nuevoJuego)
                 if (result.isSuccess) {
                     _successMessage.value = "Juego agregado correctamente"
                     loadGames() // Recargar la lista
