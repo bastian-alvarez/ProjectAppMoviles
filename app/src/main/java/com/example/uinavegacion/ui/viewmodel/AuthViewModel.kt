@@ -121,26 +121,33 @@ class AuthViewModel(
             
             // Si no es admin, validar usuario normal
             val userResult = if (!isAdmin) userRepository.login(email, pass) else null
-            val ok = isAdmin || (userResult != null && userResult.isSuccess)
+            var ok = isAdmin || (userResult != null && userResult.isSuccess)
+            var errorMessage: String? = null
 
-            // Si el login es exitoso, guardar en SessionManager
-            if (ok) {
-                if (isAdmin && admin != null) {
-                    SessionManager.loginAdmin(admin)
-                } else if (userResult != null && userResult.isSuccess) {
-                    // Obtener el usuario completo de la base de datos
-                    val user = userRepository.getUserByEmail(email)
-                    if (user != null) {
-                        SessionManager.loginUser(user)
-                    }
+            // Verificar si el usuario está bloqueado (solo para usuarios normales)
+            if (ok && !isAdmin) {
+                val user = userRepository.getUserByEmail(email)
+                if (user != null && user.isBlocked) {
+                    ok = false
+                    errorMessage = "Tu cuenta ha sido bloqueada. Contacta al administrador."
+                    Log.d("AuthViewModel", "User is blocked: $email")
+                } else if (user != null) {
+                    SessionManager.loginUser(user)
                 }
+            } else if (ok && isAdmin && admin != null) {
+                SessionManager.loginAdmin(admin)
+            }
+
+            // Si no es válido y no hay mensaje de bloqueo, mostrar mensaje genérico
+            if (!ok && errorMessage == null) {
+                errorMessage = "Credenciales inválidas"
             }
 
             _login.update {                                 // Actualizamos con el resultado
                 it.copy(
                     isSubmitting = false,                   // Fin carga
                     success = ok,                           // true si credenciales correctas
-                    errorMsg = if (!ok) "Credenciales inválidas" else null, // Mensaje si falla
+                    errorMsg = errorMessage,                // Mensaje si falla
                     isAdmin = isAdmin                       // Guardamos si es admin
                 )
             }

@@ -10,5 +10,6 @@ data class UserEntity(
     val email:String,
     val phone: String,
     val password: String,
-    val profilePhotoUri: String? = null
+    val profilePhotoUri: String? = null,
+    val isBlocked: Boolean = false
 )

@@ -47,6 +47,11 @@ fun UserManagementScreen(navController: NavHostController) {
     val users by viewModel.users.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
+    
+    // Estado para el diálogo de confirmación
+    var showBlockDialog by remember { mutableStateOf(false) }
+    var selectedUser by remember { mutableStateOf<UserEntity?>(null) }
     
     Scaffold(
         topBar = {
@@ -216,7 +221,8 @@ fun UserManagementScreen(navController: NavHostController) {
                             UserManagementItem(
                                 user = user,
                                 onBlock = { 
-                                    // TODO: Implementar bloquear usuario
+                                    selectedUser = user
+                                    showBlockDialog = true
                                 },
                                 onViewDetails = { 
                                     // TODO: Ver detalles del usuario
@@ -226,6 +232,74 @@ fun UserManagementScreen(navController: NavHostController) {
                     }
                 }
             }
+            
+            // Mostrar mensaje de éxito
+            successMessage?.let { message ->
+                LaunchedEffect(message) {
+                    kotlinx.coroutines.delay(3000)
+                    viewModel.clearMessages()
+                }
+                Snackbar(
+                    modifier = Modifier.padding(16.dp),
+                    action = {
+                        TextButton(onClick = { viewModel.clearMessages() }) {
+                            Text("OK")
+                        }
+                    }
+                ) {
+                    Text(message)
+                }
+            }
+        }
+        
+        // Diálogo de confirmación de bloqueo
+        if (showBlockDialog && selectedUser != null) {
+            AlertDialog(
+                onDismissRequest = { showBlockDialog = false },
+                title = { 
+                    Text(
+                        if (selectedUser!!.isBlocked) "Desbloquear Usuario" 
+                        else "Bloquear Usuario"
+                    ) 
+                },
+                text = {
+                    Text(
+                        if (selectedUser!!.isBlocked) {
+                            "¿Estás seguro de que deseas desbloquear a ${selectedUser!!.name}? El usuario podrá volver a acceder a la aplicación."
+                        } else {
+                            "¿Estás seguro de que deseas bloquear a ${selectedUser!!.name}? El usuario no podrá acceder a la aplicación hasta que sea desbloqueado."
+                        }
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.toggleUserBlockStatus(
+                                selectedUser!!.id,
+                                selectedUser!!.isBlocked
+                            )
+                            showBlockDialog = false
+                            selectedUser = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedUser!!.isBlocked) 
+                                MaterialTheme.colorScheme.primary 
+                            else 
+                                MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text(if (selectedUser!!.isBlocked) "Desbloquear" else "Bloquear")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { 
+                        showBlockDialog = false
+                        selectedUser = null
+                    }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
     }
 }
@@ -240,7 +314,10 @@ private fun UserManagementItem(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (user.isBlocked) 
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            else 
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
@@ -259,7 +336,10 @@ private fun UserManagementItem(
                             Modifier // TODO: Cargar imagen del usuario
                         } else {
                             Modifier.background(
-                                MaterialTheme.colorScheme.primary,
+                                if (user.isBlocked) 
+                                    MaterialTheme.colorScheme.error
+                                else 
+                                    MaterialTheme.colorScheme.primary,
                                 CircleShape
                             )
                         }
@@ -267,12 +347,20 @@ private fun UserManagementItem(
                 contentAlignment = Alignment.Center
             ) {
                 if (user.profilePhotoUri == null) {
-                    Text(
-                        user.name.take(1).uppercase(),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (user.isBlocked) {
+                        Icon(
+                            Icons.Default.Block,
+                            contentDescription = "Bloqueado",
+                            tint = MaterialTheme.colorScheme.onError
+                        )
+                    } else {
+                        Text(
+                            user.name.take(1).uppercase(),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
             
@@ -280,13 +368,30 @@ private fun UserManagementItem(
             
             // Información del usuario
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    user.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        user.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (user.isBlocked) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.error,
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                "BLOQUEADO",
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onError,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
                 Text(
                     user.email,
                     style = MaterialTheme.typography.bodyMedium,
@@ -319,12 +424,15 @@ private fun UserManagementItem(
                 IconButton(
                     onClick = onBlock,
                     colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
+                        contentColor = if (user.isBlocked) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.error
                     )
                 ) {
                     Icon(
-                        Icons.Default.Block,
-                        contentDescription = "Bloquear usuario"
+                        if (user.isBlocked) Icons.Default.CheckCircle else Icons.Default.Block,
+                        contentDescription = if (user.isBlocked) "Desbloquear usuario" else "Bloquear usuario"
                     )
                 }
             }

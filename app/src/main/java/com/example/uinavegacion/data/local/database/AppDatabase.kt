@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 5, // Se añade tabla biblioteca
+    version = 6, // Se añade campo isBlocked a UserEntity
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
