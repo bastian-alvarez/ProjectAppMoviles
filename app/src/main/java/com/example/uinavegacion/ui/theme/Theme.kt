@@ -19,12 +19,16 @@ private val DarkColorScheme = darkColorScheme(
     background = Color1, // Azul muy oscuro
     surface = Color2, // Azul oscuro
     surfaceVariant = Color3, // Azul medio
+    primaryContainer = Color3, // Azul medio para contenedores
+    secondaryContainer = Color5, // Azul muy claro para contenedores secundarios
     onPrimary = Color.White,
     onSecondary = Color.White,
     onTertiary = Color1, // Texto oscuro sobre azul claro
     onBackground = Color.White,
     onSurface = Color.White,
-    onSurfaceVariant = Color.White
+    onSurfaceVariant = Color.White,
+    onPrimaryContainer = Color1, // Texto azul oscuro sobre contenedor primario
+    onSecondaryContainer = Color1 // Texto azul oscuro sobre contenedor secundario
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -34,12 +38,16 @@ private val LightColorScheme = lightColorScheme(
     background = Color.White,
     surface = Color.White,
     surfaceVariant = Color5, // Azul muy claro
+    primaryContainer = Color5, // Azul muy claro para contenedores primarios
+    secondaryContainer = Color5, // Azul muy claro para contenedores secundarios
     onPrimary = Color.White,
     onSecondary = Color.White,
     onTertiary = Color1, // Texto oscuro sobre azul claro
     onBackground = Color1, // Texto azul oscuro
     onSurface = Color1, // Texto azul oscuro
-    onSurfaceVariant = Color1 // Texto azul oscuro
+    onSurfaceVariant = Color1, // Texto azul oscuro
+    onPrimaryContainer = Color1, // Texto azul oscuro sobre contenedor primario
+    onSecondaryContainer = Color1 // Texto azul oscuro sobre contenedor secundario
 )
 
 @Composable
