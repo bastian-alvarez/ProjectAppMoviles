@@ -100,25 +100,37 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                         .padding(innerPadding)
                 )
             } else {
-                // Diseño de una columna para móviles y tablets pequeños
-                SinglePaneCartContent(
-                    cartItems = cartItems,
-                    cartViewModel = cartViewModel,
-                    totalPrice = totalPrice,
-                    totalItems = totalItems,
-                    windowInfo = windowInfo,
-                    onNavigateToGames = { nav.navigate(Route.Games.path) },
-                    onCompletePurchase = { 
-                        // Añadir juegos comprados a la biblioteca
-                        libraryViewModel.addPurchasedGames(cartItems)
-                        cartViewModel.clearCart()
-                        nav.navigate(Route.Home.path)
-                    },
+                // Diseño de una columna para móviles y tablets pequeños - centrado en tablets
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(AdaptiveUtils.getHorizontalPadding(windowInfo))
-                )
+                        .padding(innerPadding),
+                    contentAlignment = if (windowInfo.isTablet) Alignment.Center else Alignment.TopCenter
+                ) {
+                    SinglePaneCartContent(
+                        cartItems = cartItems,
+                        cartViewModel = cartViewModel,
+                        totalPrice = totalPrice,
+                        totalItems = totalItems,
+                        windowInfo = windowInfo,
+                        onNavigateToGames = { nav.navigate(Route.Games.path) },
+                        onCompletePurchase = { 
+                            // Añadir juegos comprados a la biblioteca
+                            libraryViewModel.addPurchasedGames(cartItems)
+                            cartViewModel.clearCart()
+                            nav.navigate(Route.Home.path)
+                        },
+                        modifier = Modifier
+                            .then(
+                                if (windowInfo.isTablet) {
+                                    Modifier.widthIn(max = AdaptiveUtils.getMaxContentWidth(windowInfo))
+                                } else {
+                                    Modifier.fillMaxWidth()
+                                }
+                            )
+                            .padding(AdaptiveUtils.getHorizontalPadding(windowInfo))
+                    )
+                }
             }
         }
     }
@@ -291,7 +303,8 @@ private fun SinglePaneCartContent(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .then(if (windowInfo.isTablet) Modifier.fillMaxHeight(0.9f) else Modifier),
         verticalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo))
     ) {
         // Lista de productos

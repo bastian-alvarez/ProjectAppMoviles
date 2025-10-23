@@ -54,10 +54,10 @@ fun AppTopBar(
         title = {
             var localQuery by remember { mutableStateOf(currentQuery) }
 
-            // Debounce localQuery and propagate after 300ms
+            // Debounce localQuery and propagate immediately for better responsiveness
             LaunchedEffect(localQuery) {
-                // small debounce
-                delay(300)
+                // Minimal debounce for smoother typing experience
+                delay(100)
                 if (localQuery != currentQuery) {
                     onQueryChanged(localQuery)
                 }
