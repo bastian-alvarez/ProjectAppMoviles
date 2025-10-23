@@ -79,4 +79,9 @@ class UserRepository(
             Result.failure(e)
         }
     }
+
+    //obtener usuario por email (para SessionManager)
+    suspend fun getUserByEmail(email: String): UserEntity? {
+        return userDao.getByEmail(email)
+    }
 }

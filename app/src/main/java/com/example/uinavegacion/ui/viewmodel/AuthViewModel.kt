@@ -11,6 +11,7 @@ import com.example.uinavegacion.domain.validatePhoneDigitsOnly
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -122,6 +123,19 @@ class AuthViewModel(
             val userResult = if (!isAdmin) userRepository.login(email, pass) else null
             val ok = isAdmin || (userResult != null && userResult.isSuccess)
 
+            // Si el login es exitoso, guardar en SessionManager
+            if (ok) {
+                if (isAdmin && admin != null) {
+                    SessionManager.loginAdmin(admin)
+                } else if (userResult != null && userResult.isSuccess) {
+                    // Obtener el usuario completo de la base de datos
+                    val user = userRepository.getUserByEmail(email)
+                    if (user != null) {
+                        SessionManager.loginUser(user)
+                    }
+                }
+            }
+
             _login.update {                                 // Actualizamos con el resultado
                 it.copy(
                     isSubmitting = false,                   // Fin carga
@@ -130,14 +144,15 @@ class AuthViewModel(
                     isAdmin = isAdmin                       // Guardamos si es admin
                 )
             }
-
-            // Login exitoso - no necesitamos SessionManager
-            // El estado success=true es suficiente para manejar la navegación
         }
     }
 
     fun clearLoginResult() {                                // Limpia banderas tras navegar
         _login.update { it.copy(success = false, errorMsg = null, isAdmin = false) }
+    }
+
+    fun logout() {                                          // Función para cerrar sesión
+        SessionManager.logout()
     }
 
     // ----------------- REGISTRO: handlers y envío -----------------

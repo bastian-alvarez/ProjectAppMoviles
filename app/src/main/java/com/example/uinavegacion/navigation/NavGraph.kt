@@ -19,6 +19,7 @@ import com.example.uinavegacion.ui.utils.*
 import com.example.uinavegacion.viewmodel.CartViewModel
 import com.example.uinavegacion.viewmodel.LibraryViewModel
 import com.example.uinavegacion.viewmodel.SearchViewModel
+import com.example.uinavegacion.data.SessionManager
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.launch
 
@@ -56,6 +57,7 @@ fun AppNavGraph(navController: NavHostController) {
     // Acción para cerrar sesión
     val onLogout: () -> Unit = {
         scope.launch { drawerState.close() }
+        SessionManager.logout() // Limpiar sesión
         navController.navigate(Route.Login.path) {
             // Limpia todo el historial de navegación para que el usuario no pueda volver atrás
             popUpTo(0) { inclusive = true }

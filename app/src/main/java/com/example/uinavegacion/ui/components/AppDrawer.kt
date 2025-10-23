@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.navigation.Route
 
 @Composable
@@ -37,13 +38,24 @@ fun AppDrawer(
             var displayName by remember { mutableStateOf("Usuario Demo") }
             var displayEmail by remember { mutableStateOf("user1@demo.com") }
             
-            // Cargar datos del usuario
+            // Cargar datos del usuario desde SessionManager
             LaunchedEffect(Unit) {
-                val user = db.userDao().getByEmail(if (isAdmin) "admin@steamish.com" else "user1@demo.com")
-                if (user != null) {
-                    displayName = user.name
-                    displayEmail = user.email
-                    profilePhotoUri = user.profilePhotoUri
+                val currentUserEmail = SessionManager.getCurrentUserEmail()
+                if (currentUserEmail != null) {
+                    val user = db.userDao().getByEmail(currentUserEmail)
+                    if (user != null) {
+                        displayName = user.name
+                        displayEmail = user.email
+                        profilePhotoUri = user.profilePhotoUri
+                    }
+                } else {
+                    // Fallback para usuarios demo
+                    val user = db.userDao().getByEmail(if (isAdmin) "admin@steamish.com" else "user1@demo.com")
+                    if (user != null) {
+                        displayName = user.name
+                        displayEmail = user.email
+                        profilePhotoUri = user.profilePhotoUri
+                    }
                 }
             }
             
@@ -71,8 +83,14 @@ fun AppDrawer(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(if (isAdmin) "Administrador" else displayName, style = MaterialTheme.typography.titleMedium)
-            Text(if (isAdmin) "admin@steamish.com" else displayEmail, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = if (SessionManager.isAdmin()) "Administrador" else displayName, 
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = SessionManager.getCurrentUserEmail() ?: displayEmail, 
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         HorizontalDivider()
