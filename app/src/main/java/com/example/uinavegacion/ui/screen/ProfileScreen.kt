@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.uinavegacion.data.SessionManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,18 +30,32 @@ fun ProfileScreen(nav: NavHostController) {
     val context = LocalContext.current.applicationContext
     val db = remember { AppDatabase.getInstance(context) }
     val userRepo = remember { UserRepository(db.userDao()) }
-    // Usuario demo por defecto - SessionManager removido
-    var displayName by remember { mutableStateOf("Usuario Demo") }
-    var displayEmail by remember { mutableStateOf("user1@demo.com") }
+    
+    var displayName by remember { mutableStateOf("Usuario") }
+    var displayEmail by remember { mutableStateOf("") }
     var photoUri by remember { mutableStateOf<String?>(null) }
 
-    // Cargar usuario demo por defecto - SessionManager removido
+    // Cargar datos del usuario logueado desde SessionManager
     LaunchedEffect(Unit) {
-        val u = db.userDao().getByEmail("user1@demo.com")
-        if (u != null) {
-            displayName = u.name
-            displayEmail = u.email
-            photoUri = u.profilePhotoUri
+        val currentUser = SessionManager.getCurrentUser()
+        val currentAdmin = SessionManager.getCurrentAdmin()
+        
+        if (currentUser != null) {
+            displayName = currentUser.name
+            displayEmail = currentUser.email
+            photoUri = currentUser.profilePhotoUri
+        } else if (currentAdmin != null) {
+            displayName = currentAdmin.name
+            displayEmail = currentAdmin.email
+            photoUri = null // Los admins no tienen foto de perfil
+        } else {
+            // Si no hay sesión, intentar cargar usuario demo
+            val u = db.userDao().getByEmail("user1@demo.com")
+            if (u != null) {
+                displayName = u.name
+                displayEmail = u.email
+                photoUri = u.profilePhotoUri
+            }
         }
     }
     Scaffold(
