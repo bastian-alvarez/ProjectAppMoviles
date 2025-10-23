@@ -245,7 +245,7 @@ fun GameManagementScreen(navController: NavHostController) {
         AddEditGameDialog(
             game = gameToEdit,
             onDismiss = { showDialog = false },
-            onSave = { nombre, descripcion, precio, stock, categoria, imageUrl ->
+            onSave = { nombre, descripcion, precio, stock, imageUrl ->
                 if (gameToEdit != null) {
                     viewModel.updateGame(
                         gameToEdit!!.copy(
@@ -253,12 +253,11 @@ fun GameManagementScreen(navController: NavHostController) {
                             descripcion = descripcion,
                             precio = precio,
                             stock = stock,
-                            categoria = categoria,
-                            imageUrl = imageUrl
+                            imagenUrl = imageUrl.ifEmpty { null }
                         )
                     )
                 } else {
-                    viewModel.addGame(nombre, descripcion, precio, stock, categoria, imageUrl)
+                    viewModel.addGame(nombre, descripcion, precio, stock, imageUrl)
                 }
                 showDialog = false
             }
@@ -271,17 +270,13 @@ fun GameManagementScreen(navController: NavHostController) {
 private fun AddEditGameDialog(
     game: JuegoEntity?,
     onDismiss: () -> Unit,
-    onSave: (String, String, Double, Int, String, String) -> Unit
+    onSave: (String, String, Double, Int, String) -> Unit
 ) {
     var nombre by remember { mutableStateOf(game?.nombre ?: "") }
     var descripcion by remember { mutableStateOf(game?.descripcion ?: "") }
     var precio by remember { mutableStateOf(game?.precio?.toString() ?: "") }
     var stock by remember { mutableStateOf(game?.stock?.toString() ?: "") }
-    var categoria by remember { mutableStateOf(game?.categoria ?: "Acción") }
-    var imageUrl by remember { mutableStateOf(game?.imageUrl ?: "") }
-    var expandedCategory by remember { mutableStateOf(false) }
-    
-    val categorias = listOf("Acción", "Aventura", "RPG", "Deportes", "Estrategia", "Arcade", "Plataformas")
+    var imageUrl by remember { mutableStateOf(game?.imagenUrl ?: "") }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -328,38 +323,6 @@ private fun AddEditGameDialog(
                     singleLine = true
                 )
                 
-                ExposedDropdownMenuBox(
-                    expanded = expandedCategory,
-                    onExpandedChange = { expandedCategory = it }
-                ) {
-                    OutlinedTextField(
-                        value = categoria,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Categoría") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expandedCategory,
-                        onDismissRequest = { expandedCategory = false }
-                    ) {
-                        categorias.forEach { cat ->
-                            DropdownMenuItem(
-                                text = { Text(cat) },
-                                onClick = {
-                                    categoria = cat
-                                    expandedCategory = false
-                                }
-                            )
-                        }
-                    }
-                }
-                
                 OutlinedTextField(
                     value = imageUrl,
                     onValueChange = { imageUrl = it },
@@ -376,7 +339,7 @@ private fun AddEditGameDialog(
                     val precioDouble = precio.toDoubleOrNull() ?: 0.0
                     val stockInt = stock.toIntOrNull() ?: 0
                     if (nombre.isNotBlank() && precioDouble > 0 && stockInt >= 0) {
-                        onSave(nombre, descripcion, precioDouble, stockInt, categoria, imageUrl)
+                        onSave(nombre, descripcion, precioDouble, stockInt, imageUrl)
                     }
                 },
                 enabled = nombre.isNotBlank() && 

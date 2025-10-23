@@ -59,7 +59,7 @@ class GameManagementViewModel(
     /**
      * Agrega un nuevo juego
      */
-    fun addGame(nombre: String, descripcion: String, precio: Double, stock: Int, categoria: String, imageUrl: String) {
+    fun addGame(nombre: String, descripcion: String, precio: Double, stock: Int, imageUrl: String) {
         viewModelScope.launch {
             try {
                 val nuevoJuego = JuegoEntity(
@@ -68,8 +68,11 @@ class GameManagementViewModel(
                     descripcion = descripcion,
                     precio = precio,
                     stock = stock,
-                    categoria = categoria,
-                    imageUrl = imageUrl
+                    imagenUrl = imageUrl.ifEmpty { null },
+                    desarrollador = "Desarrollador",
+                    fechaLanzamiento = "2024",
+                    categoriaId = 1L, // Categoría por defecto
+                    generoId = 1L // Género por defecto
                 )
                 val result = gameRepository.insertGame(nuevoJuego)
                 if (result.isSuccess) {

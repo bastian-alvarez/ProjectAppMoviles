@@ -33,8 +33,12 @@ data class JuegoEntity(
     val precio: Double,
     val stock: Int,
     val imagenUrl: String? = null,
-    val desarrollador: String,
-    val fechaLanzamiento: String,
-    val categoriaId: Long,
-    val generoId: Long
-)
+    val desarrollador: String = "Desarrollador",
+    val fechaLanzamiento: String = "2024",
+    val categoriaId: Long = 1L,
+    val generoId: Long = 1L
+) {
+    // Propiedad computada para compatibilidad
+    val imageUrl: String
+        get() = imagenUrl ?: ""
+}
