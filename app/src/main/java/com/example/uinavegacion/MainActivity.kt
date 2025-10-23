@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.example.uinavegacion.ui.theme.UINavegacionTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -68,7 +69,7 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
     )
 
     val navController = rememberNavController() // Controlador de navegación
-    MaterialTheme { // Provee colores/tipografías Material 3
+    UINavegacionTheme { // Usa nuestro tema personalizado con colores azules
         Surface(color = MaterialTheme.colorScheme.background) { // Fondo general
             AppNavGraph(navController = navController) // Carga el NavHost + Scaffold + Drawer
         }
