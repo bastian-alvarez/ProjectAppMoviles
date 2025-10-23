@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -437,7 +438,7 @@ private fun GameListItem(
                 }
             }
 
-            // Botón de acción mejorado
+            // Botón de acción mejorado con icono
             Button(
                 onClick = {
                     if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
@@ -447,18 +448,27 @@ private fun GameListItem(
                 enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
                 modifier = Modifier
                     .height(if (windowInfo.isTablet) 56.dp else 48.dp)
-                    .widthIn(min = if (windowInfo.isTablet) 180.dp else 140.dp),
+                    .widthIn(min = if (windowInfo.isTablet) 200.dp else 140.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (cartViewModel.isInCart(game.id)) 
                         MaterialTheme.colorScheme.secondary 
                     else MaterialTheme.colorScheme.primary
                 )
             ) {
+                Icon(
+                    imageVector = if (cartViewModel.isInCart(game.id)) 
+                        Icons.Default.Done 
+                    else Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(if (windowInfo.isTablet) 20.dp else 18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
                     if (cartViewModel.isInCart(game.id)) "En Carrito"
-                    else if (game.stock > 0) "Agregar al carrito"
+                    else if (game.stock > 0) "Agregar al Carrito"
                     else "Sin Stock",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    style = if (windowInfo.isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
                 )
             }
         }
@@ -566,7 +576,7 @@ private fun GameGridItem(
                     }
                 }
                 
-                // Botón de acción
+                // Botón de acción con icono
                 Button(
                     onClick = {
                         if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
@@ -576,19 +586,26 @@ private fun GameGridItem(
                     enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(if (windowInfo.isTablet) 44.dp else 40.dp)
-                        .widthIn(min = if (windowInfo.isTablet) 160.dp else 120.dp),
+                        .height(if (windowInfo.isTablet) 48.dp else 40.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (cartViewModel.isInCart(game.id)) 
                             MaterialTheme.colorScheme.secondary 
                         else MaterialTheme.colorScheme.primary
                     )
                 ) {
+                    Icon(
+                        imageVector = if (cartViewModel.isInCart(game.id)) 
+                            Icons.Default.Done 
+                        else Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(if (windowInfo.isTablet) 18.dp else 16.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
                     Text(
-                        if (cartViewModel.isInCart(game.id)) "✓ En Carrito"
-                        else if (game.stock > 0) "Agregar al carrito"
+                        if (cartViewModel.isInCart(game.id)) "En Carrito"
+                        else if (game.stock > 0) "Agregar"
                         else "Sin Stock",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = if (windowInfo.isTablet) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
                 }
