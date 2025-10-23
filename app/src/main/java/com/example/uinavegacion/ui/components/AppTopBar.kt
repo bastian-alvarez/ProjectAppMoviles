@@ -1,58 +1,37 @@
 package com.example.uinavegacion.ui.components
 
-import androidx.compose.material.icons.Icons // Conjunto de íconos Material
-import androidx.compose.material.icons.filled.Home // Ícono Home
-import androidx.compose.material.icons.filled.AccountCircle // Ícono Login
-import androidx.compose.material.icons.filled.Menu // Ícono hamburguesa
-import androidx.compose.material.icons.filled.MoreVert // Ícono 3 puntitos (overflow)
-import androidx.compose.material.icons.filled.Person // Ícono Registro
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.TextField
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar // TopAppBar centrada
-import androidx.compose.material3.DropdownMenu // Menú desplegable
-import androidx.compose.material3.DropdownMenuItem // Opción del menú
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon // Para mostrar íconos
-import androidx.compose.material3.IconButton // Botones con ícono
-import androidx.compose.material3.MaterialTheme // Tema Material
-import androidx.compose.material3.Text // Texto
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.* // remember / mutableStateOf
-import androidx.compose.runtime.snapshots.SnapshotStateObserver
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.debounce
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable // Composable reutilizable: barra superior con búsqueda
+@Composable
 fun AppTopBar(
-    onOpenDrawer: (() -> Unit)? = null, // Abre el drawer (hamburguesa) - nullable para tablets
-    onHome: () -> Unit,       // Navega a Home
-    onLogin: () -> Unit,      // Navega a Login
-    onRegister: () -> Unit,   // Navega a Registro
+    onOpenDrawer: (() -> Unit)? = null,
+    onHome: () -> Unit,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit,
     currentQuery: String = "",
     onQueryChanged: (String) -> Unit = {},
-    showHamburger: Boolean = true // Controla si mostrar el botón hamburguesa
+    showHamburger: Boolean = true
 ) {
     var localQuery by remember { mutableStateOf(currentQuery) }
 
-    // Sincronizar el estado local con el estado externo
     LaunchedEffect(currentQuery) {
         if (currentQuery != localQuery) {
             localQuery = currentQuery
         }
     }
 
-    // Debounce para mejor rendimiento
     LaunchedEffect(localQuery) {
         delay(100)
         if (localQuery != currentQuery) {
@@ -60,35 +39,56 @@ fun AppTopBar(
         }
     }
 
-    CenterAlignedTopAppBar(
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        title = {
-            // Barra de búsqueda compacta
+    // Surface personalizada para tener control total del espacio
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp), // Altura aumentada para dar más espacio
+        color = MaterialTheme.colorScheme.primary,
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Botón de menú hamburguesa
+            if (showHamburger && onOpenDrawer != null) {
+                IconButton(
+                    onClick = onOpenDrawer,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Menu,
+                        contentDescription = "Menú",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
+            // Barra de búsqueda con espacio completo
             OutlinedTextField(
                 value = localQuery,
                 onValueChange = { newValue -> localQuery = newValue },
-                placeholder = { 
+                placeholder = {
                     Text(
                         "Buscar juegos",
                         color = Color.Gray,
                         style = MaterialTheme.typography.bodyMedium
-                    ) 
+                    )
                 },
-                leadingIcon = { 
+                leadingIcon = {
                     Icon(
-                        imageVector = Icons.Filled.Search, 
+                        imageVector = Icons.Filled.Search,
                         contentDescription = "Buscar",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    ) 
+                        modifier = Modifier.size(22.dp)
+                    )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -104,21 +104,9 @@ fun AppTopBar(
                 ),
                 textStyle = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .height(44.dp)
+                    .weight(1f) // Toma todo el espacio disponible
+                    .height(48.dp) // Altura mayor para evitar que se corte
             )
-        },
-        navigationIcon = {
-            if (showHamburger && onOpenDrawer != null) {
-                IconButton(onClick = onOpenDrawer) {
-                    Icon(
-                        imageVector = Icons.Filled.Menu, 
-                        contentDescription = "Menú",
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-        },
-        actions = { }
-    )
+        }
+    }
 }
