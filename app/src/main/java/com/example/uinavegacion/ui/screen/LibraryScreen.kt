@@ -63,54 +63,62 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Estadísticas de la biblioteca
+            // Estadísticas de la biblioteca - Adaptado para tablets
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${libraryStats.totalGames}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Total Juegos",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${libraryStats.installedGames}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Instalados",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                    // Total Juegos
+                    StatsColumn(
+                        value = libraryStats.totalGames,
+                        label = "Total Juegos",
+                        icon = Icons.Default.SportsEsports,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Divisor vertical
+                    if (windowInfo.isTablet) {
+                        VerticalDivider(
+                            modifier = Modifier
+                                .height(60.dp)
+                                .width(1.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
                         )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${libraryStats.availableGames}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Disponibles",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                    
+                    // Instalados
+                    StatsColumn(
+                        value = libraryStats.installedGames,
+                        label = "Instalados",
+                        icon = Icons.Default.CheckCircle,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Divisor vertical
+                    if (windowInfo.isTablet) {
+                        VerticalDivider(
+                            modifier = Modifier
+                                .height(60.dp)
+                                .width(1.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
                         )
                     }
+                    
+                    // Disponibles
+                    StatsColumn(
+                        value = libraryStats.availableGames,
+                        label = "Disponibles",
+                        icon = Icons.Default.Download,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
@@ -423,6 +431,41 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StatsColumn(
+    value: Int,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(32.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "$value",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
