@@ -35,10 +35,10 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     
     // Juegos en oferta con 20% de descuento
     val gamesOnSale = listOf(
-        Game("10", "The Witcher 3", 39.99, "RPG", 6, "Aventura de Geralt de Rivia", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ume.jpg", discount = 20),
-        Game("12", "Cyberpunk 2077", 59.99, "RPG", 9, "Futuro cyberpunk", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2of0.jpg", discount = 20),
-        Game("13", "Red Dead Redemption 2", 49.99, "Aventura", 11, "Western épico", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg", discount = 20),
-        Game("16", "Assassin's Creed Valhalla", 59.99, "Aventura", 13, "Aventura vikinga", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2jqn.jpg", discount = 20)
+        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://tudominio.com/imagenes/final_fantasy_vii.webp", discount = 20),
+        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://tudominio.com/imagenes/minecraft.webp", discount = 20),
+        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://tudominio.com/imagenes/dark_souls_iii.webp", discount = 20),
+        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://tudominio.com/imagenes/elden_ring.webp", discount = 20)
     )
 
     val categories = listOf("Acción", "Aventura", "RPG", "Plataformas", "Deportes", "Estrategia")
