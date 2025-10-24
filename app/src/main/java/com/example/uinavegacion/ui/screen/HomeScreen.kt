@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -74,11 +76,12 @@ private fun PhoneHomeLayout(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(
                 start = AdaptiveUtils.getHorizontalPadding(windowInfo),
                 end = AdaptiveUtils.getHorizontalPadding(windowInfo),
                 top = 24.dp,  // Espaciado superior para evitar que choque con la barra de búsqueda
-                bottom = 0.dp
+                bottom = 80.dp  // Espaciado inferior para la barra de navegación
             ),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
@@ -101,17 +104,20 @@ private fun PhoneHomeLayout(
         }
 
         // Juegos destacados
-        SectionHeader(title = "🔥 Juegos en Oferta - 20% OFF", onSeeAll = { nav.navigate(Route.Games.path) })
+        SectionHeader(
+            title = "🔥 Juegos en Oferta - 20% OFF", 
+            onSeeAll = { nav.navigate(Route.Games.path) },
+            isMobile = true
+        )
 
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
-            contentPadding = PaddingValues(horizontal = 4.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 8.dp)
         ) {
             items(gamesOnSale) { game ->
-                GameCard(
+                MobileGameCard(
                     game = game,
-                    onClick = { nav.navigate(Route.Games.path) },
-                    windowInfo = windowInfo
+                    onClick = { nav.navigate(Route.Games.path) }
                 )
             }
         }
@@ -345,19 +351,167 @@ private fun CategoryCard(category: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+private fun SectionHeader(title: String, onSeeAll: () -> Unit, isMobile: Boolean = false) {
+    if (isMobile) {
+        // Diseño vertical para móvil
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            TextButton(
+                onClick = onSeeAll,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("Ver todos los juegos →")
+            }
+        }
+    } else {
+        // Diseño horizontal para tablet
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            TextButton(onClick = onSeeAll) {
+                Text("Ver todos")
+            }
+        }
+    }
+}
+
+@Composable
+private fun MobileGameCard(
+    game: Game,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .height(260.dp),
+        onClick = onClick,
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        TextButton(onClick = onSeeAll) {
-            Text("Ver todos")
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Imagen del juego con badges
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                // Imagen del juego
+                if (game.imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = game.imageUrl,
+                        contentDescription = game.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = "Sin imagen",
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                // Badge de descuento
+                if (game.hasDiscount) {
+                    Card(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFE74C3C)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "-${game.discount}%",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+            
+            // Información del juego
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Nombre del juego
+                Text(
+                    text = game.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Spacer(Modifier.height(4.dp))
+                
+                // Categoría
+                Text(
+                    text = game.category,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Spacer(Modifier.weight(1f))
+                
+                // Precios
+                if (game.hasDiscount) {
+                    // Precio original tachado
+                    Text(
+                        text = "$${String.format("%.2f", game.price)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                    )
+                    // Precio con descuento
+                    Text(
+                        text = "$${String.format("%.2f", game.discountedPrice)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF27AE60)
+                    )
+                } else {
+                    Text(
+                        text = if (game.price == 0.0) "Gratis" else "$${String.format("%.2f", game.price)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }
