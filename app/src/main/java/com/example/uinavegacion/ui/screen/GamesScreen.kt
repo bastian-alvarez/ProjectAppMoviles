@@ -70,28 +70,28 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
         }
     }
     
-    // Lista de juegos con imágenes oficiales de Wikipedia
+    // Lista de juegos con imágenes de IGDB
     val allGames = listOf(
-        Game("1", "Super Mario Bros", 29.99, "Plataformas", 15, "El clásico juego de plataformas", "https://upload.wikimedia.org/wikipedia/en/5/5a/Super_Mario_Bros._box.png"),
-        Game("2", "The Legend of Zelda", 39.99, "Aventura", 8, "Épica aventura en Hyrule", "https://upload.wikimedia.org/wikipedia/en/2/28/The_Legend_of_Zelda_Box_Art.jpg"),
-        Game("3", "Pokémon Red", 24.99, "RPG", 20, "Conviértete en maestro Pokémon", "https://upload.wikimedia.org/wikipedia/en/2/21/Pokemon_Red_Boxart.png"),
-        Game("4", "Sonic the Hedgehog", 19.99, "Plataformas", 12, "Velocidad supersónica", "https://upload.wikimedia.org/wikipedia/en/1/16/Sonic_the_Hedgehog_box_cover.jpg"),
-        Game("5", "Final Fantasy VII", 49.99, "RPG", 5, "RPG épico de Square Enix", "https://upload.wikimedia.org/wikipedia/en/0/05/Final_Fantasy_VII_box.jpg"),
-        Game("6", "Street Fighter II", 14.99, "Arcade", 10, "El mejor juego de lucha", "https://upload.wikimedia.org/wikipedia/en/1/10/Street_Fighter_II_UE_box_art.jpg"),
-        Game("7", "Minecraft", 26.99, "Aventura", 25, "Construye tu mundo", "https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_cover.png"),
-        Game("8", "Call of Duty Modern Warfare", 59.99, "Acción", 7, "Acción militar intensa", "https://upload.wikimedia.org/wikipedia/en/9/9d/Call_of_Duty_Modern_Warfare_box_art.jpg"),
-        Game("9", "FIFA 24", 69.99, "Deportes", 18, "El mejor fútbol virtual", "https://upload.wikimedia.org/wikipedia/en/9/90/FIFA_24_cover_art.jpg"),
-        Game("10", "The Witcher 3 Wild Hunt", 39.99, "RPG", 6, "Aventura de Geralt de Rivia", "https://upload.wikimedia.org/wikipedia/en/0/0c/Witcher_3_cover_art.jpg"),
+        Game("1", "Super Mario Bros", 29.99, "Plataformas", 15, "El clásico juego de plataformas", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wdv.jpg"),
+        Game("2", "The Legend of Zelda", 39.99, "Aventura", 8, "Épica aventura en Hyrule", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wfu.jpg"),
+        Game("3", "Pokémon Red", 24.99, "RPG", 20, "Conviértete en maestro Pokémon", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2h8d.jpg"),
+        Game("4", "Sonic the Hedgehog", 19.99, "Plataformas", 12, "Velocidad supersónica", "https://images.igdb.com/igdb/image/upload/t_cover_big/co66jx.jpg"),
+        Game("5", "Final Fantasy VII", 49.99, "RPG", 5, "RPG épico de Square Enix", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p5s.jpg"),
+        Game("6", "Street Fighter II", 14.99, "Arcade", 10, "El mejor juego de lucha", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2odu.jpg"),
+        Game("7", "Minecraft", 26.99, "Aventura", 25, "Construye tu mundo", "https://images.igdb.com/igdb/image/upload/t_cover_big/co49x5.jpg"),
+        Game("8", "Call of Duty Modern Warfare", 59.99, "Acción", 7, "Acción militar intensa", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vke.jpg"),
+        Game("9", "FIFA 24", 69.99, "Deportes", 18, "El mejor fútbol virtual", "https://images.igdb.com/igdb/image/upload/t_cover_big/co7gxp.jpg"),
+        Game("10", "The Witcher 3 Wild Hunt", 39.99, "RPG", 6, "Aventura de Geralt de Rivia", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ume.jpg"),
         Game("11", "Overwatch 2", 39.99, "Acción", 14, "Shooter por equipos", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5s7g.jpg"),
-        Game("12", "Cyberpunk 2077", 59.99, "RPG", 9, "Futuro cyberpunk", "https://upload.wikimedia.org/wikipedia/en/9/9f/Cyberpunk_2077_box_art.jpg"),
-        Game("13", "Red Dead Redemption 2", 49.99, "Aventura", 11, "Western épico", "https://upload.wikimedia.org/wikipedia/en/4/44/Red_Dead_Redemption_2_cover.jpg"),
+        Game("12", "Cyberpunk 2077", 59.99, "RPG", 9, "Futuro cyberpunk", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2of0.jpg"),
+        Game("13", "Red Dead Redemption 2", 49.99, "Aventura", 11, "Western épico", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg"),
         Game("14", "Among Us", 4.99, "Arcade", 30, "Encuentra al impostor", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2eud.jpg"),
         Game("15", "Valorant", 0.0, "Acción", 100, "Shooter táctico gratis", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvt.jpg"),
         Game("16", "Assassin's Creed Valhalla", 59.99, "Aventura", 13, "Aventura vikinga", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2jqn.jpg"),
         Game("17", "Fortnite", 0.0, "Acción", 100, "Battle Royale gratis", "https://images.igdb.com/igdb/image/upload/t_cover_big/co6vjy.jpg"),
-        Game("18", "Dark Souls III", 39.99, "RPG", 8, "Desafío extremo", "https://upload.wikimedia.org/wikipedia/en/5/5f/Dark_Souls_III_cover.jpg"),
-        Game("19", "Grand Theft Auto V", 29.99, "Acción", 22, "Mundo abierto épico", "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V_cover.jpg"),
-        Game("20", "Elden Ring", 59.99, "RPG", 10, "Obra maestra de FromSoftware", "https://upload.wikimedia.org/wikipedia/en/8/8d/Elden_Ring_cover_art.jpg")
+        Game("18", "Dark Souls III", 39.99, "RPG", 8, "Desafío extremo", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vcv.jpg"),
+        Game("19", "Grand Theft Auto V", 29.99, "Acción", 22, "Mundo abierto épico", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.jpg"),
+        Game("20", "Elden Ring", 59.99, "RPG", 10, "Obra maestra de FromSoftware", "https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg")
     )
     val query by searchViewModel.query.collectAsState()
     
