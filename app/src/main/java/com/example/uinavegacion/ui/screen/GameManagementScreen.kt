@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,12 +43,41 @@ fun GameManagementScreen(navController: NavHostController) {
     val games by viewModel.games.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
+    
+    // Snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
+    // Mostrar mensajes
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Long
+            )
+            viewModel.clearMessages()
+        }
+    }
+    
+    LaunchedEffect(successMessage) {
+        successMessage?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearMessages()
+        }
+    }
     
     // Estado para diálogo
     var showDialog by remember { mutableStateOf(false) }
     var gameToEdit by remember { mutableStateOf<JuegoEntity?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var gameToDelete by remember { mutableStateOf<JuegoEntity?>(null) }
     
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { 
@@ -230,7 +260,8 @@ fun GameManagementScreen(navController: NavHostController) {
                                     showDialog = true
                                 },
                                 onDelete = { 
-                                    viewModel.deleteGame(game.id)
+                                    gameToDelete = game
+                                    showDeleteDialog = true
                                 }
                             )
                         }
@@ -260,6 +291,37 @@ fun GameManagementScreen(navController: NavHostController) {
                     viewModel.addGame(nombre, descripcion, precio, stock, imageUrl)
                 }
                 showDialog = false
+            }
+        )
+    }
+    
+    // Diálogo de confirmación de eliminación
+    if (showDeleteDialog && gameToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar Juego") },
+            text = { Text("¿Estás seguro de que deseas eliminar '${gameToDelete!!.nombre}'? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteGame(gameToDelete!!.id)
+                        showDeleteDialog = false
+                        gameToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showDeleteDialog = false
+                    gameToDelete = null
+                }) {
+                    Text("Cancelar")
+                }
             }
         )
     }

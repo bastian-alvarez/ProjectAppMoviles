@@ -70,7 +70,7 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
         }
     }
     
-    // Lista ampliada de juegos con stock e imágenes
+    // Lista ampliada de juegos con stock e imágenes CORRECTAS
     val allGames = listOf(
         Game("1", "Super Mario Bros", 29.99, "Plataformas", 15, "El clásico juego de plataformas", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wq8.jpg"),
         Game("2", "The Legend of Zelda", 39.99, "Aventura", 8, "Épica aventura en Hyrule", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg"),
@@ -78,8 +78,8 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
         Game("4", "Sonic the Hedgehog", 19.99, "Plataformas", 12, "Velocidad supersónica", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mq6.jpg"),
         Game("5", "Final Fantasy VII", 49.99, "RPG", 5, "RPG épico de Square Enix", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p3d.jpg"),
         Game("6", "Street Fighter II", 14.99, "Arcade", 10, "El mejor juego de lucha", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2a.jpg"),
-        Game("7", "Minecraft", 26.99, "Aventura", 25, "Construye tu mundo", "https://images.igdb.com/igdb/image/upload/t_cover_big/co49x0.jpg"),
-        Game("8", "Call of Duty", 59.99, "Acción", 7, "Acción militar intensa", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5w4k.jpg"),
+        Game("7", "Minecraft", 26.99, "Aventura", 25, "Construye tu mundo", "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2z.jpg"),
+        Game("8", "Call of Duty: Modern Warfare", 59.99, "Acción", 7, "Acción militar intensa", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lcm.jpg"),
         Game("9", "FIFA 24", 69.99, "Deportes", 18, "El mejor fútbol virtual", "https://images.igdb.com/igdb/image/upload/t_cover_big/co7kun.jpg"),
         Game("10", "The Witcher 3", 39.99, "RPG", 6, "Aventura de Geralt de Rivia", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ume.jpg"),
         Game("11", "Overwatch 2", 39.99, "Acción", 14, "Shooter por equipos", "https://images.igdb.com/igdb/image/upload/t_cover_big/co5s7g.jpg"),
@@ -87,7 +87,11 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
         Game("13", "Red Dead Redemption 2", 49.99, "Aventura", 11, "Western épico", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg"),
         Game("14", "Among Us", 4.99, "Arcade", 30, "Encuentra al impostor", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2eud.jpg"),
         Game("15", "Valorant", 0.0, "Acción", 100, "Shooter táctico gratis", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvt.jpg"),
-        Game("16", "Assassin's Creed Valhalla", 59.99, "Aventura", 13, "Aventura vikinga", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2jqn.jpg")
+        Game("16", "Assassin's Creed Valhalla", 59.99, "Aventura", 13, "Aventura vikinga", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2jqn.jpg"),
+        Game("17", "Fortnite", 0.0, "Acción", 100, "Battle Royale gratis", "https://images.igdb.com/igdb/image/upload/t_cover_big/co7bui.jpg"),
+        Game("18", "Dark Souls 3", 39.99, "RPG", 8, "Desafío extremo", "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wzo.jpg"),
+        Game("19", "Grand Theft Auto V", 29.99, "Acción", 22, "Mundo abierto épico", "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.jpg"),
+        Game("20", "Elden Ring", 59.99, "RPG", 10, "Obra maestra de FromSoftware", "https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg")
     )
     val query by searchViewModel.query.collectAsState()
     
