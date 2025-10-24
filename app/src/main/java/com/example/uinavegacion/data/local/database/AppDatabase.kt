@@ -91,6 +91,7 @@ abstract class AppDatabase : RoomDatabase() {
                     DB_NAME
                 )
                     .addMigrations(MIGRATION_5_6)
+                    .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -193,7 +194,6 @@ abstract class AppDatabase : RoomDatabase() {
                             }
                         }
                     })
-                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
