@@ -99,7 +99,10 @@ private fun PhoneHomeLayout(
             horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo))
         ) {
             items(categories) { category ->
-                CategoryCard(category = category, onClick = { nav.navigate(Route.Games.path) })
+                CategoryCard(
+                    category = category, 
+                    onClick = { nav.navigate(Route.Games.build(category)) }
+                )
             }
         }
 
@@ -181,7 +184,7 @@ private fun TabletHomeLayout(
                             items(categories) { category ->
                                 CategoryCard(
                                     category = category,
-                                    onClick = { nav.navigate(Route.Games.path) }
+                                    onClick = { nav.navigate(Route.Games.build(category)) }
                                 )
                             }
                         }
@@ -244,7 +247,7 @@ private fun TabletHomeLayout(
                     items(categories) { category ->
                         CategoryCard(
                             category = category,
-                            onClick = { nav.navigate(Route.Games.path) }
+                            onClick = { nav.navigate(Route.Games.build(category)) }
                         )
                     }
                 }

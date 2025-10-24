@@ -25,7 +25,9 @@ sealed class Route(val path: String) {
     data object ChangePassword : Route("change_password")
 
     // Catálogo / Contenido
-    data object Games : Route("games")
+    data object Games : Route("games?category={category}") {
+        fun build(category: String = "Todos") = "games?category=$category"
+    }
     data object GameDetail : Route("game/{gameId}") {
         fun build(gameId: String) = "game/$gameId"
     }

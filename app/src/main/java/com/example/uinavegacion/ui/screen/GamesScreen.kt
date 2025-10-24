@@ -53,7 +53,12 @@ data class Game(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewModel(), cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel = viewModel()) {
+fun GamesScreen(
+    nav: NavHostController, 
+    searchViewModel: SearchViewModel = viewModel(), 
+    cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel = viewModel(),
+    initialCategory: String? = null
+) {
     val windowInfo = rememberWindowInfo()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -97,7 +102,7 @@ fun GamesScreen(nav: NavHostController, searchViewModel: SearchViewModel = viewM
     
     // categorías disponibles
     val categories = listOf("Todos", "Plataformas", "Aventura", "RPG", "Arcade", "Acción", "Deportes")
-    var selectedCategory by remember { mutableStateOf("Todos") }
+    var selectedCategory by remember { mutableStateOf(initialCategory ?: "Todos") }
 
     val games = allGames.filter { game ->
         val matchesCategory = selectedCategory == "Todos" || game.category == selectedCategory

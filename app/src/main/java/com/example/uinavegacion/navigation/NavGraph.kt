@@ -271,7 +271,17 @@ private fun AdaptiveScaffold(
                 composable(Route.ChangePassword.path) { ChangePasswordScreen(navController) }
 
                 // ===== Catálogo =====
-                composable(Route.Games.path) { GamesScreen(navController, searchViewModel, cartViewModel) }
+                composable(
+                    route = Route.Games.path,
+                    arguments = listOf(navArgument("category") { 
+                        type = NavType.StringType
+                        defaultValue = "Todos"
+                        nullable = true
+                    })
+                ) { backStack ->
+                    val category = backStack.arguments?.getString("category") ?: "Todos"
+                    GamesScreen(navController, searchViewModel, cartViewModel, initialCategory = category)
+                }
                 composable(
                     route = Route.GameDetail.path,
                     arguments = listOf(navArgument("gameId") { type = NavType.StringType })
