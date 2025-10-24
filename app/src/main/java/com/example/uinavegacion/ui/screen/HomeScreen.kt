@@ -111,10 +111,8 @@ private fun PhoneHomeLayout(
         )
 
         LazyRow(
-            modifier = Modifier.height(280.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp),
-            verticalAlignment = Alignment.Top
+            contentPadding = PaddingValues(horizontal = 8.dp)
         ) {
             items(gamesOnSale) { game ->
                 MobileGameCard(
@@ -401,14 +399,14 @@ private fun MobileGameCard(
 ) {
     Card(
         modifier = Modifier
-            .width(170.dp)
+            .width(160.dp)
             .height(260.dp),
         onClick = onClick,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -417,9 +415,9 @@ private fun MobileGameCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .height(140.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
             ) {
                 // Imagen del juego
                 if (game.imageUrl.isNotEmpty()) {
@@ -430,35 +428,31 @@ private fun MobileGameCard(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = "Sin imagen",
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = "Sin imagen",
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 
                 // Badge de descuento
                 if (game.hasDiscount) {
-                    Surface(
+                    Card(
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(8.dp),
-                        color = Color(0xFFE74C3C),
-                        shape = RoundedCornerShape(6.dp),
-                        shadowElevation = 2.dp
+                            .padding(6.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFE74C3C)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = "-${game.discount}%",
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
                 }
@@ -467,9 +461,9 @@ private fun MobileGameCard(
             // Información del juego
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Nombre del juego
                 Text(
@@ -478,9 +472,10 @@ private fun MobileGameCard(
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = MaterialTheme.typography.titleSmall.lineHeight
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                
+                Spacer(Modifier.height(4.dp))
                 
                 // Categoría
                 Text(
@@ -490,39 +485,31 @@ private fun MobileGameCard(
                     fontWeight = FontWeight.Medium
                 )
                 
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.weight(1f))
                 
                 // Precios
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (game.hasDiscount) {
-                        Column {
-                            // Precio original tachado
-                            Text(
-                                text = "$${String.format("%.2f", game.price)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
-                            )
-                            // Precio con descuento
-                            Text(
-                                text = "$${String.format("%.2f", game.discountedPrice)}",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF27AE60)
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = if (game.price == 0.0) "Gratis" else "$${String.format("%.2f", game.price)}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                if (game.hasDiscount) {
+                    // Precio original tachado
+                    Text(
+                        text = "$${String.format("%.2f", game.price)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                    )
+                    // Precio con descuento
+                    Text(
+                        text = "$${String.format("%.2f", game.discountedPrice)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF27AE60)
+                    )
+                } else {
+                    Text(
+                        text = if (game.price == 0.0) "Gratis" else "$${String.format("%.2f", game.price)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
