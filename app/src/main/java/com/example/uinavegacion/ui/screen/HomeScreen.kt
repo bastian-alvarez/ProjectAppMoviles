@@ -355,26 +355,15 @@ private fun CategoryCard(category: String, onClick: () -> Unit) {
 @Composable
 private fun SectionHeader(title: String, onSeeAll: () -> Unit, isMobile: Boolean = false) {
     if (isMobile) {
-        // Diseño vertical para móvil
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            TextButton(
-                onClick = onSeeAll,
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text("Ver todos los juegos →")
-            }
-        }
+        // Diseño simple para móvil - solo título
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+        )
     } else {
         // Diseño horizontal para tablet
         Row(
