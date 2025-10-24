@@ -21,21 +21,39 @@ import com.example.uinavegacion.navigation.*
 @Composable  
 fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: CartViewModel = viewModel()) {
     
-    // Modelo simple del juego
-    data class Game(val id: String, val name: String, val price: Double, val category: String, val stock: Int)
+    // Modelo del juego con descripción e imagen
+    data class Game(
+        val id: String, 
+        val name: String, 
+        val price: Double, 
+        val category: String, 
+        val stock: Int,
+        val description: String = "Descripción del juego",
+        val imageUrl: String = ""
+    )
 
-    // Lista simple de juegos (misma que en GamesScreen)
+    // Lista de juegos con imágenes WebP optimizadas (misma que en GamesScreen)
     val games = listOf(
-        Game("1", "Super Mario Bros", 29.99, "Plataformas", 15),
-        Game("2", "The Legend of Zelda", 39.99, "Aventura", 8),
-        Game("3", "Pokémon Red", 24.99, "RPG", 20),
-        Game("4", "Sonic the Hedgehog", 19.99, "Plataformas", 12),
-        Game("5", "Final Fantasy VII", 49.99, "RPG", 5),
-        Game("6", "Street Fighter II", 14.99, "Arcade", 10),
-        Game("7", "Minecraft", 26.99, "Aventura", 25),
-        Game("8", "Call of Duty", 59.99, "Acción", 7),
-        Game("9", "FIFA 24", 69.99, "Deportes", 18),
-        Game("10", "The Witcher 3", 39.99, "RPG", 6)
+        Game("1",  "Super Mario Bros",            29.99, "Plataformas", 15,  "El clásico juego de plataformas",     "https://tudominio.com/imagenes/super_mario_bros.webp"),
+        Game("2",  "The Legend of Zelda",         39.99, "Aventura",    8,   "Épica aventura en Hyrule",            "https://tudominio.com/imagenes/the_legend_of_zelda.webp"),
+        Game("3",  "Pokémon Red",                 24.99, "RPG",         20,  "Conviértete en maestro Pokémon",      "https://tudominio.com/imagenes/pokemon_red.webp"),
+        Game("4",  "Sonic the Hedgehog",          19.99, "Plataformas", 12,  "Velocidad supersónica",               "https://tudominio.com/imagenes/sonic_the_hedgehog.webp"),
+        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://tudominio.com/imagenes/final_fantasy_vii.webp"),
+        Game("6",  "Street Fighter II",           14.99, "Arcade",      10,  "El mejor juego de lucha",             "https://tudominio.com/imagenes/street_fighter_ii.webp"),
+        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://tudominio.com/imagenes/minecraft.webp"),
+        Game("8",  "Call of Duty Modern Warfare", 59.99, "Acción",      7,   "Acción militar intensa",              "https://tudominio.com/imagenes/cod_modern_warfare.webp"),
+        Game("9",  "FIFA 24",                     69.99, "Deportes",    18,  "El mejor fútbol virtual",             "https://tudominio.com/imagenes/fifa_24.webp"),
+        Game("10", "The Witcher 3 Wild Hunt",     39.99, "RPG",         6,   "Aventura de Geralt de Rivia",         "https://tudominio.com/imagenes/witcher_3.webp"),
+        Game("11", "Overwatch 2",                 39.99, "Acción",      14,  "Shooter por equipos",                 "https://tudominio.com/imagenes/overwatch_2.webp"),
+        Game("12", "Cyberpunk 2077",              59.99, "RPG",         9,   "Futuro cyberpunk",                    "https://tudominio.com/imagenes/cyberpunk_2077.webp"),
+        Game("13", "Red Dead Redemption 2",       49.99, "Aventura",    11,  "Western épico",                       "https://tudominio.com/imagenes/red_dead_redemption_2.webp"),
+        Game("14", "Among Us",                    4.99,  "Arcade",      30,  "Encuentra al impostor",               "https://tudominio.com/imagenes/among_us.webp"),
+        Game("15", "Valorant",                    19.99, "Acción",      100, "Shooter táctico",                     "https://tudominio.com/imagenes/valorant.webp"),
+        Game("16", "Assassin's Creed Valhalla",   59.99, "Aventura",    13,  "Aventura vikinga",                    "https://tudominio.com/imagenes/assassins_creed_valhalla.webp"),
+        Game("17", "Fortnite",                    0.0,   "Acción",      100, "Battle Royale",                       "https://tudominio.com/imagenes/fortnite.webp"),
+        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://tudominio.com/imagenes/dark_souls_iii.webp"),
+        Game("19", "Grand Theft Auto V",          29.99, "Acción",      22,  "Mundo abierto épico",                 "https://tudominio.com/imagenes/gta_v.webp"),
+        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://tudominio.com/imagenes/elden_ring.webp")
     )
 
     val game = games.find { it.id == gameId } ?: games[0]
@@ -98,7 +116,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        text = "Descripción del juego ${game.name} en la categoría ${game.category}.",
+                        text = game.description,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
