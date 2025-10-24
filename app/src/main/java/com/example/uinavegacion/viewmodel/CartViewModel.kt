@@ -10,8 +10,13 @@ data class CartItem(
     val name: String,
     val price: Double,
     val quantity: Int,
-    val imageUrl: String = ""
-)
+    val imageUrl: String = "",
+    val originalPrice: Double? = null,  // Precio original si hay descuento
+    val discount: Int = 0  // Porcentaje de descuento
+) {
+    val hasDiscount: Boolean
+        get() = discount > 0 && originalPrice != null
+}
 
 class CartViewModel : ViewModel() {
     private val _items = MutableStateFlow<List<CartItem>>(emptyList())
@@ -25,7 +30,7 @@ class CartViewModel : ViewModel() {
     }
 
     // Agregar juego al carrito
-    fun addGame(id: String, name: String, price: Double, imageUrl: String = ""): Boolean {
+    fun addGame(id: String, name: String, price: Double, imageUrl: String = "", originalPrice: Double? = null, discount: Int = 0): Boolean {
         val currentItems = _items.value.toMutableList()
         val existingIndex = currentItems.indexOfFirst { it.id == id }
         
@@ -52,7 +57,7 @@ class CartViewModel : ViewModel() {
             }
             
             // Agregarlo
-            currentItems.add(CartItem(id, name, price, 1, imageUrl))
+            currentItems.add(CartItem(id, name, price, 1, imageUrl, originalPrice, discount))
         }
         _items.value = currentItems
         _errorMessage.value = null

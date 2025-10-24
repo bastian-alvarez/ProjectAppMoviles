@@ -235,7 +235,14 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                 Button(
                     onClick = {
                         if (game.stock > 0) {
-                            cartViewModel.addGame(game.id, game.name, game.discountedPrice, game.imageUrl)
+                            cartViewModel.addGame(
+                                id = game.id,
+                                name = game.name,
+                                price = game.discountedPrice,
+                                imageUrl = game.imageUrl,
+                                originalPrice = if (game.hasDiscount) game.price else null,
+                                discount = game.discount
+                            )
                         }
                     },
                     enabled = game.stock > 0 && !isInCart,

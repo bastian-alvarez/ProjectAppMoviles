@@ -519,7 +519,14 @@ private fun GameListItem(
             Button(
                 onClick = {
                     if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
-                        cartViewModel.addGame(game.id, game.name, game.price, game.imageUrl)
+                        cartViewModel.addGame(
+                            id = game.id,
+                            name = game.name,
+                            price = game.discountedPrice,
+                            imageUrl = game.imageUrl,
+                            originalPrice = if (game.hasDiscount) game.price else null,
+                            discount = game.discount
+                        )
                     }
                 },
                 enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
@@ -686,7 +693,14 @@ private fun GameGridItem(
                 Button(
                     onClick = {
                         if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
-                            cartViewModel.addGame(game.id, game.name, game.price, game.imageUrl)
+                            cartViewModel.addGame(
+                                id = game.id,
+                                name = game.name,
+                                price = game.discountedPrice,
+                                imageUrl = game.imageUrl,
+                                originalPrice = if (game.hasDiscount) game.price else null,
+                                discount = game.discount
+                            )
                         }
                     },
                     enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
