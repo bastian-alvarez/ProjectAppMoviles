@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uinavegacion.data.local.juego.JuegoEntity
@@ -62,8 +63,26 @@ class GameManagementViewModel(
     fun addGame(nombre: String, descripcion: String, precio: Double, stock: Int, imageUrl: String) {
         viewModelScope.launch {
             try {
+                Log.d("GameManagementVM", "Intentando agregar juego: $nombre")
+                
+                // Validar datos
+                if (nombre.isBlank()) {
+                    _error.value = "El nombre del juego es obligatorio"
+                    return@launch
+                }
+                
+                if (precio <= 0) {
+                    _error.value = "El precio debe ser mayor a 0"
+                    return@launch
+                }
+                
+                if (stock < 0) {
+                    _error.value = "El stock no puede ser negativo"
+                    return@launch
+                }
+                
                 val nuevoJuego = JuegoEntity(
-                    id = 0L,
+                    id = 0L, // Room auto-generará el ID
                     nombre = nombre,
                     descripcion = descripcion,
                     precio = precio,
@@ -74,15 +93,22 @@ class GameManagementViewModel(
                     categoriaId = 1L, // Categoría por defecto
                     generoId = 1L // Género por defecto
                 )
+                
+                Log.d("GameManagementVM", "JuegoEntity creado: $nuevoJuego")
+                
                 val result = gameRepository.addGame(nuevoJuego)
                 if (result.isSuccess) {
-                    _successMessage.value = "Juego agregado correctamente"
+                    Log.d("GameManagementVM", "Juego agregado exitosamente con ID: ${result.getOrNull()}")
+                    _successMessage.value = "✅ Juego '$nombre' agregado correctamente"
                     loadGames() // Recargar la lista
                 } else {
-                    _error.value = "Error al agregar juego: ${result.exceptionOrNull()?.message}"
+                    val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
+                    Log.e("GameManagementVM", "Error al agregar juego: $errorMsg")
+                    _error.value = "❌ Error al agregar juego: $errorMsg"
                 }
             } catch (e: Exception) {
-                _error.value = "Error al agregar juego: ${e.message}"
+                Log.e("GameManagementVM", "Excepción al agregar juego", e)
+                _error.value = "❌ Error inesperado: ${e.message}"
             }
         }
     }

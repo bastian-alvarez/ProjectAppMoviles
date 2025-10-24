@@ -8,7 +8,7 @@ import androidx.room.Query
 @Dao
 interface JuegoDao {
     // Insertar juego
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(juego: JuegoEntity): Long
 
     // Buscar juego por id
