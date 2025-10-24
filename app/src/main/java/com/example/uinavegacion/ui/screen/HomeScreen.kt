@@ -74,7 +74,12 @@ private fun PhoneHomeLayout(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
+            .padding(
+                start = AdaptiveUtils.getHorizontalPadding(windowInfo),
+                end = AdaptiveUtils.getHorizontalPadding(windowInfo),
+                top = 24.dp,  // Espaciado superior para evitar que choque con la barra de búsqueda
+                bottom = 0.dp
+            ),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         // Banner de bienvenida
@@ -131,7 +136,12 @@ private fun TabletHomeLayout(
             modifier = Modifier
                 .widthIn(max = maxContentWidth)
                 .fillMaxSize()
-                .padding(horizontal = horizontalPadding),
+                .padding(
+                    start = horizontalPadding,
+                    end = horizontalPadding,
+                    top = 24.dp,  // Espaciado superior para evitar que choque con la barra de búsqueda
+                    bottom = 0.dp
+                ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Banner de bienvenida más grande para tablets
