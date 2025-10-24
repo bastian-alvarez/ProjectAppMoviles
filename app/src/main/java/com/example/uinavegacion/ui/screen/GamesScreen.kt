@@ -407,27 +407,6 @@ private fun GameListItem(
                     )
                 }
                 
-                // Badge de descuento si aplica
-                if (game.hasDiscount) {
-                    Card(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = androidx.compose.ui.graphics.Color(0xFFE74C3C)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Text(
-                            text = "-${game.discount}%",
-                            style = if (windowInfo.isTablet) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = androidx.compose.ui.graphics.Color.White,
-                            modifier = Modifier.padding(horizontal = if (windowInfo.isTablet) 6.dp else 4.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-                
                 // Precio destacado en esquina
                 Card(
                     modifier = Modifier
@@ -636,27 +615,6 @@ private fun GameGridItem(
                         modifier = Modifier.size(60.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                
-                // Badge de descuento si aplica
-                if (game.hasDiscount) {
-                    Card(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = androidx.compose.ui.graphics.Color(0xFFE74C3C)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Text(
-                            text = "-${game.discount}%",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = androidx.compose.ui.graphics.Color.White,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
                 }
                 
                 // Precio destacado en esquina
