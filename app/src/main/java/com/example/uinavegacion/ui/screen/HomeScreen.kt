@@ -122,7 +122,7 @@ private fun PhoneHomeLayout(
             items(gamesOnSale) { game ->
                 CompactGameCard(
                     game = game,
-                    onClick = { nav.navigate(Route.Games.build()) }
+                    onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
                 )
             }
         }
@@ -265,7 +265,7 @@ private fun TabletHomeLayout(
                 items(gamesOnSale) { game ->
                     GameCard(
                         game = game,
-                        onClick = { nav.navigate(Route.Games.build()) },
+                        onClick = { nav.navigate(Route.GameDetail.build(game.id)) },
                         windowInfo = windowInfo
                     )
                 }
