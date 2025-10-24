@@ -144,7 +144,7 @@ fun AppDrawer(
                 NavigationDrawerItem(
                     label = { Text("Juegos") },
                     selected = currentRoute == Route.Games.path,
-                    onClick = { onNavigate(Route.Games.path) },
+                    onClick = { onNavigate(Route.Games.build()) },
                     icon = { Icon(Icons.Filled.SportsEsports, contentDescription = "Juegos") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
