@@ -102,7 +102,7 @@ fun AppNavGraph(navController: NavHostController) {
                     AppNavigationRail(
                         currentRoute = currentRoute,
                         onHome = { navController.navigate(Route.Home.path) { launchSingleTop = true } },
-                        onGames = { navController.navigate(Route.Games.path) { launchSingleTop = true } },
+                        onGames = { navController.navigate(Route.Games.build()) { launchSingleTop = true } },
                         onCart = { navController.navigate(Route.Cart.path) { launchSingleTop = true } },
                         onProfile = { navController.navigate(Route.Profile.path) { launchSingleTop = true } },
                         cartCount = cartViewModel.getTotalItems()
@@ -200,7 +200,7 @@ private fun AdaptiveScaffold(
                     onQueryChanged = { query ->
                         searchViewModel.setQuery(query)
                         if (query.isNotBlank()) {
-                            navController.navigate(Route.Games.path)
+                            navController.navigate(Route.Games.build())
                         }
                     },
                     showHamburger = windowInfo.navigationType == NavigationType.BOTTOM_NAVIGATION
@@ -217,7 +217,7 @@ private fun AdaptiveScaffold(
                 AppBottomBar(
                     currentRoute = currentRoute,
                     onHome = { navController.navigate(Route.Home.path) { launchSingleTop = true } },
-                    onGames = { navController.navigate(Route.Games.path) { launchSingleTop = true } },
+                    onGames = { navController.navigate(Route.Games.build()) { launchSingleTop = true } },
                     onCart = { navController.navigate(Route.Cart.path) { launchSingleTop = true } },
                     cartCount = cartViewModel.getTotalItems()
                 )

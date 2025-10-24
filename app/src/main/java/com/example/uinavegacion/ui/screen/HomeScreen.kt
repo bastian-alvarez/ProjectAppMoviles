@@ -109,7 +109,7 @@ private fun PhoneHomeLayout(
         // Juegos destacados
         SectionHeader(
             title = "🔥 Juegos en Oferta - 20% OFF", 
-            onSeeAll = { nav.navigate(Route.Games.path) },
+            onSeeAll = { nav.navigate(Route.Games.build()) },
             isMobile = true
         )
 
@@ -122,7 +122,7 @@ private fun PhoneHomeLayout(
             items(gamesOnSale) { game ->
                 CompactGameCard(
                     game = game,
-                    onClick = { nav.navigate(Route.Games.path) }
+                    onClick = { nav.navigate(Route.Games.build()) }
                 )
             }
         }
@@ -221,7 +221,7 @@ private fun TabletHomeLayout(
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                                 Button(
-                                    onClick = { nav.navigate(Route.Games.path) },
+                                    onClick = { nav.navigate(Route.Games.build()) },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text("Ver Ofertas")
@@ -254,7 +254,7 @@ private fun TabletHomeLayout(
             }
 
             // Juegos destacados en grid para tablets
-            SectionHeader(title = "🔥 Juegos en Oferta - 20% OFF", onSeeAll = { nav.navigate(Route.Games.path) })
+            SectionHeader(title = "🔥 Juegos en Oferta - 20% OFF", onSeeAll = { nav.navigate(Route.Games.build()) })
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(AdaptiveUtils.getGridColumns(windowInfo)),
@@ -265,7 +265,7 @@ private fun TabletHomeLayout(
                 items(gamesOnSale) { game ->
                     GameCard(
                         game = game,
-                        onClick = { nav.navigate(Route.Games.path) },
+                        onClick = { nav.navigate(Route.Games.build()) },
                         windowInfo = windowInfo
                     )
                 }

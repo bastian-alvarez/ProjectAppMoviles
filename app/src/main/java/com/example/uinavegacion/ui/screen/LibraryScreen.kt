@@ -159,7 +159,7 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                                 )
                                 Spacer(Modifier.height(16.dp))
                                 AnimatedButton(
-                                    onClick = { nav.navigate(Route.Games.path) }
+                                    onClick = { nav.navigate(Route.Games.build()) }
                                 ) {
                                     Text("Explorar Juegos")
                                 }
@@ -194,7 +194,7 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                             )
                             Spacer(Modifier.height(16.dp))
                             Button(
-                                onClick = { nav.navigate(Route.Games.path) }
+                                onClick = { nav.navigate(Route.Games.build()) }
                             ) {
                                 Text("Explorar Juegos")
                             }

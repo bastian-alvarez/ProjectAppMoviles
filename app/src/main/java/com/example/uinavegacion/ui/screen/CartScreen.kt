@@ -82,7 +82,7 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                             }
                         )
                         .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
-                    onExploreGames = { nav.navigate(Route.Games.path) },
+                    onExploreGames = { nav.navigate(Route.Games.build()) },
                     isTablet = windowInfo.isTablet
                 )
             }
@@ -96,7 +96,7 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                     totalPrice = totalPrice,
                     totalItems = totalItems,
                     windowInfo = windowInfo,
-                    onNavigateToGames = { nav.navigate(Route.Games.path) },
+                    onNavigateToGames = { nav.navigate(Route.Games.build()) },
                     onCompletePurchase = { 
                         // Añadir juegos comprados a la biblioteca
                         libraryViewModel.addPurchasedGames(cartItems)
@@ -121,7 +121,7 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                         totalPrice = totalPrice,
                         totalItems = totalItems,
                         windowInfo = windowInfo,
-                        onNavigateToGames = { nav.navigate(Route.Games.path) },
+                        onNavigateToGames = { nav.navigate(Route.Games.build()) },
                         onCompletePurchase = { 
                             // Añadir juegos comprados a la biblioteca
                             libraryViewModel.addPurchasedGames(cartItems)
