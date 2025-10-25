@@ -2,6 +2,8 @@ package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -75,90 +77,104 @@ fun RegisterScreen(nav: NavHostController) {
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .padding(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                .fillMaxWidth(0.92f)
+                .fillMaxHeight(0.9f)
+                .padding(vertical = 24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+            ),
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(32.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Logo/Título
+                // Logo/Título - Más compacto
                 Text(
                     text = "GameStore Pro",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Crea tu cuenta nueva",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(20.dp))
 
                 // Campo Nombre
                 OutlinedTextField(
                     value = registerState.name,
                     onValueChange = viewModel::onNameChange,
-                    label = { Text("Nombre Completo") },
+                    label = { Text("Nombre Completo", style = MaterialTheme.typography.bodyMedium) },
                     singleLine = true,
                     isError = registerState.nameError != null,
-                    supportingText = registerState.nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    supportingText = registerState.nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // Campo Email
                 OutlinedTextField(
                     value = registerState.email,
                     onValueChange = viewModel::onRegisterEmailChange,
-                    label = { Text("Correo Electrónico") },
+                    label = { Text("Correo Electrónico", style = MaterialTheme.typography.bodyMedium) },
                     singleLine = true,
                     isError = registerState.emailError != null,
-                    supportingText = registerState.emailError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    supportingText = registerState.emailError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // Campo Teléfono (Obligatorio con formato chileno)
                 OutlinedTextField(
                     value = registerState.phone,
                     onValueChange = viewModel::onPhoneChange,
-                    label = { Text("Teléfono Celular *") },
-                    placeholder = { Text("+56 9 1234 5678") },
+                    label = { Text("Teléfono Celular *", style = MaterialTheme.typography.bodyMedium) },
+                    placeholder = { Text("+56 9 1234 5678", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     isError = registerState.phoneError != null,
-                    supportingText = registerState.phoneError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } }
-                        ?: { Text("Formato: +56 9 XXXX XXXX", style = MaterialTheme.typography.bodySmall) },
+                    supportingText = registerState.phoneError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } }
+                        ?: { Text("Formato: +56 9 XXXX XXXX", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // Campo Contraseña
                 OutlinedTextField(
                     value = registerState.pass,
                     onValueChange = viewModel::onRegisterPassChange,
-                    label = { Text("Contraseña") },
+                    label = { Text("Contraseña", style = MaterialTheme.typography.bodyMedium) },
                     singleLine = true,
                     isError = registerState.passError != null,
-                    supportingText = registerState.passError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    supportingText = registerState.passError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } },
                     visualTransformation = if (showPass) VisualTransformation.None
                     else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -173,18 +189,22 @@ fun RegisterScreen(nav: NavHostController) {
                         keyboardType = KeyboardType.Password,
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // Campo Confirmar Contraseña
                 OutlinedTextField(
                     value = registerState.confirm,
                     onValueChange = viewModel::onConfirmChange,
-                    label = { Text("Confirmar Contraseña") },
+                    label = { Text("Confirmar Contraseña", style = MaterialTheme.typography.bodyMedium) },
                     singleLine = true,
                     isError = registerState.confirmError != null,
-                    supportingText = registerState.confirmError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    supportingText = registerState.confirmError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } },
                     visualTransformation = if (showConfirmPass) VisualTransformation.None
                     else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -199,28 +219,34 @@ fun RegisterScreen(nav: NavHostController) {
                         keyboardType = KeyboardType.Password,
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
                 )
                 
                 // Mostrar error general si existe
                 if (registerState.errorMsg != null) {
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = registerState.errorMsg ?: "",
                             color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.padding(16.dp),
-                            textAlign = TextAlign.Center
+                            modifier = Modifier.padding(12.dp),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
                 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(20.dp))
 
                 // Botón de registro
                 Button(
@@ -228,8 +254,18 @@ fun RegisterScreen(nav: NavHostController) {
                     enabled = registerState.canSubmit && !registerState.isSubmitting,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 2.dp,
+                        pressedElevation = 4.dp
+                    )
                 ) {
                     if (registerState.isSubmitting) {
                         CircularProgressIndicator(
@@ -240,28 +276,36 @@ fun RegisterScreen(nav: NavHostController) {
                     } else {
                         Text(
                             "Crear Cuenta",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                
-                Spacer(Modifier.height(16.dp))
                 
                 // Botón de login
                 OutlinedButton(
                     onClick = { nav.navigate(Route.Login.path) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.5.dp, 
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    )
                 ){
                     Text(
                         "Ya tengo una cuenta",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
                 }
+                
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
