@@ -58,7 +58,7 @@ fun ProfileEditScreen(nav: NavHostController) {
     val userRepository = remember { UserRepository(db.userDao()) }
     val scope = rememberCoroutineScope()
     
-    // Función para formatear teléfono chileno: +56 9 1234 5678
+    // Función para formatear teléfono celular chileno: +56 9 XXXX XXXX (8 dígitos después del 9)
     fun formatChileanPhone(input: String): String {
         // Si el usuario borra todo o intenta borrar el prefijo, mantener +56 9 
         if (input.isEmpty() || input == "+" || input == "+5" || input == "+56" || input == "+56 " || input == "+56 9") {
@@ -72,7 +72,6 @@ fun ProfileEditScreen(nav: NavHostController) {
         if (digitsOnly.isEmpty()) return "+56 9 "
         
         // Extraer solo los dígitos después del código de país (56)
-        // Si empieza con 56, quitarlo, si no, usar todos los dígitos
         val cleanDigits = if (digitsOnly.startsWith("56") && digitsOnly.length > 2) {
             digitsOnly.substring(2)
         } else if (digitsOnly.startsWith("56")) {
@@ -84,20 +83,22 @@ fun ProfileEditScreen(nav: NavHostController) {
         // Si no hay dígitos después del 56, retornar prefijo
         if (cleanDigits.isEmpty()) return "+56 9 "
         
-        // Limitar a máximo 9 dígitos
-        val limitedDigits = cleanDigits.take(9)
+        // El primer dígito debe ser 9 (celular), si no lo es, agregarlo
+        val phoneDigits = if (cleanDigits.startsWith("9")) {
+            cleanDigits.substring(1).take(8)  // Tomar máximo 8 dígitos después del 9
+        } else {
+            cleanDigits.take(8)  // Tomar máximo 8 dígitos (asumimos que es celular)
+        }
         
         // Formatear según la cantidad de dígitos
-        // Formato: +56 9 1234 5678
-        val formatted = when (limitedDigits.length) {
+        // Formato: +56 9 XXXX XXXX (16 caracteres total con espacios)
+        val formatted = when (phoneDigits.length) {
             0 -> "+56 9 "
-            1 -> "+56 ${limitedDigits[0]} "
-            in 2..5 -> "+56 ${limitedDigits[0]} ${limitedDigits.substring(1)}"
-            in 6..9 -> {
-                val first = limitedDigits[0]           // 9
-                val second = limitedDigits.substring(1, 5)  // 1234
-                val third = limitedDigits.substring(5)      // 5678 (o menos)
-                "+56 $first $second $third"
+            in 1..4 -> "+56 9 $phoneDigits"
+            in 5..8 -> {
+                val first = phoneDigits.substring(0, 4)     // XXXX
+                val second = phoneDigits.substring(4)        // XXXX (o menos)
+                "+56 9 $first $second"
             }
             else -> "+56 9 "
         }
@@ -398,20 +399,20 @@ fun ProfileEditScreen(nav: NavHostController) {
                         singleLine = true
                     )
 
-                    // Teléfono con formato automático
+                    // Teléfono celular con formato automático
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { newValue ->
                             // Aplicar formato automático
                             phone = formatChileanPhone(newValue)
                         },
-                        label = { Text("Teléfono") },
-                        placeholder = { Text("+56 9 1234 5678") },
+                        label = { Text("Teléfono Celular") },
+                        placeholder = { Text("+56 9 XXXX XXXX") },
                         leadingIcon = {
                             Icon(Icons.Default.Phone, contentDescription = "Teléfono", modifier = Modifier.size(20.dp))
                         },
                         trailingIcon = {
-                            if (phone.length == 17) {
+                            if (phone.length == 16) {
                                 Icon(
                                     Icons.Default.CheckCircle,
                                     contentDescription = "Formato correcto",
@@ -422,18 +423,23 @@ fun ProfileEditScreen(nav: NavHostController) {
                         },
                         supportingText = {
                             Text(
-                                text = "${phone.length}/17 caracteres",
+                                text = if (phone == "+56 9 ") {
+                                    "Ingresa tu número celular (8 dígitos)"
+                                } else {
+                                    "${phone.length}/16 caracteres"
+                                },
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (phone.length == 17) 
-                                    MaterialTheme.colorScheme.primary 
-                                else 
-                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                color = when {
+                                    phone.length == 16 -> MaterialTheme.colorScheme.primary
+                                    phone == "+56 9 " -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    else -> MaterialTheme.colorScheme.error
+                                }
                             )
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        isError = phone.isNotBlank() && phone != "+56 9 " && phone.length < 17
+                        isError = phone.isNotBlank() && phone != "+56 9 " && phone.length < 16
                     )
 
                     // Email
@@ -536,12 +542,12 @@ fun ProfileEditScreen(nav: NavHostController) {
                         
                         // Validar que el teléfono tenga formato correcto (si no está vacío)
                         if (phone.isNotBlank() && phone != "+56 9 ") {
-                            if (!phone.startsWith("+56 9")) {
+                            if (!phone.startsWith("+56 9 ")) {
                                 photoSavedMessage = "El teléfono debe comenzar con +56 9"
                                 return@Button
                             }
-                            if (phone.length != 17) {
-                                photoSavedMessage = "El teléfono debe tener 9 dígitos completos: +56 9 1234 5678"
+                            if (phone.length != 16) {
+                                photoSavedMessage = "El teléfono debe tener 8 dígitos: +56 9 XXXX XXXX"
                                 return@Button
                             }
                         }
