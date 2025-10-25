@@ -823,106 +823,99 @@ private fun CartSummary(
     val textStyle = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
     val titleStyle = if (isTablet) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge
     
-    Card(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isTablet) 4.dp else 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        verticalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 12.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(if (isTablet) 24.dp else 16.dp)
-        ) {
-            Text(
-                text = "Resumen del Pedido",
-                style = if (isTablet) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = if (isTablet) 20.dp else 16.dp)
+        // Encabezado del resumen
+        Text(
+            text = "Resumen del Pedido",
+            style = if (isTablet) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        
+        // Card con información del pedido
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = if (isTablet) 4.dp else 2.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
             )
-            
-            // Items
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = if (isTablet) 8.dp else 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.padding(if (isTablet) 20.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (isTablet) 12.dp else 8.dp)
             ) {
-                Text(
-                    text = "Items:",
-                    style = textStyle,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "$totalItems juegos",
-                    style = textStyle,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            // Envío
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = if (isTablet) 8.dp else 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Envío:",
-                    style = textStyle,
-                    fontWeight = FontWeight.Medium
-                )
+                // Items
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Done,
-                        contentDescription = "Gratis",
-                        tint = androidx.compose.ui.graphics.Color(0xFF27AE60),
-                        modifier = Modifier.size(if (isTablet) 20.dp else 16.dp)
-                    )
-                    Text(
-                        text = "Gratis",
-                        style = textStyle,
-                        fontWeight = FontWeight.Bold,
-                        color = androidx.compose.ui.graphics.Color(0xFF27AE60)
-                    )
-                }
-            }
-            
-            Spacer(Modifier.height(if (isTablet) 16.dp else 12.dp))
-            HorizontalDivider(thickness = 2.dp)
-            Spacer(Modifier.height(if (isTablet) 16.dp else 12.dp))
-            
-            // Total
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(if (isTablet) 20.dp else 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Total a Pagar:",
-                        style = titleStyle,
+                        text = "Items:",
+                        style = textStyle,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "$totalItems juegos",
+                        style = textStyle,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                // Subtotal (sin envío)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Subtotal:",
+                        style = textStyle,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "$${String.format("%.2f", totalPrice)}",
-                        style = titleStyle,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
+                        style = textStyle,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+            }
+        }
+        
+        // Card destacado con el total final
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = if (isTablet) 6.dp else 4.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (isTablet) 24.dp else 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Total a Pagar:",
+                    style = if (isTablet) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = "$${String.format("%.2f", totalPrice)}",
+                    style = if (isTablet) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
