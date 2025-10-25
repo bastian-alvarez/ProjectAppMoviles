@@ -457,17 +457,20 @@ fun ProfileEditScreen(nav: NavHostController) {
                             return@Button
                         }
                         
-                        // Validar teléfono si no está vacío
+                        // Validar teléfono si no está vacío (acepta +56 9 XXXX XXXX o +569XXXXXXXX)
                         if (phone.isNotBlank()) {
-                            if (!phone.startsWith("+56 9")) {
+                            if (!phone.startsWith("+56")) {
                                 photoSavedMessage = "Formato incorrecto"
                                 return@Button
                             }
                             
-                            // Extraer dígitos después del +56 9
-                            val digitsAfterPrefix = phone.replace("+56 9", "").replace(" ", "").trim()
+                            // Extraer todos los dígitos después de +56
+                            val digitsAfterCountryCode = phone.substring(3).replace(" ", "").trim()
                             
-                            if (digitsAfterPrefix.isEmpty() || digitsAfterPrefix.length != 8 || !digitsAfterPrefix.all { it.isDigit() }) {
+                            if (digitsAfterCountryCode.isEmpty() || 
+                                digitsAfterCountryCode.length != 9 || 
+                                !digitsAfterCountryCode.all { it.isDigit() } ||
+                                !digitsAfterCountryCode.startsWith("9")) {
                                 photoSavedMessage = "Formato incorrecto"
                                 return@Button
                             }
