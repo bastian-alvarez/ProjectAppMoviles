@@ -60,50 +60,49 @@ fun ProfileEditScreen(nav: NavHostController) {
     
     // Función para formatear teléfono chileno: +56 9 1234 5678
     fun formatChileanPhone(input: String): String {
-        // Remover todo excepto dígitos y el símbolo +
-        val digitsOnly = input.filter { it.isDigit() || it == '+' }
-        
-        // Si está vacío o solo tiene +, retornar el prefijo
-        if (digitsOnly.isEmpty() || digitsOnly == "+") return "+56 9 "
-        
-        // Asegurar que comience con +56
-        val withPrefix = if (digitsOnly.startsWith("+56")) {
-            digitsOnly
-        } else if (digitsOnly.startsWith("56")) {
-            "+$digitsOnly"
-        } else if (digitsOnly.startsWith("+")) {
-            "+56${digitsOnly.substring(1)}"
-        } else {
-            "+56$digitsOnly"
+        // Si el usuario borra todo o intenta borrar el prefijo, mantener +56 9 
+        if (input.isEmpty() || input == "+" || input == "+5" || input == "+56" || input == "+56 " || input == "+56 9") {
+            return "+56 9 "
         }
         
-        // Extraer solo los números después del +56
-        val numbers = withPrefix.removePrefix("+56").filter { it.isDigit() }
+        // Remover todo excepto dígitos
+        val digitsOnly = input.replace(Regex("[^0-9]"), "")
+        
+        // Si no hay dígitos, retornar el prefijo
+        if (digitsOnly.isEmpty()) return "+56 9 "
+        
+        // Extraer solo los dígitos después del código de país (56)
+        // Si empieza con 56, quitarlo, si no, usar todos los dígitos
+        val cleanDigits = if (digitsOnly.startsWith("56") && digitsOnly.length > 2) {
+            digitsOnly.substring(2)
+        } else if (digitsOnly.startsWith("56")) {
+            ""
+        } else {
+            digitsOnly
+        }
+        
+        // Si no hay dígitos después del 56, retornar prefijo
+        if (cleanDigits.isEmpty()) return "+56 9 "
+        
+        // Limitar a máximo 9 dígitos
+        val limitedDigits = cleanDigits.take(9)
         
         // Formatear según la cantidad de dígitos
-        // Formato: +56 9 1234 5678 (total 17 caracteres con espacios)
-        val formatted = when {
-            numbers.isEmpty() -> "+56 9 "
-            numbers.length == 1 -> "+56 ${numbers[0]} "
-            numbers.length <= 5 -> "+56 ${numbers[0]} ${numbers.substring(1)}"
-            numbers.length <= 9 -> {
-                val firstPart = numbers.substring(0, 1)  // 9
-                val secondPart = numbers.substring(1, minOf(5, numbers.length))  // 1234
-                val thirdPart = if (numbers.length > 5) numbers.substring(5, minOf(9, numbers.length)) else ""  // 5678
-                if (thirdPart.isEmpty()) {
-                    "+56 $firstPart $secondPart"
-                } else {
-                    "+56 $firstPart $secondPart $thirdPart"
-                }
+        // Formato: +56 9 1234 5678
+        val formatted = when (limitedDigits.length) {
+            0 -> "+56 9 "
+            1 -> "+56 ${limitedDigits[0]} "
+            in 2..5 -> "+56 ${limitedDigits[0]} ${limitedDigits.substring(1)}"
+            in 6..9 -> {
+                val first = limitedDigits[0]           // 9
+                val second = limitedDigits.substring(1, 5)  // 1234
+                val third = limitedDigits.substring(5)      // 5678 (o menos)
+                "+56 $first $second $third"
             }
-            else -> {
-                // Limitar a 9 dígitos máximo
-                val limited = numbers.substring(0, 9)
-                "+56 ${limited[0]} ${limited.substring(1, 5)} ${limited.substring(5, 9)}"
-            }
+            else -> "+56 9 "
         }
         
-        return formatted
+        return formatted.trimEnd()
     }
 
     // Crear archivo temporal para foto
@@ -434,7 +433,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        isError = phone.isNotBlank() && phone.length < 17
+                        isError = phone.isNotBlank() && phone != "+56 9 " && phone.length < 17
                     )
 
                     // Email
@@ -535,14 +534,14 @@ fun ProfileEditScreen(nav: NavHostController) {
                             return@Button
                         }
                         
-                        // Validar que el teléfono tenga formato y longitud correctos
-                        if (phone.isNotBlank()) {
+                        // Validar que el teléfono tenga formato correcto (si no está vacío)
+                        if (phone.isNotBlank() && phone != "+56 9 ") {
                             if (!phone.startsWith("+56 9")) {
                                 photoSavedMessage = "El teléfono debe comenzar con +56 9"
                                 return@Button
                             }
                             if (phone.length != 17) {
-                                photoSavedMessage = "El teléfono debe tener 9 dígitos: +56 9 1234 5678"
+                                photoSavedMessage = "El teléfono debe tener 9 dígitos completos: +56 9 1234 5678"
                                 return@Button
                             }
                         }
