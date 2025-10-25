@@ -489,7 +489,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                                     if (updatedUser != null) {
                                         SessionManager.loginUser(updatedUser)
                                         showSuccessMessage = true
-                                        photoSavedMessage = "✓ Perfil actualizado correctamente"
+                                        photoSavedMessage = null // Limpiar mensaje anterior
                                     }
                                 } else {
                                     photoSavedMessage = "Error: Usuario no encontrado"
