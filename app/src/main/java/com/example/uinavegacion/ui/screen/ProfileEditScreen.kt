@@ -77,6 +77,9 @@ fun ProfileEditScreen(nav: NavHostController) {
         )
     }
 
+    // ID del usuario para mantener la referencia correcta
+    var userId by remember { mutableStateOf<Long?>(null) }
+
     // Launcher para tomar foto con cámara
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -84,17 +87,16 @@ fun ProfileEditScreen(nav: NavHostController) {
         if (success) {
             profilePhotoUri = photoUri.toString()
             scope.launch {
-                val userByEmail = db.userDao().getByEmail(email)
-                if (userByEmail != null) {
-                    userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                if (userId != null) {
+                    userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
                     // Actualizar SessionManager con la nueva foto
-                    val updatedUser = db.userDao().getByEmail(email)
+                    val updatedUser = db.userDao().getById(userId!!)
                     if (updatedUser != null) {
                         SessionManager.loginUser(updatedUser)
                     }
                     photoSavedMessage = "Foto tomada y guardada"
                 } else {
-                    photoSavedMessage = "Error: Usuario no encontrado"
+                    photoSavedMessage = "Error: Usuario no identificado"
                 }
             }
         }
@@ -107,17 +109,16 @@ fun ProfileEditScreen(nav: NavHostController) {
         if (uri != null) {
             profilePhotoUri = uri.toString()
             scope.launch {
-                val userByEmail = db.userDao().getByEmail(email)
-                if (userByEmail != null) {
-                    userRepository.updateProfilePhoto(userByEmail.id, profilePhotoUri)
+                if (userId != null) {
+                    userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
                     // Actualizar SessionManager con la nueva foto
-                    val updatedUser = db.userDao().getByEmail(email)
+                    val updatedUser = db.userDao().getById(userId!!)
                     if (updatedUser != null) {
                         SessionManager.loginUser(updatedUser)
                     }
                     photoSavedMessage = "Foto de galería guardada"
                 } else {
-                    photoSavedMessage = "Error: Usuario no encontrado"
+                    photoSavedMessage = "Error: Usuario no identificado"
                 }
             }
         }
@@ -134,9 +135,6 @@ fun ProfileEditScreen(nav: NavHostController) {
         }
     }
 
-    // ID del usuario para mantener la referencia correcta
-    var userId by remember { mutableStateOf<Long?>(null) }
-    
     // Cargar datos del usuario desde SessionManager
     LaunchedEffect(Unit) {
         val currentUserEmail = SessionManager.getCurrentUserEmail()
@@ -146,7 +144,14 @@ fun ProfileEditScreen(nav: NavHostController) {
                 userId = userByEmail.id
                 name = userByEmail.name
                 email = userByEmail.email
-                phone = userByEmail.phone.ifEmpty { "+56 9 " }
+                // Asegurar que el teléfono tenga formato chileno
+                phone = if (userByEmail.phone.isBlank()) {
+                    "+56 9 "
+                } else if (!userByEmail.phone.startsWith("+56")) {
+                    "+56 9 ${userByEmail.phone}"
+                } else {
+                    userByEmail.phone
+                }
                 profilePhotoUri = userByEmail.profilePhotoUri
             }
         }
@@ -296,9 +301,12 @@ fun ProfileEditScreen(nav: NavHostController) {
                             onClick = {
                                 profilePhotoUri = null
                                 scope.launch {
-                                    val userByEmail = db.userDao().getByEmail(email)
-                                    if (userByEmail != null) {
-                                        userRepository.updateProfilePhoto(userByEmail.id, null)
+                                    if (userId != null) {
+                                        userRepository.updateProfilePhoto(userId!!, null)
+                                        val updatedUser = db.userDao().getById(userId!!)
+                                        if (updatedUser != null) {
+                                            SessionManager.loginUser(updatedUser)
+                                        }
                                         photoSavedMessage = "Foto eliminada"
                                     }
                                 }

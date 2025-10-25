@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 6, // Se añade campo isBlocked a UserEntity
+    version = 7, // Actualizar formato de teléfonos a +56 9
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -82,6 +82,29 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             }
         }
+        
+        // Migración de versión 6 a 7: Actualizar formato de teléfonos a +56 9
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 6->7: Actualizando formato de teléfonos...")
+                // Actualizar teléfonos que no empiezan con +56
+                database.execSQL(
+                    """
+                    UPDATE users 
+                    SET phone = '+56 9 ' || phone 
+                    WHERE phone NOT LIKE '+56%' AND phone != ''
+                    """
+                )
+                database.execSQL(
+                    """
+                    UPDATE admins 
+                    SET phone = '+56 9 ' || phone 
+                    WHERE phone NOT LIKE '+56%' AND phone != ''
+                    """
+                )
+                Log.d("AppDatabase", "MIGRATION 6->7: Teléfonos actualizados correctamente")
+            }
+        }
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -90,7 +113,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
                     .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
