@@ -460,25 +460,15 @@ fun ProfileEditScreen(nav: NavHostController) {
                         // Validar teléfono si no está vacío
                         if (phone.isNotBlank()) {
                             if (!phone.startsWith("+56 9")) {
-                                photoSavedMessage = "El teléfono debe comenzar con +56 9"
+                                photoSavedMessage = "Formato incorrecto"
                                 return@Button
                             }
                             
                             // Extraer dígitos después del +56 9
                             val digitsAfterPrefix = phone.replace("+56 9", "").replace(" ", "").trim()
                             
-                            if (digitsAfterPrefix.isEmpty()) {
-                                photoSavedMessage = "Ingrese el número completo después de +56 9"
-                                return@Button
-                            }
-                            
-                            if (!digitsAfterPrefix.all { it.isDigit() }) {
-                                photoSavedMessage = "El teléfono solo debe contener números después del +56 9"
-                                return@Button
-                            }
-                            
-                            if (digitsAfterPrefix.length != 8) {
-                                photoSavedMessage = "El teléfono debe tener 8 dígitos (ej: +56 9 1234 5678)"
+                            if (digitsAfterPrefix.isEmpty() || digitsAfterPrefix.length != 8 || !digitsAfterPrefix.all { it.isDigit() }) {
+                                photoSavedMessage = "Formato incorrecto"
                                 return@Button
                             }
                         }
