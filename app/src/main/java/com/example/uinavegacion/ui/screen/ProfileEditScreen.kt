@@ -57,6 +57,54 @@ fun ProfileEditScreen(nav: NavHostController) {
     val db = remember { AppDatabase.getInstance(context) }
     val userRepository = remember { UserRepository(db.userDao()) }
     val scope = rememberCoroutineScope()
+    
+    // Función para formatear teléfono chileno: +56 9 1234 5678
+    fun formatChileanPhone(input: String): String {
+        // Remover todo excepto dígitos y el símbolo +
+        val digitsOnly = input.filter { it.isDigit() || it == '+' }
+        
+        // Si está vacío o solo tiene +, retornar el prefijo
+        if (digitsOnly.isEmpty() || digitsOnly == "+") return "+56 9 "
+        
+        // Asegurar que comience con +56
+        val withPrefix = if (digitsOnly.startsWith("+56")) {
+            digitsOnly
+        } else if (digitsOnly.startsWith("56")) {
+            "+$digitsOnly"
+        } else if (digitsOnly.startsWith("+")) {
+            "+56${digitsOnly.substring(1)}"
+        } else {
+            "+56$digitsOnly"
+        }
+        
+        // Extraer solo los números después del +56
+        val numbers = withPrefix.removePrefix("+56").filter { it.isDigit() }
+        
+        // Formatear según la cantidad de dígitos
+        // Formato: +56 9 1234 5678 (total 17 caracteres con espacios)
+        val formatted = when {
+            numbers.isEmpty() -> "+56 9 "
+            numbers.length == 1 -> "+56 ${numbers[0]} "
+            numbers.length <= 5 -> "+56 ${numbers[0]} ${numbers.substring(1)}"
+            numbers.length <= 9 -> {
+                val firstPart = numbers.substring(0, 1)  // 9
+                val secondPart = numbers.substring(1, minOf(5, numbers.length))  // 1234
+                val thirdPart = if (numbers.length > 5) numbers.substring(5, minOf(9, numbers.length)) else ""  // 5678
+                if (thirdPart.isEmpty()) {
+                    "+56 $firstPart $secondPart"
+                } else {
+                    "+56 $firstPart $secondPart $thirdPart"
+                }
+            }
+            else -> {
+                // Limitar a 9 dígitos máximo
+                val limited = numbers.substring(0, 9)
+                "+56 ${limited[0]} ${limited.substring(1, 5)} ${limited.substring(5, 9)}"
+            }
+        }
+        
+        return formatted
+    }
 
     // Crear archivo temporal para foto
     fun createImageFile(): File {
@@ -351,18 +399,42 @@ fun ProfileEditScreen(nav: NavHostController) {
                         singleLine = true
                     )
 
-                    // Teléfono
+                    // Teléfono con formato automático
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { phone = it },
+                        onValueChange = { newValue ->
+                            // Aplicar formato automático
+                            phone = formatChileanPhone(newValue)
+                        },
                         label = { Text("Teléfono") },
                         placeholder = { Text("+56 9 1234 5678") },
                         leadingIcon = {
                             Icon(Icons.Default.Phone, contentDescription = "Teléfono", modifier = Modifier.size(20.dp))
                         },
+                        trailingIcon = {
+                            if (phone.length == 17) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = "Formato correcto",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        },
+                        supportingText = {
+                            Text(
+                                text = "${phone.length}/17 caracteres",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (phone.length == 17) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        isError = phone.isNotBlank() && phone.length < 17
                     )
 
                     // Email
@@ -463,10 +535,16 @@ fun ProfileEditScreen(nav: NavHostController) {
                             return@Button
                         }
                         
-                        // Validar que el teléfono tenga formato correcto
-                        if (phone.isNotBlank() && !phone.startsWith("+56 9")) {
-                            photoSavedMessage = "El teléfono debe comenzar con +56 9"
-                            return@Button
+                        // Validar que el teléfono tenga formato y longitud correctos
+                        if (phone.isNotBlank()) {
+                            if (!phone.startsWith("+56 9")) {
+                                photoSavedMessage = "El teléfono debe comenzar con +56 9"
+                                return@Button
+                            }
+                            if (phone.length != 17) {
+                                photoSavedMessage = "El teléfono debe tener 9 dígitos: +56 9 1234 5678"
+                                return@Button
+                            }
                         }
                         
                         isLoading = true
