@@ -178,9 +178,9 @@ class AuthViewModel(
     }
 
     fun onPhoneChange(value: String) {                      // Handler del teléfono
-        val digitsOnly = value.filter { it.isDigit() }      // Dejamos solo dígitos
+        // Permitir escribir el formato completo: +56 9 XXXX XXXX
         _register.update {                                  // Guardamos + validamos
-            it.copy(phone = digitsOnly, phoneError = validatePhoneDigitsOnly(digitsOnly))
+            it.copy(phone = value, phoneError = validatePhoneDigitsOnly(value))
         }
         recomputeRegisterCanSubmit()
     }

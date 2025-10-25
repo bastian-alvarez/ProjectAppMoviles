@@ -133,14 +133,16 @@ fun RegisterScreen(nav: NavHostController) {
                 )
                 Spacer(Modifier.height(16.dp))
 
-                // Campo Teléfono
+                // Campo Teléfono (Obligatorio con formato chileno)
                 OutlinedTextField(
                     value = registerState.phone,
                     onValueChange = viewModel::onPhoneChange,
-                    label = { Text("Teléfono") },
+                    label = { Text("Teléfono Celular *") },
+                    placeholder = { Text("+56 9 1234 5678") },
                     singleLine = true,
                     isError = registerState.phoneError != null,
-                    supportingText = registerState.phoneError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                    supportingText = registerState.phoneError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } }
+                        ?: { Text("Formato: +56 9 XXXX XXXX", style = MaterialTheme.typography.bodySmall) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
                     ),

@@ -16,11 +16,18 @@ fun validateLettersOnly(nombre: String): String?{
     return if(!regex.matches(nombre)) "Solo letras y espacios" else null
 }
 
-//valida longitud del telefono y solo digitos
+//valida telefono celular chileno: +56 9 XXXX XXXX
 fun validatePhoneDigitsOnly(phone: String): String?{
     if(phone.isBlank()) return "El teléfono es obligatorio"
-    if(!phone.all { it.isDigit() }) return "Solo se permiten números"
-    if(phone.length !in 7 .. 8) return "Debe tener entre 7 y 8 digitos"
+    if(!phone.startsWith("+56 9")) return "Debe comenzar con +56 9"
+    
+    // Extraer solo los dígitos después de +56 9
+    val digitsAfterPrefix = phone.replace("+56 9", "").replace(" ", "").trim()
+    
+    if(digitsAfterPrefix.isEmpty()) return "Ingrese el número después de +56 9"
+    if(!digitsAfterPrefix.all { it.isDigit() }) return "Solo números después del +56 9"
+    if(digitsAfterPrefix.length != 8) return "Debe tener 8 dígitos (ej: +56 9 1234 5678)"
+    
     return null
 }
 
