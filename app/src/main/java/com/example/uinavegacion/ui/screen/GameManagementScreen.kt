@@ -41,8 +41,84 @@ fun GameManagementScreen(navController: NavHostController) {
         factory = GameManagementViewModelFactory(gameRepository)
     )
     
-    // Forzar recarga inicial
+    // Forzar recarga inicial y debug
     LaunchedEffect(Unit) {
+        android.util.Log.d("GameManagementScreen", "=== INICIANDO GESTIÓN DE JUEGOS ===")
+        
+        // Debug completo de la base de datos
+        try {
+            // Verificar conteo
+            val count = db.juegoDao().count()
+            android.util.Log.d("GameManagementScreen", "Conteo de juegos: $count")
+            
+            // Si está vacía, intentar forzar datos
+            if (count == 0) {
+                android.util.Log.w("GameManagementScreen", "¡BD VACÍA! Intentando insertar datos manualmente...")
+                
+                // Insertar algunos juegos manualmente para debug
+                val juegosSeed = listOf(
+                    com.example.uinavegacion.data.local.juego.JuegoEntity(
+                        nombre = "Super Mario Bros", 
+                        precio = 29.99, 
+                        imagenUrl = "https://tudominio.com/imagenes/super_mario_bros.webp", 
+                        descripcion = "El clásico juego de plataformas", 
+                        stock = 15, 
+                        desarrollador = "Nintendo", 
+                        fechaLanzamiento = "1985", 
+                        categoriaId = 1, 
+                        generoId = 1
+                    ),
+                    com.example.uinavegacion.data.local.juego.JuegoEntity(
+                        nombre = "The Legend of Zelda", 
+                        precio = 39.99, 
+                        imagenUrl = "https://tudominio.com/imagenes/the_legend_of_zelda.webp", 
+                        descripcion = "Épica aventura en Hyrule", 
+                        stock = 8, 
+                        desarrollador = "Nintendo", 
+                        fechaLanzamiento = "1986", 
+                        categoriaId = 1, 
+                        generoId = 1
+                    ),
+                    com.example.uinavegacion.data.local.juego.JuegoEntity(
+                        nombre = "Minecraft", 
+                        precio = 26.99, 
+                        imagenUrl = "https://tudominio.com/imagenes/minecraft.webp", 
+                        descripcion = "Construye tu mundo", 
+                        stock = 25, 
+                        desarrollador = "Mojang", 
+                        fechaLanzamiento = "2011", 
+                        categoriaId = 1, 
+                        generoId = 1
+                    )
+                )
+                
+                juegosSeed.forEach { juego ->
+                    try {
+                        val id = db.juegoDao().insert(juego)
+                        android.util.Log.d("GameManagementScreen", "Juego insertado: ${juego.nombre} con ID: $id")
+                    } catch (e: Exception) {
+                        android.util.Log.e("GameManagementScreen", "Error insertando ${juego.nombre}", e)
+                    }
+                }
+                
+                // Verificar después de insertar
+                val newCount = db.juegoDao().count()
+                android.util.Log.d("GameManagementScreen", "Conteo después de insertar: $newCount")
+            }
+            
+            // Listar todos los juegos
+            val allGames = db.juegoDao().getAll()
+            android.util.Log.d("GameManagementScreen", "=== LISTADO COMPLETO (${allGames.size} juegos) ===")
+            allGames.forEach { game ->
+                android.util.Log.d("GameManagementScreen", "ID: ${game.id} | ${game.nombre} | \$${game.precio} | Stock: ${game.stock}")
+            }
+            
+        } catch (e: Exception) {
+            android.util.Log.e("GameManagementScreen", "ERROR CRÍTICO en debug BD", e)
+        }
+        
+        // Forzar actualización del ViewModel
+        kotlinx.coroutines.delay(1000) // Dar tiempo para que termine todo
         viewModel.refreshGames()
     }
     

@@ -43,25 +43,35 @@ class GameManagementViewModel(
     fun loadGames() {
         viewModelScope.launch {
             try {
-                Log.d("GameManagementVM", "Iniciando carga de juegos...")
+                Log.d("GameManagementVM", "=== INICIANDO CARGA DE JUEGOS ===")
                 _isLoading.value = true
                 _error.value = null
                 
                 val gamesList = gameRepository.getAllGames()
-                Log.d("GameManagementVM", "Juegos cargados: ${gamesList.size}")
+                Log.d("GameManagementVM", "🎮 Juegos cargados desde repositorio: ${gamesList.size}")
+                
+                // Debug detallado
+                gamesList.forEachIndexed { index, game ->
+                    Log.d("GameManagementVM", "[$index] ${game.nombre} - \$${game.precio} (Stock: ${game.stock})")
+                }
+                
                 _games.value = gamesList
                 
                 if (gamesList.isEmpty()) {
-                    Log.w("GameManagementVM", "No se encontraron juegos en la base de datos")
+                    Log.w("GameManagementVM", "⚠️ NO SE ENCONTRARON JUEGOS - Lista vacía")
+                    _error.value = "No hay juegos en el catálogo. Agrega el primer juego para comenzar."
                 } else {
-                    Log.d("GameManagementVM", "Juegos encontrados: ${gamesList.joinToString { it.nombre }}")
+                    Log.d("GameManagementVM", "✅ Carga exitosa: ${gamesList.size} juegos cargados")
+                    _error.value = null
                 }
                 
             } catch (e: Exception) {
-                Log.e("GameManagementVM", "Error al cargar juegos", e)
+                Log.e("GameManagementVM", "❌ ERROR CRÍTICO al cargar juegos", e)
                 _error.value = "Error al cargar juegos: ${e.message}"
+                _games.value = emptyList()
             } finally {
                 _isLoading.value = false
+                Log.d("GameManagementVM", "=== FIN CARGA DE JUEGOS ===")
             }
         }
     }
