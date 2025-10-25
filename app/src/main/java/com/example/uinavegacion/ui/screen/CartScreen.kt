@@ -308,9 +308,9 @@ private fun SinglePaneCartContent(
             .then(if (windowInfo.isTablet) Modifier.fillMaxHeight(0.9f) else Modifier),
         verticalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo))
     ) {
-        // Lista de productos
+        // Lista de productos - más espacio
         LazyColumn(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(0.65f), // Dar más proporción a los productos
             verticalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo))
         ) {
             items(cartItems) { item ->
@@ -329,21 +329,12 @@ private fun SinglePaneCartContent(
             }
         }
 
-        // Resumen del carrito
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                CartSummary(
-                    totalItems = totalItems,
-                    totalPrice = totalPrice,
-                    isTablet = windowInfo.isTablet
-                )
-            }
-        }
+        // Resumen del carrito - más compacto
+        CartSummary(
+            totalItems = totalItems,
+            totalPrice = totalPrice,
+            isTablet = windowInfo.isTablet
+        )
 
         // Botones de acción
         if (windowInfo.isTablet) {
@@ -631,20 +622,22 @@ private fun MobileCartItem(
     cartViewModel: CartViewModel
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp), // Altura fija más grande para mejor equilibrio
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Imagen del producto
+            // Imagen del producto más grande
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(80.dp) // Aumentado de 60dp a 80dp
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
@@ -659,83 +652,90 @@ private fun MobileCartItem(
                     Icon(
                         imageVector = Icons.Default.Image,
                         contentDescription = "Sin imagen",
-                        modifier = Modifier.size(30.dp),
+                        modifier = Modifier.size(40.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
+            // Información del producto expandida
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = item.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge, // Texto más grande
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2
                 )
-                Spacer(Modifier.height(4.dp))
+                
                 Text(
                     text = "Cantidad: ${item.quantity}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyLarge, // Texto más grande
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(4.dp))
                 
                 // Precio con descuento si aplica
                 if (item.hasDiscount) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
                             color = androidx.compose.ui.graphics.Color(0xFFE74C3C),
-                            shape = RoundedCornerShape(3.dp)
+                            shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
                                 text = "-${item.discount}%",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium, // Más grande
                                 fontWeight = FontWeight.Bold,
                                 color = androidx.compose.ui.graphics.Color.White,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                             )
                         }
                         Text(
                             text = "$${String.format("%.2f", item.originalPrice)}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
                         )
                         Text(
                             text = "$${String.format("%.2f", item.price)}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = androidx.compose.ui.graphics.Color(0xFF27AE60),
                             fontWeight = FontWeight.Bold
                         )
                     }
                 } else {
                     Text(
-                        text = "Precio: $${item.price}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "Precio: $${String.format("%.2f", item.price)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
                 
                 Text(
                     text = "Subtotal: $${String.format("%.2f", item.price * item.quantity)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleMedium, // Más prominente
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            // Botones de control compactos para móvil
+            Spacer(Modifier.width(12.dp))
+
+            // Botones de control mejorados para móvil
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     AnimatedIconButton(
                         onClick = { 
@@ -744,22 +744,22 @@ private fun MobileCartItem(
                             }
                         },
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(40.dp) // Más grande
                             .background(
                                 MaterialTheme.colorScheme.secondaryContainer,
-                                RoundedCornerShape(8.dp)
+                                RoundedCornerShape(10.dp)
                             )
                     ) {
                         Icon(
                             Icons.Default.Remove,
                             contentDescription = "Disminuir cantidad",
                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                     
                     Card(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(44.dp), // Más grande
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
@@ -770,6 +770,7 @@ private fun MobileCartItem(
                         ) {
                             Text(
                                 text = "${item.quantity}",
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -779,17 +780,17 @@ private fun MobileCartItem(
                     AnimatedIconButton(
                         onClick = { cartViewModel.updateQuantity(item.id, item.quantity + 1) },
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(40.dp) // Más grande
                             .background(
                                 MaterialTheme.colorScheme.secondaryContainer,
-                                RoundedCornerShape(8.dp)
+                                RoundedCornerShape(10.dp)
                             )
                     ) {
                         Icon(
                             Icons.Default.Add,
                             contentDescription = "Aumentar cantidad",
                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -799,15 +800,15 @@ private fun MobileCartItem(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     ),
-                    modifier = Modifier.height(32.dp)
+                    modifier = Modifier.height(36.dp)
                 ) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Eliminar",
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Text("Quitar", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Quitar", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -820,33 +821,30 @@ private fun CartSummary(
     totalPrice: Double,
     isTablet: Boolean
 ) {
-    val textStyle = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
-    val titleStyle = if (isTablet) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge
-    
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 12.dp)
+        verticalArrangement = Arrangement.spacedBy(if (isTablet) 12.dp else 8.dp)
     ) {
-        // Encabezado del resumen
-        Text(
-            text = "Resumen del Pedido",
-            style = if (isTablet) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        
-        // Card con información del pedido
+        // Card con información compacta del pedido
         Card(
             modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = if (isTablet) 4.dp else 2.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
         ) {
             Column(
                 modifier = Modifier.padding(if (isTablet) 20.dp else 16.dp),
-                verticalArrangement = Arrangement.spacedBy(if (isTablet) 12.dp else 8.dp)
+                verticalArrangement = Arrangement.spacedBy(if (isTablet) 8.dp else 6.dp)
             ) {
+                // Encabezado
+                Text(
+                    text = "Resumen del Pedido",
+                    style = if (isTablet) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
                 // Items
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -855,19 +853,19 @@ private fun CartSummary(
                 ) {
                     Text(
                         text = "Items:",
-                        style = textStyle,
+                        style = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "$totalItems juegos",
-                        style = textStyle,
+                        style = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 
-                // Subtotal (sin envío)
+                // Subtotal
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -875,44 +873,44 @@ private fun CartSummary(
                 ) {
                     Text(
                         text = "Subtotal:",
-                        style = textStyle,
+                        style = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "$${String.format("%.2f", totalPrice)}",
-                        style = textStyle,
+                        style = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
         
-        // Card destacado con el total final
+        // Card destacado con el total final - más compacto
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = if (isTablet) 6.dp else 4.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(if (isTablet) 24.dp else 20.dp),
+                    .padding(if (isTablet) 20.dp else 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Total a Pagar:",
-                    style = if (isTablet) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
+                    style = if (isTablet) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
                     text = "$${String.format("%.2f", totalPrice)}",
-                    style = if (isTablet) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineSmall,
+                    style = if (isTablet) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
                 )
