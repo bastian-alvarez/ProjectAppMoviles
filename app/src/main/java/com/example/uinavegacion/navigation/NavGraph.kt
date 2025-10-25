@@ -64,30 +64,53 @@ fun AppNavGraph(navController: NavHostController) {
         }
     }
 
+    // Verificar si estamos en pantallas de autenticación
+    val isAuthScreen = currentRoute in listOf(
+        Route.Splash.path, 
+        Route.Login.path, 
+        Route.Register.path, 
+        Route.ForgotPassword.path, 
+        Route.VerifyEmail.path
+    )
+    
     // Configurar navegación según el tipo de dispositivo
     when (windowInfo.navigationType) {
         NavigationType.PERMANENT_NAVIGATION_DRAWER -> {
             // Drawer permanente para tablets grandes y desktop
-            Row(modifier = Modifier.fillMaxSize()) {
-                AppPermanentNavigationDrawer(
+            if (isAuthScreen) {
+                // Sin drawer en pantallas de autenticación
+                AdaptiveScaffold(
+                    windowInfo = windowInfo,
+                    navController = navController,
                     currentRoute = currentRoute,
-                    onNavigate = navigateAndCloseDrawer,
-                    onLogout = onLogout,
-                    isAdmin = isAdminView,
-                    cartCount = cartViewModel.getTotalItems()
+                    isAdminView = isAdminView,
+                    cartViewModel = cartViewModel,
+                    libraryViewModel = libraryViewModel,
+                    searchViewModel = searchViewModel,
+                    showNavigationElements = false
                 )
-                
-                            AdaptiveScaffold(
-                                windowInfo = windowInfo,
-                                navController = navController,
-                                currentRoute = currentRoute,
-                                isAdminView = isAdminView,
-                                cartViewModel = cartViewModel,
-                                libraryViewModel = libraryViewModel,
-                                searchViewModel = searchViewModel,
-                                showNavigationElements = false,
-                                modifier = Modifier.weight(1f)
-                            )
+            } else {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    AppPermanentNavigationDrawer(
+                        currentRoute = currentRoute,
+                        onNavigate = navigateAndCloseDrawer,
+                        onLogout = onLogout,
+                        isAdmin = isAdminView,
+                        cartCount = cartViewModel.getTotalItems()
+                    )
+                    
+                    AdaptiveScaffold(
+                        windowInfo = windowInfo,
+                        navController = navController,
+                        currentRoute = currentRoute,
+                        isAdminView = isAdminView,
+                        cartViewModel = cartViewModel,
+                        libraryViewModel = libraryViewModel,
+                        searchViewModel = searchViewModel,
+                        showNavigationElements = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
         
@@ -96,7 +119,7 @@ fun AppNavGraph(navController: NavHostController) {
             Row(modifier = Modifier.fillMaxSize()) {
                 val showNavigationRail = currentRoute in listOf(
                     Route.Home.path, Route.Games.path, Route.Library.path, Route.Cart.path, Route.Profile.path
-                ) && !isAdminView
+                ) && !isAdminView && !isAuthScreen
                 
                 if (showNavigationRail) {
                     AppNavigationRail(
@@ -125,8 +148,8 @@ fun AppNavGraph(navController: NavHostController) {
         
         NavigationType.BOTTOM_NAVIGATION -> {
             // Navegación tradicional con drawer modal para teléfonos
-            if (isAdminView) {
-                // Para administradores: Sin drawer modal
+            if (isAdminView || isAuthScreen) {
+                // Para administradores o pantallas de autenticación: Sin drawer modal
                 AdaptiveScaffold(
                     windowInfo = windowInfo,
                     navController = navController,
@@ -136,7 +159,7 @@ fun AppNavGraph(navController: NavHostController) {
                     libraryViewModel = libraryViewModel,
                     searchViewModel = searchViewModel,
                     showNavigationElements = true,
-                    onOpenDrawer = null // No drawer para admin
+                    onOpenDrawer = null // No drawer para admin ni auth
                 )
             } else {
                 // Para usuarios normales: Con drawer modal
