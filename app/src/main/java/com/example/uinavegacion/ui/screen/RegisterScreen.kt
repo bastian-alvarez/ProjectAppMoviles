@@ -22,6 +22,8 @@ import com.example.uinavegacion.navigation.Route
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.foundation.text.KeyboardOptions
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
@@ -195,6 +197,63 @@ fun RegisterScreen(nav: NavHostController) {
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     )
                 )
+                
+                // Indicador de requisitos de contraseña
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Text(
+                            text = "Requisitos de contraseña:",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        
+                        // Requisito: Mínimo 8 caracteres
+                        PasswordRequirementItem(
+                            text = "Mínimo 8 caracteres",
+                            isMet = registerState.pass.length >= 8
+                        )
+                        
+                        // Requisito: Una mayúscula
+                        PasswordRequirementItem(
+                            text = "Al menos una letra mayúscula (A-Z)",
+                            isMet = registerState.pass.any { it.isUpperCase() }
+                        )
+                        
+                        // Requisito: Una minúscula
+                        PasswordRequirementItem(
+                            text = "Al menos una letra minúscula (a-z)",
+                            isMet = registerState.pass.any { it.isLowerCase() }
+                        )
+                        
+                        // Requisito: Un número
+                        PasswordRequirementItem(
+                            text = "Al menos un número (0-9)",
+                            isMet = registerState.pass.any { it.isDigit() }
+                        )
+                        
+                        // Requisito: Un carácter especial
+                        PasswordRequirementItem(
+                            text = "Al menos un símbolo (!@#$%^&*)",
+                            isMet = registerState.pass.any { !it.isLetterOrDigit() }
+                        )
+                        
+                        // Requisito: Sin espacios
+                        PasswordRequirementItem(
+                            text = "Sin espacios en blanco",
+                            isMet = !registerState.pass.contains(' ')
+                        )
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
 
                 // Campo Confirmar Contraseña
@@ -308,5 +367,39 @@ fun RegisterScreen(nav: NavHostController) {
                 Spacer(Modifier.height(8.dp))
             }
         }
+    }
+}
+
+// Componente para mostrar cada requisito de contraseña
+@Composable
+private fun PasswordRequirementItem(
+    text: String,
+    isMet: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (isMet) Icons.Default.CheckCircle else Icons.Default.Cancel,
+            contentDescription = if (isMet) "Requisito cumplido" else "Requisito no cumplido",
+            tint = if (isMet) 
+                MaterialTheme.colorScheme.tertiary 
+            else 
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isMet) 
+                MaterialTheme.colorScheme.onSurfaceVariant 
+            else 
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            fontWeight = if (isMet) FontWeight.Medium else FontWeight.Normal
+        )
     }
 }
