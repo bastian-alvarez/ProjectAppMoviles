@@ -34,92 +34,61 @@ import com.example.uinavegacion.ui.viewmodel.GameManagementViewModelFactory
 fun GameManagementScreen(navController: NavHostController) {
     // Configurar ViewModel con dependencias
     val context = LocalContext.current
-    val db = remember { AppDatabase.getInstance(context) }
+    val applicationContext = context.applicationContext
+    val db = remember { AppDatabase.getInstance(applicationContext) }
     val gameRepository = remember { GameRepository(db.juegoDao()) }
     
     val viewModel: GameManagementViewModel = viewModel(
         factory = GameManagementViewModelFactory(gameRepository)
     )
     
-    // Forzar recarga inicial y debug
-    LaunchedEffect(Unit) {
-        android.util.Log.d("GameManagementScreen", "=== INICIANDO GESTIÓN DE JUEGOS ===")
-        
-        // Debug completo de la base de datos
+    // Estado para controlar si ya se intentó cargar datos
+    var dataInitialized by remember { mutableStateOf(false) }
+    
+    // Función para inicializar datos manualmente
+    val initializeData = suspend {
         try {
-            // Verificar conteo
-            val count = db.juegoDao().count()
-            android.util.Log.d("GameManagementScreen", "Conteo de juegos: $count")
+            android.util.Log.d("GameManagementScreen", "🔄 VERIFICANDO E INICIALIZANDO DATOS")
             
-            // Si está vacía, intentar forzar datos
-            if (count == 0) {
-                android.util.Log.w("GameManagementScreen", "¡BD VACÍA! Intentando insertar datos manualmente...")
+            val currentCount = db.juegoDao().count()
+            android.util.Log.d("GameManagementScreen", "📊 Juegos actuales en BD: $currentCount")
+            
+            if (currentCount == 0) {
+                android.util.Log.d("GameManagementScreen", "💾 Insertando juegos de prueba...")
                 
-                // Insertar algunos juegos manualmente para debug
                 val juegosSeed = listOf(
-                    com.example.uinavegacion.data.local.juego.JuegoEntity(
-                        nombre = "Super Mario Bros", 
-                        precio = 29.99, 
-                        imagenUrl = "https://tudominio.com/imagenes/super_mario_bros.webp", 
-                        descripcion = "El clásico juego de plataformas", 
-                        stock = 15, 
-                        desarrollador = "Nintendo", 
-                        fechaLanzamiento = "1985", 
-                        categoriaId = 1, 
-                        generoId = 1
-                    ),
-                    com.example.uinavegacion.data.local.juego.JuegoEntity(
-                        nombre = "The Legend of Zelda", 
-                        precio = 39.99, 
-                        imagenUrl = "https://tudominio.com/imagenes/the_legend_of_zelda.webp", 
-                        descripcion = "Épica aventura en Hyrule", 
-                        stock = 8, 
-                        desarrollador = "Nintendo", 
-                        fechaLanzamiento = "1986", 
-                        categoriaId = 1, 
-                        generoId = 1
-                    ),
-                    com.example.uinavegacion.data.local.juego.JuegoEntity(
-                        nombre = "Minecraft", 
-                        precio = 26.99, 
-                        imagenUrl = "https://tudominio.com/imagenes/minecraft.webp", 
-                        descripcion = "Construye tu mundo", 
-                        stock = 25, 
-                        desarrollador = "Mojang", 
-                        fechaLanzamiento = "2011", 
-                        categoriaId = 1, 
-                        generoId = 1
-                    )
+                    JuegoEntity(id = 0, nombre = "Super Mario Bros", precio = 29.99, imagenUrl = "https://example.com/mario.webp", descripcion = "El clásico juego de plataformas de Nintendo", stock = 15, desarrollador = "Nintendo", fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
+                    JuegoEntity(id = 0, nombre = "The Legend of Zelda", precio = 39.99, imagenUrl = "https://example.com/zelda.webp", descripcion = "Épica aventura en el reino de Hyrule", stock = 8, desarrollador = "Nintendo", fechaLanzamiento = "1986", categoriaId = 1, generoId = 1),
+                    JuegoEntity(id = 0, nombre = "Minecraft", precio = 26.99, imagenUrl = "https://example.com/minecraft.webp", descripcion = "Construye y explora mundos infinitos", stock = 25, desarrollador = "Mojang", fechaLanzamiento = "2011", categoriaId = 1, generoId = 1),
+                    JuegoEntity(id = 0, nombre = "Call of Duty", precio = 59.99, imagenUrl = "https://example.com/cod.webp", descripcion = "Acción militar intensa", stock = 12, desarrollador = "Activision", fechaLanzamiento = "2019", categoriaId = 1, generoId = 1),
+                    JuegoEntity(id = 0, nombre = "FIFA 24", precio = 69.99, imagenUrl = "https://example.com/fifa.webp", descripcion = "El mejor simulador de fútbol", stock = 18, desarrollador = "EA Sports", fechaLanzamiento = "2023", categoriaId = 1, generoId = 1)
                 )
                 
                 juegosSeed.forEach { juego ->
-                    try {
-                        val id = db.juegoDao().insert(juego)
-                        android.util.Log.d("GameManagementScreen", "Juego insertado: ${juego.nombre} con ID: $id")
-                    } catch (e: Exception) {
-                        android.util.Log.e("GameManagementScreen", "Error insertando ${juego.nombre}", e)
-                    }
+                    val id = db.juegoDao().insert(juego)
+                    android.util.Log.d("GameManagementScreen", "✅ Insertado: ${juego.nombre} (ID: $id)")
                 }
                 
-                // Verificar después de insertar
-                val newCount = db.juegoDao().count()
-                android.util.Log.d("GameManagementScreen", "Conteo después de insertar: $newCount")
+                val finalCount = db.juegoDao().count()
+                android.util.Log.d("GameManagementScreen", "🎮 Total de juegos después de insertar: $finalCount")
+            } else {
+                android.util.Log.d("GameManagementScreen", "✅ Ya hay juegos en la BD ($currentCount)")
             }
             
-            // Listar todos los juegos
-            val allGames = db.juegoDao().getAll()
-            android.util.Log.d("GameManagementScreen", "=== LISTADO COMPLETO (${allGames.size} juegos) ===")
-            allGames.forEach { game ->
-                android.util.Log.d("GameManagementScreen", "ID: ${game.id} | ${game.nombre} | \$${game.precio} | Stock: ${game.stock}")
-            }
+            dataInitialized = true
             
         } catch (e: Exception) {
-            android.util.Log.e("GameManagementScreen", "ERROR CRÍTICO en debug BD", e)
+            android.util.Log.e("GameManagementScreen", "❌ Error inicializando datos", e)
         }
-        
-        // Forzar actualización del ViewModel
-        kotlinx.coroutines.delay(1000) // Dar tiempo para que termine todo
-        viewModel.refreshGames()
+    }
+    
+    // Inicialización automática
+    LaunchedEffect(Unit) {
+        if (!dataInitialized) {
+            initializeData()
+            kotlinx.coroutines.delay(500)
+            viewModel.refreshGames()
+        }
     }
     
     // Observar estados
@@ -291,7 +260,13 @@ fun GameManagementScreen(navController: NavHostController) {
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
-                                onClick = { viewModel.refreshGames() }
+                                onClick = { 
+                                    scope.launch {
+                                        initializeData()
+                                        kotlinx.coroutines.delay(500)
+                                        viewModel.refreshGames()
+                                    }
+                                }
                             ) {
                                 Text("Reintentar")
                             }
@@ -327,6 +302,19 @@ fun GameManagementScreen(navController: NavHostController) {
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { 
+                                    scope.launch {
+                                        dataInitialized = false // Reset para forzar inicialización
+                                        initializeData()
+                                        kotlinx.coroutines.delay(500)
+                                        viewModel.refreshGames()
+                                    }
+                                }
+                            ) {
+                                Text("Cargar Datos de Prueba")
+                            }
                         }
                     }
                 }
