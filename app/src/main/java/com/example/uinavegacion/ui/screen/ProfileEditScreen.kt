@@ -134,12 +134,16 @@ fun ProfileEditScreen(nav: NavHostController) {
         }
     }
 
+    // ID del usuario para mantener la referencia correcta
+    var userId by remember { mutableStateOf<Long?>(null) }
+    
     // Cargar datos del usuario desde SessionManager
     LaunchedEffect(Unit) {
         val currentUserEmail = SessionManager.getCurrentUserEmail()
         if (currentUserEmail != null) {
             val userByEmail = db.userDao().getByEmail(currentUserEmail)
             if (userByEmail != null) {
+                userId = userByEmail.id
                 name = userByEmail.name
                 email = userByEmail.email
                 phone = userByEmail.phone.ifEmpty { "+56 9 " }
@@ -446,30 +450,43 @@ fun ProfileEditScreen(nav: NavHostController) {
                 
                 Button(
                     onClick = {
+                        if (userId == null) {
+                            photoSavedMessage = "Error: Usuario no identificado"
+                            return@Button
+                        }
+                        
+                        // Validar que el teléfono tenga formato correcto
+                        if (phone.isNotBlank() && !phone.startsWith("+56 9")) {
+                            photoSavedMessage = "El teléfono debe comenzar con +56 9"
+                            return@Button
+                        }
+                        
                         isLoading = true
                         scope.launch {
-                            // Guardar cambios del perfil
                             try {
-                                val userByEmail = db.userDao().getByEmail(email)
-                                if (userByEmail != null) {
+                                // Obtener el usuario actual por ID para mantener la contraseña
+                                val currentUser = db.userDao().getById(userId!!)
+                                if (currentUser != null) {
+                                    // Actualizar todos los campos en la base de datos
                                     db.userDao().update(
-                                        id = userByEmail.id,
-                                        name = name,
-                                        email = email,
-                                        phone = phone,
-                                        password = userByEmail.password
+                                        id = userId!!,
+                                        name = name.trim(),
+                                        email = email.trim(),
+                                        phone = phone.trim(),
+                                        password = currentUser.password // Mantener la contraseña actual
                                     )
+                                    
                                     // Actualizar SessionManager con los nuevos datos
-                                    val updatedUser = db.userDao().getByEmail(email)
+                                    val updatedUser = db.userDao().getById(userId!!)
                                     if (updatedUser != null) {
                                         SessionManager.loginUser(updatedUser)
+                                        showSuccessMessage = true
+                                        photoSavedMessage = "✓ Perfil actualizado correctamente"
                                     }
-                                    showSuccessMessage = true
-                                    isLoading = false
                                 } else {
                                     photoSavedMessage = "Error: Usuario no encontrado"
-                                    isLoading = false
                                 }
+                                isLoading = false
                             } catch (e: Exception) {
                                 photoSavedMessage = "Error al guardar: ${e.message}"
                                 isLoading = false
@@ -477,12 +494,13 @@ fun ProfileEditScreen(nav: NavHostController) {
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    enabled = !isLoading
+                    enabled = !isLoading && name.isNotBlank() && email.isNotBlank()
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(Modifier.width(8.dp))
                     }

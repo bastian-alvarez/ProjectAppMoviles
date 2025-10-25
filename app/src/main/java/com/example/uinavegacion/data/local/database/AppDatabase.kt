@@ -100,10 +100,10 @@ abstract class AppDatabase : RoomDatabase() {
                                 val userDao = getInstance(context).userDao()
                                 val adminDao = getInstance(context).adminDao()
 
-                                // Precargamos usuarios
+                                // Precargamos usuarios con formato chileno +56 9
                                 val userSeed = listOf(
-                                    UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "12345678", password = "Password123!"),
-                                    UserEntity(name = "Usuario Test", email = "test@test.com", phone = "87654321", password = "Password123!")
+                                    UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "+56 9 1234 5678", password = "Password123!"),
+                                    UserEntity(name = "Usuario Test", email = "test@test.com", phone = "+56 9 8765 4321", password = "Password123!")
                                 )
 
 
@@ -115,11 +115,11 @@ abstract class AppDatabase : RoomDatabase() {
                                     userSeed.forEach { userDao.insert(it) }
                                 }
 
-                                // Precargamos administradores
+                                // Precargamos administradores con formato chileno +56 9
                                 val adminSeed = listOf(
-                                    AdminEntity(name = "Administrador Principal", email = "admin@steamish.com", phone = "88776655", password = "Admin123!", role = "SUPER_ADMIN"),
-                                    AdminEntity(name = "Gerente de Juegos", email = "manager@steamish.com", phone = "77665544", password = "Manager456@", role = "GAME_MANAGER"),
-                                    AdminEntity(name = "Soporte Técnico", email = "support@steamish.com", phone = "66554433", password = "Support789#", role = "SUPPORT")
+                                    AdminEntity(name = "Administrador Principal", email = "admin@steamish.com", phone = "+56 9 8877 6655", password = "Admin123!", role = "SUPER_ADMIN"),
+                                    AdminEntity(name = "Gerente de Juegos", email = "manager@steamish.com", phone = "+56 9 7766 5544", password = "Manager456@", role = "GAME_MANAGER"),
+                                    AdminEntity(name = "Soporte Técnico", email = "support@steamish.com", phone = "+56 9 6655 4433", password = "Support789#", role = "SUPPORT")
                                 )
 
                                 val adminCount = adminDao.count()
