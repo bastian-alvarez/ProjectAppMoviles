@@ -178,11 +178,51 @@ class AuthViewModel(
     }
 
     fun onPhoneChange(value: String) {                      // Handler del teléfono
-        // Permitir escribir el formato completo: +56 9 XXXX XXXX
+        // Formatear automáticamente el teléfono chileno
+        val formatted = formatChileanPhone(value)
         _register.update {                                  // Guardamos + validamos
-            it.copy(phone = value, phoneError = validatePhoneDigitsOnly(value))
+            it.copy(phone = formatted, phoneError = validatePhoneDigitsOnly(formatted))
         }
         recomputeRegisterCanSubmit()
+    }
+    
+    // Función para formatear el teléfono a +56 9 XXXX XXXX
+    private fun formatChileanPhone(input: String): String {
+        // Extraer solo los dígitos
+        val digits = input.filter { it.isDigit() }
+        
+        // Si está vacío, retornar vacío
+        if (digits.isEmpty()) return ""
+        
+        // Construir el formato según la cantidad de dígitos
+        return when {
+            digits.length <= 2 -> "+$digits"
+            digits.length == 3 -> "+${digits.substring(0, 2)} ${digits[2]}"
+            digits.length <= 11 -> {
+                val countryCode = digits.substring(0, 2) // 56
+                val mobilePrefix = digits.getOrNull(2) ?: "" // 9
+                val remaining = digits.substring(3.coerceAtMost(digits.length))
+                
+                when {
+                    remaining.isEmpty() -> "+$countryCode $mobilePrefix"
+                    remaining.length <= 4 -> "+$countryCode $mobilePrefix $remaining"
+                    else -> {
+                        val first4 = remaining.substring(0, 4)
+                        val last4 = remaining.substring(4).take(4)
+                        "+$countryCode $mobilePrefix $first4 $last4"
+                    }
+                }
+            }
+            else -> {
+                // Si tiene más de 11 dígitos, tomar solo los primeros 11
+                val trimmed = digits.take(11)
+                val countryCode = trimmed.substring(0, 2)
+                val mobilePrefix = trimmed[2]
+                val first4 = trimmed.substring(3, 7)
+                val last4 = trimmed.substring(7)
+                "+$countryCode $mobilePrefix $first4 $last4"
+            }
+        }
     }
 
     fun onRegisterPassChange(value: String) {               // Handler de la contraseña

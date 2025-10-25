@@ -145,7 +145,8 @@ fun ProfileEditScreen(nav: NavHostController) {
                 userId = userByEmail.id
                 name = userByEmail.name
                 email = userByEmail.email
-                phone = userByEmail.phone
+                // Formatear el teléfono al cargarlo desde la BD
+                phone = formatChileanPhoneNumber(userByEmail.phone)
                 profilePhotoUri = userByEmail.profilePhotoUri
             }
         }
@@ -348,7 +349,10 @@ fun ProfileEditScreen(nav: NavHostController) {
                     // Teléfono
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { phone = it },
+                        onValueChange = { newValue ->
+                            // Formatear automáticamente mientras el usuario escribe
+                            phone = formatChileanPhoneNumber(newValue)
+                        },
                         label = { Text("Teléfono") },
                         placeholder = { Text("+56 9 1234 5678") },
                         leadingIcon = {
@@ -522,6 +526,45 @@ fun ProfileEditScreen(nav: NavHostController) {
                     Text("Guardar Cambios")
                 }
             }
+        }
+    }
+}
+
+// Función para formatear el teléfono chileno a +56 9 XXXX XXXX
+private fun formatChileanPhoneNumber(input: String): String {
+    // Extraer solo los dígitos
+    val digits = input.filter { it.isDigit() }
+    
+    // Si está vacío, retornar vacío
+    if (digits.isEmpty()) return ""
+    
+    // Construir el formato según la cantidad de dígitos
+    return when {
+        digits.length <= 2 -> "+$digits"
+        digits.length == 3 -> "+${digits.substring(0, 2)} ${digits[2]}"
+        digits.length <= 11 -> {
+            val countryCode = digits.substring(0, 2) // 56
+            val mobilePrefix = digits.getOrNull(2) ?: "" // 9
+            val remaining = digits.substring(3.coerceAtMost(digits.length))
+            
+            when {
+                remaining.isEmpty() -> "+$countryCode $mobilePrefix"
+                remaining.length <= 4 -> "+$countryCode $mobilePrefix $remaining"
+                else -> {
+                    val first4 = remaining.substring(0, 4)
+                    val last4 = remaining.substring(4).take(4)
+                    "+$countryCode $mobilePrefix $first4 $last4"
+                }
+            }
+        }
+        else -> {
+            // Si tiene más de 11 dígitos, tomar solo los primeros 11
+            val trimmed = digits.take(11)
+            val countryCode = trimmed.substring(0, 2)
+            val mobilePrefix = trimmed[2]
+            val first4 = trimmed.substring(3, 7)
+            val last4 = trimmed.substring(7)
+            "+$countryCode $mobilePrefix $first4 $last4"
         }
     }
 }
