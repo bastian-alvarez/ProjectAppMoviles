@@ -33,13 +33,18 @@ import com.example.uinavegacion.ui.viewmodel.GameManagementViewModelFactory
 @Composable
 fun GameManagementScreen(navController: NavHostController) {
     // Configurar ViewModel con dependencias
-    val context = LocalContext.current.applicationContext
+    val context = LocalContext.current
     val db = remember { AppDatabase.getInstance(context) }
     val gameRepository = remember { GameRepository(db.juegoDao()) }
     
     val viewModel: GameManagementViewModel = viewModel(
         factory = GameManagementViewModelFactory(gameRepository)
     )
+    
+    // Forzar recarga inicial
+    LaunchedEffect(Unit) {
+        viewModel.refreshGames()
+    }
     
     // Observar estados
     val games by viewModel.games.collectAsState()
@@ -342,60 +347,133 @@ private fun AddEditGameDialog(
     var stock by remember { mutableStateOf(game?.stock?.toString() ?: "") }
     var imageUrl by remember { mutableStateOf(game?.imagenUrl ?: "") }
     
+    // Validaciones en tiempo real
+    val isNombreValid = nombre.isNotBlank()
+    val isPrecioValid = precio.toDoubleOrNull()?.let { it > 0 } ?: false
+    val isStockValid = stock.toIntOrNull()?.let { it >= 0 } ?: false
+    val isFormValid = isNombreValid && isPrecioValid && isStockValid
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(if (game == null) "➕ Agregar Juego" else "✏️ Editar Juego")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = if (game == null) Icons.Default.Add else Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    if (game == null) "Agregar Juego" else "Editar Juego",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
         },
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                    .heightIn(max = 500.dp)
                     .verticalScroll(rememberScrollState())
                     .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Nombre del juego
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
-                    label = { Text("Nombre del juego") },
+                    label = { Text("Nombre del juego *") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    isError = !isNombreValid && nombre.isNotEmpty(),
+                    supportingText = if (!isNombreValid && nombre.isNotEmpty()) {
+                        { Text("El nombre no puede estar vacío", color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    leadingIcon = {
+                        Icon(Icons.Default.Games, contentDescription = null)
+                    }
                 )
                 
+                // Descripción
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
                     label = { Text("Descripción") },
                     modifier = Modifier.fillMaxWidth(),
-                    maxLines = 3
+                    maxLines = 3,
+                    minLines = 2,
+                    placeholder = { Text("Descripción del juego...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Description, contentDescription = null)
+                    }
                 )
                 
+                // Precio
                 OutlinedTextField(
                     value = precio,
-                    onValueChange = { precio = it },
-                    label = { Text("Precio") },
+                    onValueChange = { newValue ->
+                        // Solo permitir números y punto decimal
+                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                            precio = newValue
+                        }
+                    },
+                    label = { Text("Precio *") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    prefix = { Text("$") }
+                    prefix = { Text("$") },
+                    isError = !isPrecioValid && precio.isNotEmpty(),
+                    supportingText = if (!isPrecioValid && precio.isNotEmpty()) {
+                        { Text("El precio debe ser mayor a 0", color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    leadingIcon = {
+                        Icon(Icons.Default.AttachMoney, contentDescription = null)
+                    },
+                    placeholder = { Text("0.00") }
                 )
                 
+                // Stock
                 OutlinedTextField(
                     value = stock,
-                    onValueChange = { stock = it },
-                    label = { Text("Stock") },
+                    onValueChange = { newValue ->
+                        // Solo permitir números enteros
+                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d+$"))) {
+                            stock = newValue
+                        }
+                    },
+                    label = { Text("Stock *") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    isError = !isStockValid && stock.isNotEmpty(),
+                    supportingText = if (!isStockValid && stock.isNotEmpty()) {
+                        { Text("El stock debe ser 0 o mayor", color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    leadingIcon = {
+                        Icon(Icons.Default.Inventory, contentDescription = null)
+                    },
+                    placeholder = { Text("0") }
                 )
                 
+                // URL de imagen
                 OutlinedTextField(
                     value = imageUrl,
                     onValueChange = { imageUrl = it },
                     label = { Text("URL de imagen (opcional)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("https://...") }
+                    placeholder = { Text("https://ejemplo.com/imagen.webp") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Image, contentDescription = null)
+                    }
+                )
+                
+                // Indicador de campos obligatorios
+                Text(
+                    text = "* Campos obligatorios",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         },
@@ -404,19 +482,21 @@ private fun AddEditGameDialog(
                 onClick = {
                     val precioDouble = precio.toDoubleOrNull() ?: 0.0
                     val stockInt = stock.toIntOrNull() ?: 0
-                    if (nombre.isNotBlank() && precioDouble > 0 && stockInt >= 0) {
-                        onSave(nombre, descripcion, precioDouble, stockInt, imageUrl)
-                    }
+                    onSave(nombre.trim(), descripcion.trim(), precioDouble, stockInt, imageUrl.trim())
                 },
-                enabled = nombre.isNotBlank() && 
-                         (precio.toDoubleOrNull() ?: 0.0) > 0 && 
-                         (stock.toIntOrNull() ?: 0) >= 0
+                enabled = isFormValid
             ) {
+                Icon(
+                    imageVector = if (game == null) Icons.Default.Add else Icons.Default.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(if (game == null) "Agregar" else "Guardar")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            OutlinedButton(onClick = onDismiss) {
                 Text("Cancelar")
             }
         }

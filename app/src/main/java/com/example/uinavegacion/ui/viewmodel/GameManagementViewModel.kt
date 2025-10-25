@@ -43,13 +43,22 @@ class GameManagementViewModel(
     fun loadGames() {
         viewModelScope.launch {
             try {
+                Log.d("GameManagementVM", "Iniciando carga de juegos...")
                 _isLoading.value = true
                 _error.value = null
                 
                 val gamesList = gameRepository.getAllGames()
+                Log.d("GameManagementVM", "Juegos cargados: ${gamesList.size}")
                 _games.value = gamesList
                 
+                if (gamesList.isEmpty()) {
+                    Log.w("GameManagementVM", "No se encontraron juegos en la base de datos")
+                } else {
+                    Log.d("GameManagementVM", "Juegos encontrados: ${gamesList.joinToString { it.nombre }}")
+                }
+                
             } catch (e: Exception) {
+                Log.e("GameManagementVM", "Error al cargar juegos", e)
                 _error.value = "Error al cargar juegos: ${e.message}"
             } finally {
                 _isLoading.value = false
