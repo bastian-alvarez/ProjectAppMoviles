@@ -151,43 +151,48 @@ private fun PhoneGamesLayout(
     windowInfo: WindowInfo,
     snackbarHostState: SnackbarHostState
 ) {
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(AdaptiveUtils.getHorizontalPadding(windowInfo)),
+                .padding(horizontal = AdaptiveUtils.getHorizontalPadding(windowInfo)),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        item {
-            GamesHeader(
-                categories = categories,
-                selectedCategory = selectedCategory,
-                onCategorySelect = onCategorySelect,
-                windowInfo = windowInfo
-            )
-        }
+            item {
+                GamesHeader(
+                    categories = categories,
+                    selectedCategory = selectedCategory,
+                    onCategorySelect = onCategorySelect,
+                    windowInfo = windowInfo
+                )
+            }
 
-        items(games) { game ->
-            GameListItem(
-                game = game,
-                nav = nav,
-                cartViewModel = cartViewModel,
-                windowInfo = windowInfo
-            )
-        }
+            items(games) { game ->
+                GameListItem(
+                    game = game,
+                    nav = nav,
+                    cartViewModel = cartViewModel,
+                    windowInfo = windowInfo
+                )
+            }
 
             item {
-                Spacer(Modifier.height(16.dp))
                 Text(
                     text = "Total de juegos: ${games.size}",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
                 )
             }
+        }
+        
+        // SnackbarHost sin Scaffold
+        Box(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            SnackbarHost(snackbarHostState)
         }
     }
 }
@@ -207,15 +212,10 @@ private fun TabletGamesLayout(
     val maxContentWidth = AdaptiveUtils.getMaxContentWidth(windowInfo)
     val horizontalPadding = AdaptiveUtils.getHorizontalPadding(windowInfo)
     
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.TopCenter
-        ) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
         Column(
             modifier = Modifier
                 .widthIn(max = maxContentWidth)
@@ -245,13 +245,14 @@ private fun TabletGamesLayout(
                         windowInfo = windowInfo
                     )
                 }
-                
-                // Spacer item al final
-                item {
-                    Spacer(Modifier.height(16.dp))
-                }
             }
         }
+        
+        // SnackbarHost sin Scaffold
+        Box(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            SnackbarHost(snackbarHostState)
         }
     }
 }
