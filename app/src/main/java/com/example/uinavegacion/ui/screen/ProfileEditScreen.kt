@@ -60,50 +60,43 @@ fun ProfileEditScreen(nav: NavHostController) {
     
     // Función para formatear teléfono celular chileno: +56 9 XXXX XXXX (8 dígitos después del 9)
     fun formatChileanPhone(input: String): String {
-        // Si el usuario borra todo o intenta borrar el prefijo, mantener +56 9 
-        if (input.isEmpty() || input == "+" || input == "+5" || input == "+56" || input == "+56 " || input == "+56 9") {
+        // Si está vacío o es solo el prefijo, retornar prefijo base
+        if (input.isEmpty() || input.isBlank()) {
             return "+56 9 "
         }
         
         // Remover todo excepto dígitos
-        val digitsOnly = input.replace(Regex("[^0-9]"), "")
+        val digitsOnly = input.filter { it.isDigit() }
         
         // Si no hay dígitos, retornar el prefijo
         if (digitsOnly.isEmpty()) return "+56 9 "
         
-        // Extraer solo los dígitos después del código de país (56)
-        val cleanDigits = if (digitsOnly.startsWith("56") && digitsOnly.length > 2) {
-            digitsOnly.substring(2)
-        } else if (digitsOnly.startsWith("56")) {
-            ""
-        } else {
-            digitsOnly
+        // Eliminar el código de país (56) si está presente
+        val withoutCountryCode = when {
+            digitsOnly.startsWith("569") && digitsOnly.length > 3 -> digitsOnly.substring(3) // Quitar 569
+            digitsOnly.startsWith("56") && digitsOnly.length > 2 -> digitsOnly.substring(2)  // Quitar 56
+            digitsOnly.startsWith("9") -> digitsOnly.substring(1) // Quitar solo el 9
+            else -> digitsOnly // Usar tal cual
         }
         
-        // Si no hay dígitos después del 56, retornar prefijo
-        if (cleanDigits.isEmpty()) return "+56 9 "
+        // Limitar a máximo 8 dígitos
+        val phoneDigits = withoutCountryCode.take(8)
         
-        // El primer dígito debe ser 9 (celular), si no lo es, agregarlo
-        val phoneDigits = if (cleanDigits.startsWith("9")) {
-            cleanDigits.substring(1).take(8)  // Tomar máximo 8 dígitos después del 9
-        } else {
-            cleanDigits.take(8)  // Tomar máximo 8 dígitos (asumimos que es celular)
-        }
+        // Si no hay dígitos, retornar prefijo
+        if (phoneDigits.isEmpty()) return "+56 9 "
         
-        // Formatear según la cantidad de dígitos
-        // Formato: +56 9 XXXX XXXX (16 caracteres total con espacios)
+        // Formatear: +56 9 XXXX XXXX
         val formatted = when (phoneDigits.length) {
-            0 -> "+56 9 "
             in 1..4 -> "+56 9 $phoneDigits"
             in 5..8 -> {
-                val first = phoneDigits.substring(0, 4)     // XXXX
-                val second = phoneDigits.substring(4)        // XXXX (o menos)
+                val first = phoneDigits.substring(0, 4)
+                val second = phoneDigits.substring(4)
                 "+56 9 $first $second"
             }
             else -> "+56 9 "
         }
         
-        return formatted.trimEnd()
+        return formatted
     }
 
     // Crear archivo temporal para foto
@@ -192,14 +185,8 @@ fun ProfileEditScreen(nav: NavHostController) {
                 userId = userByEmail.id
                 name = userByEmail.name
                 email = userByEmail.email
-                // Asegurar que el teléfono tenga formato chileno
-                phone = if (userByEmail.phone.isBlank()) {
-                    "+56 9 "
-                } else if (!userByEmail.phone.startsWith("+56")) {
-                    "+56 9 ${userByEmail.phone}"
-                } else {
-                    userByEmail.phone
-                }
+                // Aplicar formato chileno al teléfono
+                phone = formatChileanPhone(userByEmail.phone)
                 profilePhotoUri = userByEmail.profilePhotoUri
             }
         }
