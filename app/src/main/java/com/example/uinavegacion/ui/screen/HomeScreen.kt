@@ -29,6 +29,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
+import com.example.uinavegacion.utils.GameImages
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -413,26 +414,12 @@ private fun CompactGameCard(
                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                if (game.imageUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = game.imageUrl,
-                        contentDescription = game.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = "Sin imagen",
-                            modifier = Modifier.size(40.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                AsyncImage(
+                    model = GameImages.getDefaultImage(),
+                    contentDescription = game.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
                 
                 // Badge de descuento
                 if (game.hasDiscount) {
@@ -546,21 +533,12 @@ private fun MobileGameCard(
                 contentAlignment = Alignment.Center
             ) {
                 // Imagen del juego
-                if (game.imageUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = game.imageUrl,
-                        contentDescription = game.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = "Sin imagen",
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                AsyncImage(
+                    model = GameImages.getDefaultImage(),
+                    contentDescription = game.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
                 
                 // Badge de descuento
                 if (game.hasDiscount) {
@@ -679,21 +657,12 @@ private fun GameCard(
                 contentAlignment = Alignment.Center
             ) {
                 // Imagen del juego con AsyncImage
-                if (game.imageUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = game.imageUrl,
-                        contentDescription = game.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = "Sin imagen",
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                AsyncImage(
+                    model = GameImages.getDefaultImage(),
+                    contentDescription = game.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
                 
                 // Precio con descuento si aplica
                 if (game.hasDiscount) {

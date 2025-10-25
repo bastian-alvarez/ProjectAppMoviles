@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.*
+import com.example.uinavegacion.ui.utils.GameImages
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable  
@@ -239,7 +240,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                                 id = game.id,
                                 name = game.name,
                                 price = game.discountedPrice,
-                                imageUrl = game.imageUrl,
+                                imageUrl = GameImages.getDefaultImage(),
                                 originalPrice = if (game.hasDiscount) game.price else null,
                                 discount = game.discount
                             )

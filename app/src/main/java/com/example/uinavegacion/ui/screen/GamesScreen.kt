@@ -33,6 +33,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.uinavegacion.navigation.*
 import com.example.uinavegacion.ui.utils.*
+import com.example.uinavegacion.ui.utils.GameImages
 
 data class Game(
     val id: String, 
@@ -392,21 +393,12 @@ private fun GameListItem(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                if (game.imageUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = game.imageUrl,
-                        contentDescription = game.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = "Sin imagen",
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                AsyncImage(
+                    model = GameImages.getDefaultImage(),
+                    contentDescription = game.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
                 
                 // Precio destacado en esquina
                 Card(
@@ -524,7 +516,7 @@ private fun GameListItem(
                             id = game.id,
                             name = game.name,
                             price = game.discountedPrice,
-                            imageUrl = game.imageUrl,
+                            imageUrl = GameImages.getDefaultImage(),
                             originalPrice = if (game.hasDiscount) game.price else null,
                             discount = game.discount
                         )
@@ -609,21 +601,12 @@ private fun GameGridItem(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                if (game.imageUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = game.imageUrl,
-                        contentDescription = game.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = "Sin imagen",
-                        modifier = Modifier.size(60.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                AsyncImage(
+                    model = GameImages.getDefaultImage(),
+                    contentDescription = game.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
                 
                 // Precio destacado en esquina
                 Card(
@@ -698,7 +681,7 @@ private fun GameGridItem(
                                 id = game.id,
                                 name = game.name,
                                 price = game.discountedPrice,
-                                imageUrl = game.imageUrl,
+                                imageUrl = GameImages.getDefaultImage(),
                                 originalPrice = if (game.hasDiscount) game.price else null,
                                 discount = game.discount
                             )
