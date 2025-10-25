@@ -16,6 +16,15 @@ fun validateLettersOnly(nombre: String): String?{
     return if(!regex.matches(nombre)) "Solo letras y espacios" else null
 }
 
+//valida nickname (permite letras, números y guiones bajos)
+fun validateNickname(nickname: String): String?{
+    if(nickname.isBlank()) return "El nickname es obligatorio"
+    if(nickname.length < 3) return "Mínimo 3 caracteres"
+    if(nickname.length > 20) return "Máximo 20 caracteres"
+    val regex = Regex("^[A-Za-z0-9_]+$")
+    return if(!regex.matches(nickname)) "Solo letras, números y guion bajo (_)" else null
+}
+
 //valida telefono celular chileno: +56 9 XXXX XXXX o +569XXXXXXXX
 fun validatePhoneDigitsOnly(phone: String): String?{
     if(phone.isBlank()) return "El teléfono es obligatorio"

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.uinavegacion.domain.validateEmail
 import com.example.uinavegacion.domain.validateConfirm
 import com.example.uinavegacion.domain.validateLettersOnly
+import com.example.uinavegacion.domain.validateNickname
 import com.example.uinavegacion.domain.validateStrongPassword
 import com.example.uinavegacion.domain.validatePhoneDigitsOnly
 import com.example.uinavegacion.data.repository.UserRepository
@@ -164,10 +165,11 @@ class AuthViewModel(
 
     // ----------------- REGISTRO: handlers y envío -----------------
 
-    fun onNameChange(value: String) {                       // Handler del nombre
-        val filtered = value.filter { it.isLetter() || it.isWhitespace() } // Filtramos números/símbolos (solo letras/espacios)
+    fun onNameChange(value: String) {                       // Handler del nickname
+        // Filtramos solo letras, números y guion bajo
+        val filtered = value.filter { it.isLetterOrDigit() || it == '_' }
         _register.update {                                  // Guardamos + validamos
-            it.copy(name = filtered, nameError = validateLettersOnly(filtered))
+            it.copy(name = filtered, nameError = validateNickname(filtered))
         }
         recomputeRegisterCanSubmit()                        // Recalculamos habilitado
     }

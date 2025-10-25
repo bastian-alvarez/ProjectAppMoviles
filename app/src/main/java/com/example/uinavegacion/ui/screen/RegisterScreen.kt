@@ -110,14 +110,16 @@ fun RegisterScreen(nav: NavHostController) {
                 )
                 Spacer(Modifier.height(20.dp))
 
-                // Campo Nombre
+                // Campo Nickname
                 OutlinedTextField(
                     value = registerState.name,
                     onValueChange = viewModel::onNameChange,
-                    label = { Text("Nombre Completo", style = MaterialTheme.typography.bodyMedium) },
+                    label = { Text("Nickname", style = MaterialTheme.typography.bodyMedium) },
+                    placeholder = { Text("Ej: Gamer123", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     isError = registerState.nameError != null,
-                    supportingText = registerState.nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } },
+                    supportingText = registerState.nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } }
+                        ?: { Text("Tu nombre de usuario", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
