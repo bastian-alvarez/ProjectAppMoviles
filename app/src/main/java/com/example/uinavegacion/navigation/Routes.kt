@@ -44,10 +44,6 @@ sealed class Route(val path: String) {
     // Administrador
     data object AdminDashboard : Route("admin/dashboard")
     data object AdminGames : Route("admin/games")
-    data object AdminAddGame : Route("admin/games/add")
-    data object AdminEditGame : Route("admin/games/edit/{gameId}") {
-        fun build(gameId: String) = "admin/games/edit/$gameId"
-    }
     data object AdminUsers : Route("admin/users")
 
     // Estados / Errores

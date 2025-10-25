@@ -13,3 +13,14 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Build outputs and logs
+build_output.txt
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE specific files
+.vscode/settings.json

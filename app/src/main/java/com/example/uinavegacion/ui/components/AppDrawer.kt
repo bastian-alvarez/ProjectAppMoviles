@@ -106,16 +106,16 @@ fun AppDrawer(
         Column(modifier = Modifier.padding(12.dp)) {
             if (isAdmin) {
                 NavigationDrawerItem(
-                    label = { Text("Agregar Productos") },
-                    selected = currentRoute == Route.AdminAddGame.path,
-                    onClick = { onNavigate(Route.AdminAddGame.path) },
-                    icon = { Icon(Icons.Filled.AddBox, contentDescription = "Agregar Productos") },
+                    label = { Text("Gestión de Juegos") },
+                    selected = currentRoute == Route.AdminGames.path,
+                    onClick = { onNavigate(Route.AdminGames.path) },
+                    icon = { Icon(Icons.Filled.Games, contentDescription = "Gestión de Juegos") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
                 NavigationDrawerItem(
                     label = { Text("Administrar Usuarios") },
-                    selected = currentRoute == Route.AdminGames.path,
-                    onClick = { onNavigate(Route.AdminGames.path) },
+                    selected = currentRoute == Route.AdminUsers.path,
+                    onClick = { onNavigate(Route.AdminUsers.path) },
                     icon = { Icon(Icons.Filled.People, contentDescription = "Administrar Usuarios") },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
