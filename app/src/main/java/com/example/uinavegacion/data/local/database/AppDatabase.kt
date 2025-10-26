@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 7, // Actualizar formato de teléfonos a +56 9
+    version = 8, // Agregar 5 juegos faltantes al catálogo
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -180,7 +180,12 @@ abstract class AppDatabase : RoomDatabase() {
                                         JuegoEntity(nombre = "Red Dead Redemption 2",       precio = 49.99, imagenUrl = "https://tudominio.com/imagenes/red_dead_redemption_2.webp",       descripcion = "Western épico",                       stock = 11,  desarrollador = "Rockstar Games",  fechaLanzamiento = "2018", categoriaId = 1, generoId = 1),
                                         JuegoEntity(nombre = "Dark Souls III",              precio = 39.99, imagenUrl = "https://tudominio.com/imagenes/dark_souls_iii.webp",              descripcion = "Desafío extremo",                     stock = 8,   desarrollador = "FromSoftware",    fechaLanzamiento = "2016", categoriaId = 1, generoId = 1),
                                         JuegoEntity(nombre = "Grand Theft Auto V",          precio = 29.99, imagenUrl = "https://tudominio.com/imagenes/gta_v.webp",                       descripcion = "Mundo abierto épico",                 stock = 22,  desarrollador = "Rockstar Games",  fechaLanzamiento = "2013", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Elden Ring",                  precio = 59.99, imagenUrl = "https://tudominio.com/imagenes/elden_ring.webp",                  descripcion = "Obra maestra de FromSoftware",        stock = 10,  desarrollador = "FromSoftware",    fechaLanzamiento = "2022", categoriaId = 1, generoId = 1)
+                                        JuegoEntity(nombre = "Elden Ring",                  precio = 59.99, imagenUrl = "https://tudominio.com/imagenes/elden_ring.webp",                  descripcion = "Obra maestra de FromSoftware",        stock = 10,  desarrollador = "FromSoftware",    fechaLanzamiento = "2022", categoriaId = 1, generoId = 1),
+                                        JuegoEntity(nombre = "Overwatch 2",                 precio = 39.99, imagenUrl = "https://tudominio.com/imagenes/overwatch_2.webp",                 descripcion = "Shooter por equipos",                 stock = 14,  desarrollador = "Blizzard",        fechaLanzamiento = "2022", categoriaId = 1, generoId = 1),
+                                        JuegoEntity(nombre = "Among Us",                    precio = 4.99,  imagenUrl = "https://tudominio.com/imagenes/among_us.webp",                    descripcion = "Encuentra al impostor",               stock = 30,  desarrollador = "InnerSloth",      fechaLanzamiento = "2018", categoriaId = 1, generoId = 1),
+                                        JuegoEntity(nombre = "Valorant",                    precio = 19.99, imagenUrl = "https://tudominio.com/imagenes/valorant.webp",                    descripcion = "Shooter táctico",                     stock = 100, desarrollador = "Riot Games",      fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
+                                        JuegoEntity(nombre = "Assassin's Creed Valhalla",   precio = 59.99, imagenUrl = "https://tudominio.com/imagenes/assassins_creed_valhalla.webp",   descripcion = "Aventura vikinga",                    stock = 13,  desarrollador = "Ubisoft",         fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
+                                        JuegoEntity(nombre = "Fortnite",                    precio = 0.0,   imagenUrl = "https://tudominio.com/imagenes/fortnite.webp",                    descripcion = "Battle Royale",                       stock = 100, desarrollador = "Epic Games",      fechaLanzamiento = "2017", categoriaId = 1, generoId = 1)
                                     )
                                     juegosSeed.forEach { juegoDao.insert(it) }
                                 }
