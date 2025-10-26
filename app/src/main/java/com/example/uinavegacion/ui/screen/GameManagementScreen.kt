@@ -219,6 +219,15 @@ fun GameManagementScreen(navController: NavHostController) {
                     }
                 },
                 actions = {
+                    // Botón de diagnóstico
+                    IconButton(onClick = { 
+                        viewModel.diagnosticAndFix()
+                    }) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Diagnosticar BD"
+                        )
+                    }
                     IconButton(onClick = { 
                         gameToEdit = null
                         showDialog = true
@@ -228,7 +237,7 @@ fun GameManagementScreen(navController: NavHostController) {
                             contentDescription = "Agregar juego"
                         )
                     }
-                }
+                },
             )
         },
         floatingActionButton = {

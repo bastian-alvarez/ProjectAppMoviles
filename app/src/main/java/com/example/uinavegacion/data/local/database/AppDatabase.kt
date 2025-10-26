@@ -7,6 +7,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.coroutines.runBlocking
 import com.example.uinavegacion.data.local.admin.AdminDao
 import com.example.uinavegacion.data.local.admin.AdminEntity
 import com.example.uinavegacion.data.local.categoria.CategoriaDao
@@ -50,7 +51,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 13, // Forzar recreación completa con 20 juegos
+    version = 14, // Forzar recreación completa con 20 juegos
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -119,7 +120,8 @@ abstract class AppDatabase : RoomDatabase() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
                             Log.d("AppDatabase", "onCreate CALLED. Seeding data...")
-                            CoroutineScope(Dispatchers.IO).launch {
+                            // Usar runBlocking para asegurar que el seeding se complete antes de continuar
+                            runBlocking(Dispatchers.IO) {
                                 val userDao = getInstance(context).userDao()
                                 val adminDao = getInstance(context).adminDao()
 
@@ -290,6 +292,8 @@ abstract class AppDatabase : RoomDatabase() {
                                     )
                                     ordenesSeed.forEach { ordenDao.insert(it) }
                                 }
+                                
+                                Log.d("AppDatabase", "🏁 ¡SEEDING COMPLETADO! Base de datos inicializada correctamente")
                             }
                         }
                     })

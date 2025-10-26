@@ -209,4 +209,35 @@ class GameManagementViewModel(
         _error.value = null
         _successMessage.value = null
     }
+    
+    /**
+     * Diagnosticar y corregir datos incompletos
+     */
+    fun diagnosticAndFix() {
+        viewModelScope.launch {
+            try {
+                Log.d("GameManagementVM", "🔍 Iniciando diagnóstico de base de datos...")
+                _isLoading.value = true
+                
+                val result = gameRepository.diagnosticAndFixIncompleteData()
+                if (result.isSuccess) {
+                    val message = result.getOrNull() ?: "Diagnóstico completado"
+                    Log.d("GameManagementVM", "📋 Resultado diagnóstico: $message")
+                    _successMessage.value = message
+                    
+                    // Recargar después del diagnóstico
+                    loadGames()
+                } else {
+                    val errorMsg = result.exceptionOrNull()?.message ?: "Error en diagnóstico"
+                    Log.e("GameManagementVM", "❌ Error en diagnóstico: $errorMsg")
+                    _error.value = "Error en diagnóstico: $errorMsg"
+                }
+            } catch (e: Exception) {
+                Log.e("GameManagementVM", "💥 Excepción en diagnóstico", e)
+                _error.value = "Error inesperado: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }

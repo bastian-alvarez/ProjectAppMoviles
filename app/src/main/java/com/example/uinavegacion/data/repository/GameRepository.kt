@@ -84,4 +84,34 @@ class GameRepository(
     suspend fun getTotalGamesCount(): Int {
         return juegoDao.count()
     }
+    
+    /**
+     * Diagnostica y corrige datos incompletos en la base de datos
+     */
+    suspend fun diagnosticAndFixIncompleteData(): Result<String> {
+        return try {
+            val currentCount = juegoDao.count()
+            val message = StringBuilder()
+            message.append("🔍 Diagnóstico de BD:\n")
+            message.append("- Juegos actuales: $currentCount\n")
+            
+            if (currentCount < 20) {
+                message.append("⚠️ Datos incompletos detectados\n")
+                message.append("🧹 Limpiando datos parciales...\n")
+                
+                // Limpiar juegos incompletos
+                juegoDao.deleteAll()
+                message.append("✅ Juegos eliminados\n")
+                
+                message.append("🔄 Los datos se reinicializarán automáticamente\n")
+                message.append("📱 Reinicia la aplicación para completar el proceso\n")
+            } else {
+                message.append("✅ Base de datos completa\n")
+            }
+            
+            Result.success(message.toString())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
