@@ -173,6 +173,11 @@ fun GameManagementScreen(navController: NavHostController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
+    // Refrescar datos cada vez que se abre la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.onScreenResumed()
+    }
+    
     // Mostrar mensajes
     LaunchedEffect(error) {
         error?.let {

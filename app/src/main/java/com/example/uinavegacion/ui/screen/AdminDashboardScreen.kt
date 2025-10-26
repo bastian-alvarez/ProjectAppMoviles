@@ -50,6 +50,11 @@ fun AdminDashboardScreen(navController: NavHostController) {
     val dashboardStats by viewModel.dashboardStats.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    
+    // Refrescar estadísticas cada vez que se abre la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.onScreenResumed()
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

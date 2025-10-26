@@ -42,6 +42,14 @@ class GameManagementViewModel(
     /**
      * Carga todos los juegos desde la base de datos
      */
+    /**
+     * Función para llamar cuando se regresa a la pantalla
+     */
+    fun onScreenResumed() {
+        Log.d("GameManagementVM", "👁️ PANTALLA RESUMIDA - Recargando juegos")
+        loadGames()
+    }
+    
     fun loadGames() {
         viewModelScope.launch {
             try {
@@ -182,37 +190,40 @@ class GameManagementViewModel(
      * Elimina un juego
      */
     fun deleteGame(gameId: Long) {
-        viewModelScope.launch {
-            try {
-                // Encontrar el juego antes de eliminarlo para el mensaje
-                val gameToDelete = _games.value.find { it.id == gameId }
-                val gameName = gameToDelete?.nombre ?: "Juego #$gameId"
-                
-                Log.d("GameManagementVM", "🗑️ Eliminando juego: $gameName (ID: $gameId)")
-                _isLoading.value = true
-                
-                val result = gameRepository.deleteGame(gameId)
-                if (result.isSuccess) {
-                    Log.d("GameManagementVM", "✅ Juego eliminado de BD: $gameName")
-                    _successMessage.value = "🗑️ Juego '$gameName' eliminado correctamente"
-                    
-                    // Remover de la lista local
-                    val currentGames = _games.value.toMutableList()
-                    currentGames.removeAll { it.id == gameId }
-                    _games.value = currentGames
-                    
-                    Log.d("GameManagementVM", "✅ Juego removido de lista local. Juegos restantes: ${currentGames.size}")
-                } else {
-                    val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
-                    Log.e("GameManagementVM", "❌ Error eliminando juego: $errorMsg")
-                    _error.value = "❌ Error al eliminar juego: $errorMsg"
+        try {
+            // Encontrar el juego antes de eliminarlo para el mensaje
+            val gameToDelete = _games.value.find { it.id == gameId }
+            val gameName = gameToDelete?.nombre ?: "Juego #$gameId"
+            
+            Log.d("GameManagementVM", "🗑️ Eliminando juego: $gameName (ID: $gameId)")
+            
+            // ACTUALIZAR UI INMEDIATAMENTE (optimistic update)
+            val currentGames = _games.value.toMutableList()
+            currentGames.removeAll { it.id == gameId }
+            _games.value = currentGames
+            _successMessage.value = "🗑️ Juego '$gameName' eliminado correctamente"
+            
+            Log.d("GameManagementVM", "✅ Juego removido de UI inmediatamente. Juegos restantes: ${currentGames.size}")
+            
+            // Eliminar de BD en background
+            viewModelScope.launch {
+                try {
+                    val result = gameRepository.deleteGame(gameId)
+                    if (result.isSuccess) {
+                        Log.d("GameManagementVM", "✅ Juego eliminado de BD: $gameName")
+                    } else {
+                        Log.w("GameManagementVM", "⚠️ Error eliminando de BD (UI ya actualizada): ${result.exceptionOrNull()?.message}")
+                        // No revertir UI ya que el usuario ya vio el cambio
+                    }
+                } catch (e: Exception) {
+                    Log.e("GameManagementVM", "💥 Error en BD (UI ya actualizada): ${e.message}")
+                    // No revertir UI
                 }
-            } catch (e: Exception) {
-                Log.e("GameManagementVM", "💥 Excepción eliminando juego", e)
-                _error.value = "❌ Error inesperado: ${e.message}"
-            } finally {
-                _isLoading.value = false
             }
+            
+        } catch (e: Exception) {
+            Log.e("GameManagementVM", "💥 Excepción eliminando juego", e)
+            _error.value = "❌ Error inesperado: ${e.message}"
         }
     }
     

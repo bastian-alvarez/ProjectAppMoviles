@@ -93,34 +93,55 @@ class AdminDashboardViewModel(
     }
     
     /**
-     * Recargar estadísticas
+     * Recargar estadísticas - llamar cuando se regrese a la pantalla
      */
     fun refreshStats() {
-        android.util.Log.d("AdminDashboardVM", "🔄 REFRESH - Recargando estadísticas")
+        android.util.Log.d("AdminDashboardVM", "🔄 REFRESH - Recargando estadísticas desde BD")
         loadDashboardStatsImmediate()
     }
     
     /**
-     * Carga inmediata de estadísticas (síncrona)
+     * Función para llamar cuando se vuelve a la pantalla (onResume equivalent)
+     */
+    fun onScreenResumed() {
+        android.util.Log.d("AdminDashboardVM", "👁️ PANTALLA RESUMIDA - Actualizando stats")
+        refreshStats()
+    }
+    
+    /**
+     * Carga estadísticas reales desde la base de datos
      */
     private fun loadDashboardStatsImmediate() {
-        android.util.Log.d("AdminDashboardVM", "⚡ CARGA INMEDIATA - Sin corrutinas")
-        
-        // Estadísticas fijas que aparecen al instante
-        val stats = DashboardStats(
-            totalUsers = 2,      // Usuarios demo  
-            totalGames = 20,     // Catálogo completo
-            totalOrders = 3,     // Órdenes de ejemplo
-            totalAdmins = 3      // Admins del sistema
-        )
-        
-        _dashboardStats.value = stats
-        _isLoading.value = false
-        _error.value = null
-        
-        android.util.Log.d("AdminDashboardVM", "✅ Estadísticas inmediatas aplicadas")
-        android.util.Log.d("AdminDashboardVM", "📊 Users: ${stats.totalUsers}, Games: ${stats.totalGames}, Orders: ${stats.totalOrders}, Admins: ${stats.totalAdmins}")
-        android.util.Log.d("AdminDashboardVM", "🔄 isLoading: ${_isLoading.value}")
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("AdminDashboardVM", "⚡ CARGANDO ESTADÍSTICAS REALES DESDE BD")
+                _isLoading.value = true
+                
+                val realStats = adminStatsRepository.getDashboardStats()
+                
+                _dashboardStats.value = realStats
+                _isLoading.value = false
+                _error.value = null
+                
+                android.util.Log.d("AdminDashboardVM", "✅ Estadísticas REALES cargadas desde BD")
+                android.util.Log.d("AdminDashboardVM", "📊 Users: ${realStats.totalUsers}, Games: ${realStats.totalGames}, Orders: ${realStats.totalOrders}, Admins: ${realStats.totalAdmins}")
+                
+            } catch (e: Exception) {
+                android.util.Log.e("AdminDashboardVM", "❌ Error cargando stats reales, usando fallback", e)
+                
+                // Solo en caso de error, usar datos por defecto
+                val fallbackStats = DashboardStats(
+                    totalUsers = 0,
+                    totalGames = 0,
+                    totalOrders = 0,
+                    totalAdmins = 0
+                )
+                
+                _dashboardStats.value = fallbackStats
+                _isLoading.value = false
+                _error.value = "Error al cargar estadísticas: ${e.message}"
+            }
+        }
     }
     
     /**
