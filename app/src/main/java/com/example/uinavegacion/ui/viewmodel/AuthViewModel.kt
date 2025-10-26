@@ -148,8 +148,11 @@ class AuthViewModel(
                 var isAdmin = false
                 var errorMessage: String? = null
 
+                Log.d("AuthViewModel", "🔍 Credenciales no coinciden con admin hardcoded, intentando BD...")
+                
                 try {
                     // Intentar validar admin desde BD
+                    Log.d("AuthViewModel", "🔐 Validando admin en BD...")
                     val admin = adminRepository.validateAdmin(email, pass)
                     if (admin != null) {
                         isAdmin = true
@@ -157,6 +160,7 @@ class AuthViewModel(
                         SessionManager.loginAdmin(admin)
                         Log.d("AuthViewModel", "✅ Admin desde BD logueado")
                     } else {
+                        Log.d("AuthViewModel", "❌ No es admin válido, intentando usuario normal...")
                         // Intentar usuario normal
                         val userResult = userRepository.login(email, pass)
                         if (userResult != null && userResult.isSuccess) {
@@ -166,19 +170,22 @@ class AuthViewModel(
                                 SessionManager.loginUser(user)
                                 Log.d("AuthViewModel", "✅ Usuario desde BD logueado")
                             } else {
-                                errorMessage = "Usuario bloqueado"
+                                errorMessage = "Tu cuenta ha sido bloqueada. Contacta al administrador."
                                 Log.w("AuthViewModel", "❌ Usuario bloqueado")
                             }
+                        } else {
+                            Log.w("AuthViewModel", "❌ Usuario no encontrado o credenciales incorrectas")
                         }
                     }
                 } catch (dbException: Exception) {
                     Log.e("AuthViewModel", "❌ Error de BD: ${dbException.message}")
-                    errorMessage = "Error de conexión con la base de datos"
+                    errorMessage = "Error de conexión con la base de datos. Intenta nuevamente."
                 }
 
+                // Mensaje específico para credenciales incorrectas
                 if (!ok && errorMessage == null) {
-                    errorMessage = "Credenciales inválidas"
-                    Log.w("AuthViewModel", "❌ Credenciales inválidas")
+                    errorMessage = "❌ Credenciales incorrectas. Verifica tu email y contraseña."
+                    Log.w("AuthViewModel", "❌ Credenciales incorrectas para: $email")
                 }
 
                 _login.update {
