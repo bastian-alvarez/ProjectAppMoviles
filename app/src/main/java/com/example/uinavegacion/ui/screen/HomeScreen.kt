@@ -38,10 +38,10 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     
     // Juegos en oferta con 20% de descuento
     val gamesOnSale = listOf(
-        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://tudominio.com/imagenes/final_fantasy_vii.webp", discount = 20),
-        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://tudominio.com/imagenes/minecraft.webp", discount = 20),
-        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://tudominio.com/imagenes/dark_souls_iii.webp", discount = 20),
-        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://tudominio.com/imagenes/elden_ring.webp", discount = 20)
+        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "", discount = 20),
+        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "", discount = 20),
+        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "", discount = 20),
+        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "", discount = 20)
     )
 
     val categories = listOf("Acción", "Aventura", "RPG", "Plataformas", "Deportes", "Estrategia")
