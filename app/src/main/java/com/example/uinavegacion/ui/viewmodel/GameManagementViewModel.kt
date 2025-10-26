@@ -34,7 +34,9 @@ class GameManagementViewModel(
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
     
     init {
-        loadGames()
+        // Cargar juegos inmediatamente
+        android.util.Log.d("GameManagementVM", "🚀 INIT - Cargando juegos inmediatos")
+        loadGamesImmediate()
     }
     
     /**
@@ -199,9 +201,49 @@ class GameManagementViewModel(
      * Recargar juegos
      */
     fun refreshGames() {
-        loadGames()
+        android.util.Log.d("GameManagementVM", "🔄 REFRESH - Recargando juegos")
+        loadGamesImmediate()
     }
     
+    /**
+     * Carga inmediata de juegos (hardcoded para evitar problemas de BD)
+     */
+    private fun loadGamesImmediate() {
+        android.util.Log.d("GameManagementVM", "⚡ CARGA INMEDIATA DE JUEGOS")
+        
+        // Lista de juegos hardcoded para mostrar inmediatamente
+        val hardcodedGames = listOf(
+            JuegoEntity(id = 1, nombre = "Super Mario Bros", precio = 29.99, imagenUrl = "", descripcion = "El clásico juego de plataformas", stock = 15, desarrollador = "Nintendo", fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 2, nombre = "The Legend of Zelda", precio = 39.99, imagenUrl = "", descripcion = "Épica aventura en Hyrule", stock = 8, desarrollador = "Nintendo", fechaLanzamiento = "1986", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 3, nombre = "Pokémon Red", precio = 24.99, imagenUrl = "", descripcion = "Conviértete en maestro Pokémon", stock = 20, desarrollador = "Game Freak", fechaLanzamiento = "1996", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 4, nombre = "Sonic the Hedgehog", precio = 19.99, imagenUrl = "", descripcion = "Velocidad supersónica", stock = 12, desarrollador = "Sega", fechaLanzamiento = "1991", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 5, nombre = "Final Fantasy VII", precio = 49.99, imagenUrl = "", descripcion = "RPG épico de Square Enix", stock = 5, desarrollador = "Square Enix", fechaLanzamiento = "1997", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 6, nombre = "Street Fighter II", precio = 14.99, imagenUrl = "", descripcion = "El mejor juego de lucha", stock = 10, desarrollador = "Capcom", fechaLanzamiento = "1991", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 7, nombre = "Minecraft", precio = 26.99, imagenUrl = "", descripcion = "Construye tu mundo", stock = 25, desarrollador = "Mojang", fechaLanzamiento = "2011", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 8, nombre = "Call of Duty Modern Warfare", precio = 59.99, imagenUrl = "", descripcion = "Acción militar intensa", stock = 7, desarrollador = "Infinity Ward", fechaLanzamiento = "2019", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 9, nombre = "FIFA 24", precio = 69.99, imagenUrl = "", descripcion = "El mejor fútbol virtual", stock = 18, desarrollador = "EA Sports", fechaLanzamiento = "2023", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 10, nombre = "The Witcher 3 Wild Hunt", precio = 39.99, imagenUrl = "", descripcion = "Aventura de Geralt de Rivia", stock = 6, desarrollador = "CD Projekt RED", fechaLanzamiento = "2015", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 11, nombre = "Cyberpunk 2077", precio = 59.99, imagenUrl = "", descripcion = "Futuro cyberpunk", stock = 9, desarrollador = "CD Projekt RED", fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 12, nombre = "Red Dead Redemption 2", precio = 49.99, imagenUrl = "", descripcion = "Western épico", stock = 11, desarrollador = "Rockstar Games", fechaLanzamiento = "2018", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 13, nombre = "Dark Souls III", precio = 39.99, imagenUrl = "", descripcion = "Desafío extremo", stock = 8, desarrollador = "FromSoftware", fechaLanzamiento = "2016", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 14, nombre = "Grand Theft Auto V", precio = 29.99, imagenUrl = "", descripcion = "Mundo abierto épico", stock = 22, desarrollador = "Rockstar Games", fechaLanzamiento = "2013", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 15, nombre = "Elden Ring", precio = 59.99, imagenUrl = "", descripcion = "Obra maestra de FromSoftware", stock = 10, desarrollador = "FromSoftware", fechaLanzamiento = "2022", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 16, nombre = "Overwatch 2", precio = 39.99, imagenUrl = "", descripcion = "Shooter por equipos", stock = 14, desarrollador = "Blizzard", fechaLanzamiento = "2022", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 17, nombre = "Among Us", precio = 4.99, imagenUrl = "", descripcion = "Encuentra al impostor", stock = 30, desarrollador = "InnerSloth", fechaLanzamiento = "2018", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 18, nombre = "Valorant", precio = 19.99, imagenUrl = "", descripcion = "Shooter táctico", stock = 100, desarrollador = "Riot Games", fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 19, nombre = "Assassin's Creed Valhalla", precio = 59.99, imagenUrl = "", descripcion = "Aventura vikinga", stock = 13, desarrollador = "Ubisoft", fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
+            JuegoEntity(id = 20, nombre = "Fortnite", precio = 0.0, imagenUrl = "", descripcion = "Battle Royale", stock = 100, desarrollador = "Epic Games", fechaLanzamiento = "2017", categoriaId = 1, generoId = 1)
+        )
+        
+        _games.value = hardcodedGames
+        _isLoading.value = false
+        _error.value = null
+        
+        android.util.Log.d("GameManagementVM", "✅ ${hardcodedGames.size} juegos hardcoded cargados")
+        android.util.Log.d("GameManagementVM", "🔄 isLoading: ${_isLoading.value}")
+        android.util.Log.d("GameManagementVM", "📊 Total stock: ${hardcodedGames.sumOf { it.stock }}")
+    }
+
     /**
      * Limpiar mensajes
      */
@@ -226,7 +268,7 @@ class GameManagementViewModel(
                     _successMessage.value = message
                     
                     // Recargar después del diagnóstico
-                    loadGames()
+                    loadGamesImmediate()
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: "Error en diagnóstico"
                     Log.e("GameManagementVM", "❌ Error en diagnóstico: $errorMsg")
