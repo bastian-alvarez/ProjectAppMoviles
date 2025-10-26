@@ -119,9 +119,17 @@ class GameManagementViewModel(
                 
                 val result = gameRepository.addGame(nuevoJuego)
                 if (result.isSuccess) {
-                    Log.d("GameManagementVM", "Juego agregado exitosamente con ID: ${result.getOrNull()}")
+                    val newId = result.getOrNull() ?: 0L
+                    Log.d("GameManagementVM", "Juego agregado exitosamente con ID: $newId")
                     _successMessage.value = "✅ Juego '$nombre' agregado correctamente"
-                    loadGames() // Recargar la lista
+                    
+                    // Agregar a la lista local con el ID real de la BD
+                    val juegoConId = nuevoJuego.copy(id = newId)
+                    val currentGames = _games.value.toMutableList()
+                    currentGames.add(juegoConId)
+                    _games.value = currentGames
+                    
+                    Log.d("GameManagementVM", "✅ Juego agregado a lista local. Total: ${currentGames.size}")
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
                     Log.e("GameManagementVM", "Error al agregar juego: $errorMsg")
@@ -140,15 +148,32 @@ class GameManagementViewModel(
     fun updateGame(game: JuegoEntity) {
         viewModelScope.launch {
             try {
+                Log.d("GameManagementVM", "🔄 Actualizando juego: ${game.nombre}")
+                _isLoading.value = true
+                
                 val result = gameRepository.updateGame(game)
                 if (result.isSuccess) {
-                    _successMessage.value = "Juego actualizado correctamente"
-                    loadGames() // Recargar la lista
+                    Log.d("GameManagementVM", "✅ Juego actualizado en BD: ${game.nombre}")
+                    _successMessage.value = "✅ Juego '${game.nombre}' actualizado correctamente"
+                    
+                    // Actualizar la lista local manteniendo los cambios
+                    val currentGames = _games.value.toMutableList()
+                    val index = currentGames.indexOfFirst { it.id == game.id }
+                    if (index != -1) {
+                        currentGames[index] = game
+                        _games.value = currentGames
+                        Log.d("GameManagementVM", "✅ Lista local actualizada")
+                    }
                 } else {
-                    _error.value = "Error al actualizar juego: ${result.exceptionOrNull()?.message}"
+                    val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
+                    Log.e("GameManagementVM", "❌ Error actualizando juego: $errorMsg")
+                    _error.value = "❌ Error al actualizar juego: $errorMsg"
                 }
             } catch (e: Exception) {
-                _error.value = "Error al actualizar juego: ${e.message}"
+                Log.e("GameManagementVM", "💥 Excepción actualizando juego", e)
+                _error.value = "❌ Error inesperado: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
@@ -159,15 +184,34 @@ class GameManagementViewModel(
     fun deleteGame(gameId: Long) {
         viewModelScope.launch {
             try {
+                // Encontrar el juego antes de eliminarlo para el mensaje
+                val gameToDelete = _games.value.find { it.id == gameId }
+                val gameName = gameToDelete?.nombre ?: "Juego #$gameId"
+                
+                Log.d("GameManagementVM", "🗑️ Eliminando juego: $gameName (ID: $gameId)")
+                _isLoading.value = true
+                
                 val result = gameRepository.deleteGame(gameId)
                 if (result.isSuccess) {
-                    _successMessage.value = "Juego eliminado correctamente"
-                    loadGames() // Recargar la lista
+                    Log.d("GameManagementVM", "✅ Juego eliminado de BD: $gameName")
+                    _successMessage.value = "🗑️ Juego '$gameName' eliminado correctamente"
+                    
+                    // Remover de la lista local
+                    val currentGames = _games.value.toMutableList()
+                    currentGames.removeAll { it.id == gameId }
+                    _games.value = currentGames
+                    
+                    Log.d("GameManagementVM", "✅ Juego removido de lista local. Juegos restantes: ${currentGames.size}")
                 } else {
-                    _error.value = "Error al eliminar juego: ${result.exceptionOrNull()?.message}"
+                    val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
+                    Log.e("GameManagementVM", "❌ Error eliminando juego: $errorMsg")
+                    _error.value = "❌ Error al eliminar juego: $errorMsg"
                 }
             } catch (e: Exception) {
-                _error.value = "Error al eliminar juego: ${e.message}"
+                Log.e("GameManagementVM", "💥 Excepción eliminando juego", e)
+                _error.value = "❌ Error inesperado: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
@@ -242,6 +286,50 @@ class GameManagementViewModel(
         android.util.Log.d("GameManagementVM", "✅ ${hardcodedGames.size} juegos hardcoded cargados")
         android.util.Log.d("GameManagementVM", "🔄 isLoading: ${_isLoading.value}")
         android.util.Log.d("GameManagementVM", "📊 Total stock: ${hardcodedGames.sumOf { it.stock }}")
+        
+        // Sincronizar con BD en background para hacer operaciones funcionales
+        syncHardcodedGamesWithDatabase(hardcodedGames)
+    }
+    
+    /**
+     * Sincroniza los juegos hardcoded con la base de datos en background
+     */
+    private fun syncHardcodedGamesWithDatabase(hardcodedGames: List<JuegoEntity>) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("GameManagementVM", "🔄 Sincronizando juegos con BD...")
+                
+                // Verificar cuántos juegos hay en BD
+                val realGamesCount = gameRepository.getTotalGamesCount()
+                android.util.Log.d("GameManagementVM", "📊 Juegos en BD: $realGamesCount")
+                
+                // Si hay menos de 20 juegos en BD, insertar los que faltan
+                if (realGamesCount < 20) {
+                    android.util.Log.d("GameManagementVM", "📥 Insertando juegos faltantes en BD...")
+                    
+                    hardcodedGames.forEach { game ->
+                        try {
+                            // Insertar con ID original para mantener consistencia
+                            val gameToInsert = game.copy(id = 0L) // Room auto-generará ID
+                            val result = gameRepository.addGame(gameToInsert)
+                            if (result.isSuccess) {
+                                android.util.Log.d("GameManagementVM", "✅ Insertado: ${game.nombre}")
+                            }
+                        } catch (e: Exception) {
+                            // Si falla (por ejemplo, por duplicado), continuar
+                            android.util.Log.w("GameManagementVM", "⚠️ No se pudo insertar ${game.nombre}: ${e.message}")
+                        }
+                    }
+                    
+                    val finalCount = gameRepository.getTotalGamesCount()
+                    android.util.Log.d("GameManagementVM", "✅ Sincronización completa. BD tiene $finalCount juegos")
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("GameManagementVM", "❌ Error sincronizando con BD: ${e.message}")
+                // No mostrar error al usuario, la UI ya funciona con datos hardcoded
+            }
+        }
     }
 
     /**
