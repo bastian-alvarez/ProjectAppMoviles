@@ -109,48 +109,97 @@ class AuthViewModel(
         val s = _login.value                                // Snapshot del estado
         if (!s.canSubmit || s.isSubmitting) return          // Si no se puede o ya está cargando, salimos
         viewModelScope.launch {                             // Lanzamos corrutina
-            _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false, isAdmin = false) } // Seteamos loading
-            delay(500)                                      // Simulamos tiempo de verificación
+            try {
+                Log.d("AuthViewModel", "=== INICIO LOGIN ===")
+                _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false, isAdmin = false) } // Seteamos loading
 
-            val email = s.email.trim()
-            val pass = s.pass.trim()
-            Log.d("AuthViewModel", "Attempting login with email: [$email], pass: [$pass]")
+                val email = s.email.trim()
+                val pass = s.pass.trim()
+                Log.d("AuthViewModel", "Attempting login with email: [$email], pass length: [${pass.length}]")
 
-            // Validar credenciales de admin primero
-            val admin = adminRepository.validateAdmin(email, pass)
-            val isAdmin = admin != null
-            
-            // Si no es admin, validar usuario normal
-            val userResult = if (!isAdmin) userRepository.login(email, pass) else null
-            var ok = isAdmin || (userResult != null && userResult.isSuccess)
-            var errorMessage: String? = null
-
-            // Verificar si el usuario está bloqueado (solo para usuarios normales)
-            if (ok && !isAdmin) {
-                val user = userRepository.getUserByEmail(email)
-                if (user != null && user.isBlocked) {
-                    ok = false
-                    errorMessage = "Tu cuenta ha sido bloqueada. Contacta al administrador."
-                    Log.d("AuthViewModel", "User is blocked: $email")
-                } else if (user != null) {
-                    SessionManager.loginUser(user)
+                // Verificar que la BD esté inicializada
+                val adminCount = adminRepository.getAllAdmins().size
+                Log.d("AuthViewModel", "🔍 Total admins in DB: $adminCount")
+                
+                // Si no hay admins, crear el admin por defecto de emergencia
+                if (adminCount == 0) {
+                    Log.w("AuthViewModel", "⚠️ No hay admins en la BD, creando admin de emergencia...")
+                    try {
+                        val emergencyResult = adminRepository.registerAdmin(
+                            name = "Administrador Principal",
+                            email = "admin@steamish.com",
+                            phone = "+56 9 8877 6655",
+                            password = "Admin123!",
+                            role = "SUPER_ADMIN"
+                        )
+                        if (emergencyResult.isSuccess) {
+                            Log.d("AuthViewModel", "✅ Admin de emergencia creado exitosamente")
+                        } else {
+                            Log.e("AuthViewModel", "❌ Error creando admin de emergencia: ${emergencyResult.exceptionOrNull()?.message}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AuthViewModel", "💥 Excepción creando admin de emergencia", e)
+                    }
                 }
-            } else if (ok && isAdmin && admin != null) {
-                SessionManager.loginAdmin(admin)
-            }
 
-            // Si no es válido y no hay mensaje de bloqueo, mostrar mensaje genérico
-            if (!ok && errorMessage == null) {
-                errorMessage = "Credenciales inválidas"
-            }
+                // Validar credenciales de admin primero
+                Log.d("AuthViewModel", "🔐 Validando credenciales de admin...")
+                val admin = adminRepository.validateAdmin(email, pass)
+                val isAdmin = admin != null
+                Log.d("AuthViewModel", "🔍 ¿Es admin? $isAdmin")
+                
+                // Si no es admin, validar usuario normal
+                val userResult = if (!isAdmin) {
+                    Log.d("AuthViewModel", "👤 Validando usuario normal...")
+                    userRepository.login(email, pass)
+                } else null
+                
+                var ok = isAdmin || (userResult != null && userResult.isSuccess)
+                var errorMessage: String? = null
+                Log.d("AuthViewModel", "🎯 Login exitoso: $ok")
 
-            _login.update {                                 // Actualizamos con el resultado
-                it.copy(
-                    isSubmitting = false,                   // Fin carga
-                    success = ok,                           // true si credenciales correctas
-                    errorMsg = errorMessage,                // Mensaje si falla
-                    isAdmin = isAdmin                       // Guardamos si es admin
-                )
+                // Verificar si el usuario está bloqueado (solo para usuarios normales)
+                if (ok && !isAdmin) {
+                    val user = userRepository.getUserByEmail(email)
+                    if (user != null && user.isBlocked) {
+                        ok = false
+                        errorMessage = "Tu cuenta ha sido bloqueada. Contacta al administrador."
+                        Log.d("AuthViewModel", "🚫 User is blocked: $email")
+                    } else if (user != null) {
+                        SessionManager.loginUser(user)
+                        Log.d("AuthViewModel", "👤 Usuario logueado en sesión")
+                    }
+                } else if (ok && isAdmin && admin != null) {
+                    SessionManager.loginAdmin(admin)
+                    Log.d("AuthViewModel", "👨‍💼 Admin logueado en sesión")
+                }
+
+                // Si no es válido y no hay mensaje de bloqueo, mostrar mensaje genérico
+                if (!ok && errorMessage == null) {
+                    errorMessage = "Credenciales inválidas"
+                    Log.w("AuthViewModel", "❌ Credenciales inválidas para: $email")
+                }
+
+                Log.d("AuthViewModel", "🏁 Finalizando login - Success: $ok, IsAdmin: $isAdmin")
+                _login.update {                                 // Actualizamos con el resultado
+                    it.copy(
+                        isSubmitting = false,                   // Fin carga
+                        success = ok,                           // true si credenciales correctas
+                        errorMsg = errorMessage,                // Mensaje si falla
+                        isAdmin = isAdmin                       // Guardamos si es admin
+                    )
+                }
+                Log.d("AuthViewModel", "=== FIN LOGIN ===")
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "💥 EXCEPCIÓN CRÍTICA EN LOGIN", e)
+                _login.update {
+                    it.copy(
+                        isSubmitting = false,
+                        success = false,
+                        errorMsg = "Error interno: ${e.message}",
+                        isAdmin = false
+                    )
+                }
             }
         }
     }

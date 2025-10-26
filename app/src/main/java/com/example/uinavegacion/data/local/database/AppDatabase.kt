@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 14, // Forzar recreación completa con 20 juegos
+    version = 15, // Forzar recreación completa con 20 juegos
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
