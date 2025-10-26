@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 10, // Forzar recreación completa con 20 juegos
+    version = 13, // Forzar recreación completa con 20 juegos
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -161,11 +161,58 @@ abstract class AppDatabase : RoomDatabase() {
                                     }
                                 }
 
-                                // Precargamos catálogo completo de juegos con imágenes WebP optimizadas
+                                // Primero, precargamos categorías
+                                val categoriaDao = getInstance(context).categoriaDao()
+                                val categoriaCount = categoriaDao.count()
+                                Log.d("AppDatabase", "📁 Categorías actuales en BD: $categoriaCount")
+                                if (categoriaCount == 0) {
+                                    Log.d("AppDatabase", "Seeding categorías...")
+                                    val categoriasSeed = listOf(
+                                        CategoriaEntity(nombre = "Acción", descripcion = "Juegos de alta intensidad y combate"),
+                                        CategoriaEntity(nombre = "Aventura", descripcion = "Exploración y narrativa inmersiva"),
+                                        CategoriaEntity(nombre = "RPG", descripcion = "Juegos de rol y desarrollo de personajes"),
+                                        CategoriaEntity(nombre = "Deportes", descripcion = "Simulaciones deportivas"),
+                                        CategoriaEntity(nombre = "Estrategia", descripcion = "Planificación y táctica")
+                                    )
+                                    categoriasSeed.forEachIndexed { index, categoria ->
+                                        val id = categoriaDao.insert(categoria)
+                                        Log.d("AppDatabase", "  [$index] ${categoria.nombre} -> ID: $id")
+                                    }
+                                }
+
+                                // Luego, precargamos géneros
+                                val generoDao = getInstance(context).generoDao()
+                                val generoCount = generoDao.count()
+                                Log.d("AppDatabase", "🎯 Géneros actuales en BD: $generoCount")
+                                if (generoCount == 0) {
+                                    Log.d("AppDatabase", "Seeding géneros...")
+                                    val generosSeed = listOf(
+                                        GeneroEntity(nombre = "Plataformas", descripcion = "Juegos de salto y plataformas"),
+                                        GeneroEntity(nombre = "Shooter", descripcion = "Juegos de disparos"),
+                                        GeneroEntity(nombre = "Racing", descripcion = "Carreras y velocidad"),
+                                        GeneroEntity(nombre = "Puzzle", descripcion = "Rompecabezas y lógica"),
+                                        GeneroEntity(nombre = "MMORPG", descripcion = "Juegos masivos en línea")
+                                    )
+                                    generosSeed.forEachIndexed { index, genero ->
+                                        val id = generoDao.insert(genero)
+                                        Log.d("AppDatabase", "  [$index] ${genero.nombre} -> ID: $id")
+                                    }
+                                }
+
+                                // Finalmente, precargamos catálogo completo de juegos con imágenes por defecto
                                 val juegoDao = getInstance(context).juegoDao()
                                 val currentCount = juegoDao.count()
                                 Log.d("AppDatabase", "🎮 Juegos actuales en BD: $currentCount")
-                                if (currentCount == 0) {
+                                
+                                // Si hay datos incompletos (menos de 20 juegos), limpiamos y reiniciamos
+                                if (currentCount > 0 && currentCount < 20) {
+                                    Log.w("AppDatabase", "🧹 Datos incompletos detectados ($currentCount juegos), limpiando BD...")
+                                    juegoDao.deleteAll()
+                                    Log.d("AppDatabase", "🧹 Juegos eliminados, reiniciando seeding...")
+                                }
+                                
+                                val finalCurrentCount = juegoDao.count()
+                                if (finalCurrentCount == 0) {
                                     Log.d("AppDatabase", "Seeding games...")
                                     val juegosSeed = listOf(
                                         JuegoEntity(nombre = "Super Mario Bros",            precio = 29.99, imagenUrl = "",            descripcion = "El clásico juego de plataformas",     stock = 15,  desarrollador = "Nintendo",        fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
@@ -190,12 +237,26 @@ abstract class AppDatabase : RoomDatabase() {
                                         JuegoEntity(nombre = "Fortnite",                    precio = 0.0,   imagenUrl = "",                    descripcion = "Battle Royale",                       stock = 100, desarrollador = "Epic Games",      fechaLanzamiento = "2017", categoriaId = 1, generoId = 1)
                                     )
                                     Log.d("AppDatabase", "🎮 Insertando ${juegosSeed.size} juegos...")
+                                    var successCount = 0
                                     juegosSeed.forEachIndexed { index, juego ->
-                                        val id = juegoDao.insert(juego)
-                                        Log.d("AppDatabase", "  [$index] ${juego.nombre} -> ID: $id")
+                                        try {
+                                            val id = juegoDao.insert(juego)
+                                            Log.d("AppDatabase", "  ✅ [$index] ${juego.nombre} -> ID: $id")
+                                            successCount++
+                                        } catch (e: Exception) {
+                                            Log.e("AppDatabase", "  ❌ [$index] Error insertando ${juego.nombre}: ${e.message}")
+                                        }
                                     }
                                     val finalCount = juegoDao.count()
-                                    Log.d("AppDatabase", "✅ Insertados: $finalCount juegos en total")
+                                    Log.d("AppDatabase", "✅ Insertados: $finalCount/$successCount juegos en total")
+                                    
+                                    // Verificación adicional
+                                    if (finalCount < juegosSeed.size) {
+                                        Log.w("AppDatabase", "⚠️ Solo se insertaron $finalCount de ${juegosSeed.size} juegos")
+                                        Log.w("AppDatabase", "⚠️ Verificando foreign keys...")
+                                        Log.w("AppDatabase", "⚠️ Categorías disponibles: ${categoriaDao.count()}")
+                                        Log.w("AppDatabase", "⚠️ Géneros disponibles: ${generoDao.count()}")
+                                    }
                                 } else {
                                     Log.d("AppDatabase", "⚠️ BD ya tiene $currentCount juegos, omitiendo seed")
                                 }

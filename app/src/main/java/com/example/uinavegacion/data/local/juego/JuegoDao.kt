@@ -58,4 +58,8 @@ interface JuegoDao {
     // Eliminar juego
     @Query("DELETE FROM juegos WHERE id = :id")
     suspend fun delete(id: Long)
+    
+    // Eliminar todos los juegos
+    @Query("DELETE FROM juegos")
+    suspend fun deleteAll()
 }
