@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 9, // Limpiar URLs de imágenes para usar imagen genérica
+    version = 10, // Forzar recreación completa con 20 juegos
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -163,7 +163,9 @@ abstract class AppDatabase : RoomDatabase() {
 
                                 // Precargamos catálogo completo de juegos con imágenes WebP optimizadas
                                 val juegoDao = getInstance(context).juegoDao()
-                                if (juegoDao.count() == 0) {
+                                val currentCount = juegoDao.count()
+                                Log.d("AppDatabase", "🎮 Juegos actuales en BD: $currentCount")
+                                if (currentCount == 0) {
                                     Log.d("AppDatabase", "Seeding games...")
                                     val juegosSeed = listOf(
                                         JuegoEntity(nombre = "Super Mario Bros",            precio = 29.99, imagenUrl = "",            descripcion = "El clásico juego de plataformas",     stock = 15,  desarrollador = "Nintendo",        fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
@@ -187,7 +189,15 @@ abstract class AppDatabase : RoomDatabase() {
                                         JuegoEntity(nombre = "Assassin's Creed Valhalla",   precio = 59.99, imagenUrl = "",   descripcion = "Aventura vikinga",                    stock = 13,  desarrollador = "Ubisoft",         fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
                                         JuegoEntity(nombre = "Fortnite",                    precio = 0.0,   imagenUrl = "",                    descripcion = "Battle Royale",                       stock = 100, desarrollador = "Epic Games",      fechaLanzamiento = "2017", categoriaId = 1, generoId = 1)
                                     )
-                                    juegosSeed.forEach { juegoDao.insert(it) }
+                                    Log.d("AppDatabase", "🎮 Insertando ${juegosSeed.size} juegos...")
+                                    juegosSeed.forEachIndexed { index, juego ->
+                                        val id = juegoDao.insert(juego)
+                                        Log.d("AppDatabase", "  [$index] ${juego.nombre} -> ID: $id")
+                                    }
+                                    val finalCount = juegoDao.count()
+                                    Log.d("AppDatabase", "✅ Insertados: $finalCount juegos en total")
+                                } else {
+                                    Log.d("AppDatabase", "⚠️ BD ya tiene $currentCount juegos, omitiendo seed")
                                 }
 
                                 // Precargamos algunas órdenes para las estadísticas
