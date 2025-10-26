@@ -11,6 +11,9 @@ interface LibraryDao {
     @Query("SELECT * FROM biblioteca WHERE userId = :userId")
     fun getUserLibrary(userId: Long): Flow<List<LibraryEntity>>
 
+    @Query("SELECT * FROM biblioteca WHERE userId = :userId")
+    suspend fun getUserLibraryDirect(userId: Long): List<LibraryEntity>
+
     @Query("SELECT * FROM biblioteca")
     fun getAll(): Flow<List<LibraryEntity>>
 

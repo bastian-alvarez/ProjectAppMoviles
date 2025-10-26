@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 17, // Actualización para biblioteca por usuario
+    version = 17, // Biblioteca por usuario implementada
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

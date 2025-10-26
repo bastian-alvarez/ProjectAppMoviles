@@ -3,14 +3,20 @@ package com.example.uinavegacion.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.uinavegacion.data.local.database.AppDatabase
-import com.example.uinavegacion.data.local.library.LibraryEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
+
+// Data class para estadísticas de biblioteca
+data class LibraryStats(
+    val totalGames: Int,
+    val installedGames: Int,
+    val availableGames: Int,
+    val downloadingGames: Int = 0
+)
 
 // Modelo para juegos en la biblioteca
 data class LibraryGame(
@@ -26,167 +32,202 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private val _games = MutableStateFlow<List<LibraryGame>>(emptyList())
     val games: StateFlow<List<LibraryGame>> = _games
 
+    // Estado para forzar refrescos
+    private val _refreshTrigger = MutableStateFlow(0)
+
+    // 🎮 JUEGOS DISPONIBLES EN MEMORIA (SIN BD)
+    private val availableGames = listOf(
+        LibraryGame(id = "1", name = "Super Mario Bros", price = 29.99, dateAdded = "", genre = "Plataformas"),
+        LibraryGame(id = "2", name = "The Legend of Zelda", price = 39.99, dateAdded = "", genre = "Aventura"),
+        LibraryGame(id = "3", name = "Pokémon Red", price = 24.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "4", name = "Sonic the Hedgehog", price = 19.99, dateAdded = "", genre = "Plataformas"),
+        LibraryGame(id = "5", name = "Final Fantasy VII", price = 49.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "6", name = "Street Fighter II", price = 14.99, dateAdded = "", genre = "Lucha"),
+        LibraryGame(id = "7", name = "Minecraft", price = 26.99, dateAdded = "", genre = "Sandbox"),
+        LibraryGame(id = "8", name = "Call of Duty Modern Warfare", price = 59.99, dateAdded = "", genre = "Shooter"),
+        LibraryGame(id = "9", name = "FIFA 24", price = 69.99, dateAdded = "", genre = "Deportes"),
+        LibraryGame(id = "10", name = "The Witcher 3 Wild Hunt", price = 39.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "11", name = "Cyberpunk 2077", price = 59.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "12", name = "Red Dead Redemption 2", price = 49.99, dateAdded = "", genre = "Aventura"),
+        LibraryGame(id = "13", name = "Dark Souls III", price = 39.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "14", name = "Grand Theft Auto V", price = 29.99, dateAdded = "", genre = "Acción"),
+        LibraryGame(id = "15", name = "Elden Ring", price = 59.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "16", name = "Overwatch 2", price = 39.99, dateAdded = "", genre = "Shooter"),
+        LibraryGame(id = "17", name = "Among Us", price = 4.99, dateAdded = "", genre = "Social"),
+        LibraryGame(id = "18", name = "Valorant", price = 19.99, dateAdded = "", genre = "Shooter"),
+        LibraryGame(id = "19", name = "Assassin's Creed Valhalla", price = 59.99, dateAdded = "", genre = "Aventura"),
+        LibraryGame(id = "20", name = "Fortnite", price = 0.0, dateAdded = "", genre = "Battle Royale")
+    )
+
+    // 📚 BIBLIOTECA DEL USUARIO (EN MEMORIA)
+    private val _userLibrary = MutableStateFlow<List<LibraryGame>>(emptyList())
+
     // Formato de fecha
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    // Agregar juegos comprados a la biblioteca del usuario específico
-    fun addPurchasedGames(cartItems: List<com.example.uinavegacion.viewmodel.CartItem>) {
-        val dao = AppDatabase.getInstance(getApplication()).libraryDao()
-        val currentDate = dateFormat.format(Date())
-        
-        // Obtener el usuario actual de la sesión
-        val sessionManager = com.example.uinavegacion.data.SessionManager
-        val currentUser = sessionManager.currentUser.value
-        val currentAdmin = sessionManager.currentAdmin.value
-        
-        // Determinar el userId (priorizar usuario regular, luego admin)
-        val userId = currentUser?.id ?: currentAdmin?.id ?: 1L
-        
-        android.util.Log.d("LibraryViewModel", "🛒 Agregando ${cartItems.size} juegos comprados al usuario $userId")
-
-        viewModelScope.launch {
-            cartItems.forEach { item ->
-                // Verificar si el usuario ya posee este juego
-                val alreadyOwns = dao.userOwnsGame(userId, item.id) > 0
-                if (!alreadyOwns) {
-                    val entity = LibraryEntity(
-                        userId = userId,
-                        juegoId = item.id,
-                        name = item.name,
-                        price = item.price,
-                        dateAdded = currentDate,
-                        status = "Disponible",
-                        genre = getGenreForGame(item.name)
-                    )
-                    dao.insert(entity)
-                    android.util.Log.d("LibraryViewModel", "✅ Juego agregado a biblioteca: ${item.name}")
-                } else {
-                    android.util.Log.w("LibraryViewModel", "⚠️ Usuario ya posee el juego: ${item.name}")
-                }
-            }
-            // Recargar la biblioteca del usuario actual
-            loadUserLibrary()
-        }
-    }
-    
-    // Cargar biblioteca del usuario actual
-    private fun loadUserLibrary() {
-        val dao = AppDatabase.getInstance(getApplication()).libraryDao()
-        val sessionManager = com.example.uinavegacion.data.SessionManager
-        val currentUser = sessionManager.currentUser.value
-        val currentAdmin = sessionManager.currentAdmin.value
-        val userId = currentUser?.id ?: currentAdmin?.id ?: 1L
-        
-        viewModelScope.launch {
-            dao.getUserLibrary(userId).collect { list ->
-                _games.value = list.map { e ->
-                    LibraryGame(
-                        id = e.juegoId,
-                        name = e.name,
-                        price = e.price,
-                        dateAdded = e.dateAdded,
-                        status = e.status,
-                        genre = e.genre
-                    )
-                }
-                android.util.Log.d("LibraryViewModel", "📚 Biblioteca cargada: ${list.size} juegos para usuario $userId")
-            }
-        }
-    }
-
     init {
-        // Cargar biblioteca del usuario actual al inicializar
         loadUserLibrary()
     }
 
-    // Cambiar estado de un juego (para simular descarga/instalación)
-    fun updateGameStatus(gameId: String, newStatus: String) {
-        _games.value = _games.value.map { game ->
-            if (game.id == gameId) game.copy(status = newStatus) else game
+    // ✨ NUEVA VERSIÓN SIN BD - Agregar juegos comprados usando memoria
+    fun addPurchasedGames(cartItems: List<com.example.uinavegacion.viewmodel.CartItem>) {
+        android.util.Log.d("LibraryViewModel", "🛒 === COMPRA SIN BD (MEMORIA) ===")
+        android.util.Log.d("LibraryViewModel", "🛒 Juegos en carrito: ${cartItems.size}")
+        
+        val currentDate = dateFormat.format(Date())
+        val currentLibrary = _userLibrary.value.toMutableList()
+        
+        // Mostrar juegos que se van a procesar
+        cartItems.forEachIndexed { index, item ->
+            android.util.Log.d("LibraryViewModel", "  [$index] ${item.name} (ID: ${item.id}) - $${item.price}")
         }
         
-        // También actualizar en la base de datos
-        viewModelScope.launch {
-            val dao = AppDatabase.getInstance(getApplication()).libraryDao()
-            val sessionManager = com.example.uinavegacion.data.SessionManager
-            val currentUser = sessionManager.currentUser.value
-            val currentAdmin = sessionManager.currentAdmin.value
-            val userId = currentUser?.id ?: currentAdmin?.id ?: 1L
+        // Procesar cada juego del carrito
+        cartItems.forEach { item ->
+            android.util.Log.d("LibraryViewModel", "🔄 Procesando compra: ${item.name} (ID: ${item.id})")
             
-            // Aquí podrías agregar una función para actualizar el estado en BD si lo necesitas
-            android.util.Log.d("LibraryViewModel", "🔄 Estado actualizado: $gameId -> $newStatus")
+            // Buscar el juego en nuestros datos de memoria
+            val gameData = availableGames.find { it.id == item.id }
+            
+            if (gameData != null) {
+                // Verificar si ya está en la biblioteca
+                val alreadyOwned = currentLibrary.any { it.id == item.id }
+                
+                if (!alreadyOwned) {
+                    // Crear nueva entrada en biblioteca
+                    val libraryGame = gameData.copy(
+                        dateAdded = currentDate,
+                        status = "Disponible"
+                    )
+                    currentLibrary.add(libraryGame)
+                    android.util.Log.d("LibraryViewModel", "✅ ${item.name} agregado a biblioteca")
+                } else {
+                    android.util.Log.w("LibraryViewModel", "⚠️ ${item.name} ya está en biblioteca")
+                }
+            } else {
+                android.util.Log.e("LibraryViewModel", "❌ Juego no encontrado: ${item.name} (ID: ${item.id})")
+                // Debug: mostrar todos los IDs disponibles
+                android.util.Log.d("LibraryViewModel", "🔍 IDs disponibles: ${availableGames.map { it.id }.joinToString(", ")}")
+            }
+        }
+        
+        // Actualizar la biblioteca del usuario
+        _userLibrary.value = currentLibrary
+        _games.value = currentLibrary
+        
+        android.util.Log.d("LibraryViewModel", "🎉 COMPRA COMPLETADA - Biblioteca actualizada con ${currentLibrary.size} juegos")
+        
+        // Mostrar biblioteca actual
+        android.util.Log.d("LibraryViewModel", "📚 === BIBLIOTECA ACTUAL ===")
+        currentLibrary.forEachIndexed { index, game ->
+            android.util.Log.d("LibraryViewModel", "  [$index] ${game.name} - ${game.dateAdded}")
         }
     }
 
-    // Obtener juegos filtrados por estado
-    fun getGamesByStatus(status: String): List<LibraryGame> {
-        return when (status) {
-            "Todos" -> _games.value
-            "Instalados" -> _games.value.filter { it.status == "Instalado" }
-            "Disponibles" -> _games.value.filter { it.status == "Disponible" }
-            "Descargando" -> _games.value.filter { it.status == "Descargando" || it.status == "Actualizando" }
-            else -> _games.value
+    // Cargar biblioteca del usuario (versión sin BD)
+    private fun loadUserLibrary() {
+        android.util.Log.d("LibraryViewModel", "📚 Cargando biblioteca desde memoria...")
+        _games.value = _userLibrary.value
+    }
+
+    // Método público para forzar recarga
+    fun forceRefresh() {
+        android.util.Log.d("LibraryViewModel", "🔄 === FORZANDO RECARGA (MEMORIA) ===")
+        _refreshTrigger.value = _refreshTrigger.value + 1
+        
+        viewModelScope.launch {
+            try {
+                delay(50) // Pequeña pausa
+                loadUserLibrary()
+                
+                // Debug: mostrar biblioteca actual
+                android.util.Log.d("LibraryViewModel", "📚 === BIBLIOTECA ACTUAL EN REFRESH ===")
+                _games.value.forEachIndexed { index, game ->
+                    android.util.Log.d("LibraryViewModel", "  [$index] ${game.name} - ${game.dateAdded}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("LibraryViewModel", "❌ ERROR en forceRefresh: ${e.message}", e)
+            }
         }
     }
 
-    // Obtener estadísticas de la biblioteca
+    // Cargar inmediatamente (sin BD)
+    fun loadUserLibraryImmediate() {
+        android.util.Log.d("LibraryViewModel", "⚡ === CARGA INMEDIATA (MEMORIA) ===")
+        _games.value = _userLibrary.value
+        android.util.Log.d("LibraryViewModel", "⚡ Biblioteca cargada: ${_games.value.size} juegos")
+    }
+
+    // Eliminar juego de la biblioteca
+    fun removeGameFromLibrary(gameId: String) {
+        val currentLibrary = _userLibrary.value.toMutableList()
+        val gameToRemove = currentLibrary.find { it.id == gameId }
+        
+        if (gameToRemove != null) {
+            currentLibrary.remove(gameToRemove)
+            _userLibrary.value = currentLibrary
+            _games.value = currentLibrary
+            android.util.Log.d("LibraryViewModel", "🗑️ ${gameToRemove.name} eliminado de biblioteca")
+        }
+    }
+
+    // Limpiar biblioteca completa
+    fun clearLibrary() {
+        _userLibrary.value = emptyList()
+        _games.value = emptyList()
+        android.util.Log.d("LibraryViewModel", "🧹 Biblioteca limpiada")
+    }
+
+    // Método de compatibilidad para que no se rompa el resto del código
+    fun getUserLibrary() = _games
+
+    // Método para obtener un juego específico
+    fun getGameById(gameId: String): LibraryGame? {
+        return availableGames.find { it.id == gameId }
+    }
+
+    // Métodos requeridos por LibraryScreen
     fun getLibraryStats(): LibraryStats {
-        val allGames = _games.value
+        val games = _games.value
         return LibraryStats(
-            totalGames = allGames.size,
-            installedGames = allGames.count { it.status == "Instalado" },
-            availableGames = allGames.count { it.status == "Disponible" },
-            downloadingGames = allGames.count { it.status == "Descargando" || it.status == "Actualizando" }
+            totalGames = games.size,
+            installedGames = games.count { it.status == "Instalado" },
+            availableGames = games.count { it.status == "Disponible" },
+            downloadingGames = games.count { it.status == "Descargando" }
         )
     }
 
-    // Función auxiliar para asignar géneros a los juegos
-    private fun getGenreForGame(gameName: String): String {
-        return when {
-            gameName.contains("Cyberpunk", ignoreCase = true) -> "RPG"
-            gameName.contains("Witcher", ignoreCase = true) -> "RPG"
-            gameName.contains("Minecraft", ignoreCase = true) -> "Sandbox"
-            gameName.contains("Among Us", ignoreCase = true) -> "Multijugador"
-            gameName.contains("Valorant", ignoreCase = true) -> "FPS"
-            gameName.contains("Fortnite", ignoreCase = true) -> "Battle Royale"
-            gameName.contains("FIFA", ignoreCase = true) -> "Deportes"
-            gameName.contains("Call of Duty", ignoreCase = true) -> "FPS"
-            gameName.contains("Grand Theft Auto", ignoreCase = true) -> "Acción"
-            gameName.contains("The Sims", ignoreCase = true) -> "Simulación"
-            else -> "Acción" // Género por defecto
+    fun getGamesByStatus(status: String): List<LibraryGame> {
+        return when (status) {
+            "Todos" -> _games.value // Mostrar todos los juegos
+            "Instalados" -> _games.value.filter { it.status == "Instalado" }
+            "Disponibles" -> _games.value.filter { it.status == "Disponible" }
+            "Descargando" -> _games.value.filter { it.status == "Descargando" }
+            else -> _games.value.filter { it.status == status }
         }
     }
 
-    // Simular instalación de un juego (versión para String)
     fun installGame(gameId: String) {
-        updateGameStatus(gameId, "Descargando")
-        // En una aplicación real, aquí iría la lógica de descarga
-        // Por ahora, después de 3 segundos simularemos que está instalado
-    }
-
-    // Simular instalación de un juego (versión para Int - usada en UI)
-    fun installGame(gameId: Int) {
-        val game = _games.value.find { it.id == "game_$gameId" }
-        if (game != null) {
-            updateGameStatus(game.id, "Descargando")
+        val currentLibrary = _userLibrary.value.toMutableList()
+        val gameIndex = currentLibrary.indexOfFirst { it.id == gameId }
+        
+        if (gameIndex != -1) {
+            currentLibrary[gameIndex] = currentLibrary[gameIndex].copy(status = "Instalado")
+            _userLibrary.value = currentLibrary
+            _games.value = currentLibrary
+            android.util.Log.d("LibraryViewModel", "🎮 Juego instalado: ${currentLibrary[gameIndex].name}")
         }
     }
 
-    // Eliminar un juego de la biblioteca
-    fun removeGame(gameId: String) {
-        _games.value = _games.value.filter { it.id != gameId }
-    }
-
-    // Limpiar biblioteca (para testing)
-    fun clearLibrary() {
-        _games.value = emptyList()
+    fun updateGameStatus(gameId: String, newStatus: String) {
+        val currentLibrary = _userLibrary.value.toMutableList()
+        val gameIndex = currentLibrary.indexOfFirst { it.id == gameId }
+        
+        if (gameIndex != -1) {
+            currentLibrary[gameIndex] = currentLibrary[gameIndex].copy(status = newStatus)
+            _userLibrary.value = currentLibrary
+            _games.value = currentLibrary
+            android.util.Log.d("LibraryViewModel", "📝 Status actualizado: ${currentLibrary[gameIndex].name} -> $newStatus")
+        }
     }
 }
-
-// Modelo para estadísticas de la biblioteca
-data class LibraryStats(
-    val totalGames: Int,
-    val installedGames: Int,
-    val availableGames: Int,
-    val downloadingGames: Int
-)

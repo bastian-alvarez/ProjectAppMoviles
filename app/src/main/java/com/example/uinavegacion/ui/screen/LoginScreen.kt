@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,10 +48,16 @@ fun LoginScreenVm(
     val state by vm.login.collectAsStateWithLifecycle()
 
     if (state.success) {
+        Log.d("LoginScreen", "🎯 Login exitoso detectado! isAdmin=${state.isAdmin}")
         vm.clearLoginResult()
         // Navegar según el tipo de usuario resuelto en el ViewModel
-        if (state.isAdmin) navController.navigate(Route.AdminDashboard.path)
-        else onLoginOkNavigateHome()
+        if (state.isAdmin) {
+            Log.d("LoginScreen", "🔑 Navegando a AdminDashboard")
+            navController.navigate(Route.AdminDashboard.path)
+        } else {
+            Log.d("LoginScreen", "🏠 Navegando a Home")
+            onLoginOkNavigateHome()
+        }
     }
     LoginScreen(
         email = state.email,

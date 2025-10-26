@@ -12,6 +12,10 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.uinavegacion.viewmodel.CartViewModel
 import com.example.uinavegacion.viewmodel.LibraryViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,8 +105,17 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                     onCompletePurchase = { 
                         // Añadir juegos comprados a la biblioteca
                         libraryViewModel.addPurchasedGames(cartItems)
+                        // Limpiar el carrito
                         cartViewModel.clearCart()
-                        nav.navigate(Route.Home.path)
+                        
+                        // Usar un pequeño delay antes de navegar para asegurar que la BD se actualice
+                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                            kotlinx.coroutines.delay(200) // 200ms para que se complete la inserción en BD
+                            // Forzar actualización inmediata de la biblioteca
+                            libraryViewModel.forceRefresh()
+                            kotlinx.coroutines.delay(100) // 100ms adicionales para la recarga
+                            nav.navigate(Route.Library.path) // Navegar a la biblioteca
+                        }
                     },
                     modifier = Modifier
                         .fillMaxSize()
@@ -126,8 +139,17 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                         onCompletePurchase = { 
                             // Añadir juegos comprados a la biblioteca
                             libraryViewModel.addPurchasedGames(cartItems)
+                            // Limpiar el carrito
                             cartViewModel.clearCart()
-                            nav.navigate(Route.Home.path)
+                            
+                            // Usar un pequeño delay antes de navegar para asegurar que la BD se actualice
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(200) // 200ms para que se complete la inserción en BD
+                                // Forzar actualización inmediata de la biblioteca
+                                libraryViewModel.forceRefresh()
+                                delay(100) // 100ms adicionales para la recarga
+                                nav.navigate(Route.Library.path) // Navegar a la biblioteca
+                            }
                         },
                         modifier = Modifier
                             .then(

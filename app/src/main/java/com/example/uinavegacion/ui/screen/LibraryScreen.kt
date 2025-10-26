@@ -264,19 +264,25 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                                 modifier = Modifier.padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Imagen del juego
-                                        AnimatedButton(
-                                            onClick = { libraryViewModel.installGame(game.id) },
-                                            modifier = Modifier.height(32.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Download,
-                                                contentDescription = "Instalar",
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Instalar", style = MaterialTheme.typography.bodySmall)
-                                        }
+                                // Imagen del juego (placeholder con icono)
+                                Card(
+                                    modifier = Modifier.size(60.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.SportsEsports,
+                                            contentDescription = "Imagen del juego",
+                                            modifier = Modifier.size(32.dp),
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
 
                                 Spacer(Modifier.width(12.dp))
 
@@ -299,6 +305,13 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
                                         text = "Agregado: ${game.dateAdded}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = "$${game.price}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
 
