@@ -1,6 +1,8 @@
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -8,315 +10,413 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.uinavegacion.data.local.database.AppDatabase
-import com.example.uinavegacion.data.repository.AdminRepository
-import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.SessionManager
-import com.example.uinavegacion.ui.viewmodel.AuthViewModel
-import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
-import kotlinx.coroutines.delay
+import com.example.uinavegacion.data.local.database.AppDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangePasswordScreen(nav: NavHostController) {
-    val context = LocalContext.current.applicationContext
-    val db = remember { AppDatabase.getInstance(context) }
-    val userRepo = remember { UserRepository(db.userDao()) }
-    val adminRepo = remember { AdminRepository(db.adminDao()) }
-    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(context.applicationContext as android.app.Application, userRepo, adminRepo))
-    
-    val changePasswordState by authViewModel.changePassword.collectAsState()
+    // Estados
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     
     var showCurrentPassword by remember { mutableStateOf(false) }
     var showNewPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
     
-    // Obtener el email del usuario logueado desde SessionManager
-    val userEmail = SessionManager.getCurrentUserEmail() ?: "user1@demo.com"
+    var currentPasswordError by remember { mutableStateOf<String?>(null) }
+    var newPasswordError by remember { mutableStateOf<String?>(null) }
+    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
     
-    // Efecto para manejar el logout automático después del cambio exitoso
-    LaunchedEffect(changePasswordState.success) {
-        if (changePasswordState.success && changePasswordState.successMsg?.contains("redirigido") == true) {
-            delay(2000)
-            // Limpiar estado del cambio de contraseña
-            authViewModel.clearChangePasswordResult()
-            
-            // Redirigir al login
-            nav.navigate("login") {
-                popUpTo(0) { inclusive = true }
+    var isLoading by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val db = remember { AppDatabase.getInstance(context) }
+    val userEmail = SessionManager.getCurrentUserEmail()
+    
+    // Función de actualización
+    fun updatePassword() {
+        currentPasswordError = null
+        newPasswordError = null
+        confirmPasswordError = null
+        
+        var hasError = false
+        
+        if (currentPassword.isBlank()) {
+            currentPasswordError = "Requerido"
+            hasError = true
+        }
+        
+        if (newPassword.isBlank()) {
+            newPasswordError = "Requerido"
+            hasError = true
+        } else if (newPassword.length < 8) {
+            newPasswordError = "Mínimo 8 caracteres"
+            hasError = true
+        } else if (newPassword == currentPassword) {
+            newPasswordError = "Debe ser diferente"
+            hasError = true
+        }
+        
+        if (confirmPassword.isBlank()) {
+            confirmPasswordError = "Requerido"
+            hasError = true
+        } else if (confirmPassword != newPassword) {
+            confirmPasswordError = "No coinciden"
+            hasError = true
+        }
+        
+        if (hasError || userEmail == null) return
+        
+        isLoading = true
+        errorMessage = null
+        successMessage = null
+        
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val user = db.userDao().getByEmail(userEmail)
+                    
+                    if (user == null) {
+                        withContext(Dispatchers.Main) {
+                            errorMessage = "Usuario no encontrado"
+                            isLoading = false
+                        }
+                        return@withContext
+                    }
+                    
+                    if (user.password != currentPassword) {
+                        withContext(Dispatchers.Main) {
+                            currentPasswordError = "Incorrecta"
+                            errorMessage = "Contraseña actual incorrecta"
+                            isLoading = false
+                        }
+                        return@withContext
+                    }
+                    
+                    db.userDao().updatePassword(user.id, newPassword)
+                    
+                    withContext(Dispatchers.Main) {
+                        successMessage = "Contraseña actualizada"
+                        isLoading = false
+                        kotlinx.coroutines.delay(1500)
+                        currentPassword = ""
+                        newPassword = ""
+                        confirmPassword = ""
+                        successMessage = null
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    errorMessage = "Error: ${e.message}"
+                    isLoading = false
+                }
             }
         }
     }
     
     Scaffold(
-        topBar = { 
+        topBar = {
             TopAppBar(
                 title = { Text("Cambiar Contraseña", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
+                        Icon(Icons.Default.ArrowBack, "Volver")
                     }
                 }
-            ) 
+            )
         }
-    ) { innerPadding ->
-        Column(
+    ) { padding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(padding),
+            contentAlignment = Alignment.Center
         ) {
-            
-            Spacer(Modifier.height(16.dp))
-            
-            // Información de seguridad mejorada
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                shape = RoundedCornerShape(16.dp)
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 500.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                
+                // Icono decorativo
+                Surface(
+                    modifier = Modifier.size(80.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
                 ) {
-                    Icon(
-                        Icons.Default.Security,
-                        contentDescription = "Seguridad",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = "Cambia tu contraseña para mantener tu cuenta segura",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
-            }
-
-            // Formulario de cambio de contraseña mejorado
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+                
+                // Título y descripción
                 Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Cambiar Contraseña",
-                        style = MaterialTheme.typography.headlineSmall,
+                        text = "Actualiza tu contraseña",
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        color = MaterialTheme.colorScheme.onBackground
                     )
-
+                    Text(
+                        text = "Mantén tu cuenta segura",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                // Campos de contraseña
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    
                     // Contraseña actual
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Contraseña actual",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        OutlinedTextField(
-                            value = changePasswordState.currentPassword,
-                            onValueChange = { authViewModel.onCurrentPasswordChange(it) },
-                            placeholder = { Text("Ingresa tu contraseña actual") },
-                            visualTransformation = if (showCurrentPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { showCurrentPassword = !showCurrentPassword }) {
-                                    Icon(
-                                        if (showCurrentPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = if (showCurrentPassword) "Ocultar contraseña" else "Mostrar contraseña",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = changePasswordState.currentPasswordError != null,
-                            supportingText = changePasswordState.currentPasswordError?.let { { Text(it) } },
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-
-                    // Nueva contraseña
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Nueva contraseña",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        OutlinedTextField(
-                            value = changePasswordState.newPassword,
-                            onValueChange = { authViewModel.onNewPasswordChange(it) },
-                            placeholder = { Text("Ingresa tu nueva contraseña") },
-                            visualTransformation = if (showNewPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { showNewPassword = !showNewPassword }) {
-                                    Icon(
-                                        if (showNewPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = if (showNewPassword) "Ocultar contraseña" else "Mostrar contraseña",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = changePasswordState.newPasswordError != null,
-                            supportingText = changePasswordState.newPasswordError?.let { { Text(it) } },
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-
-                    // Confirmar nueva contraseña
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Confirmar nueva contraseña",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        OutlinedTextField(
-                            value = changePasswordState.confirmPassword,
-                            onValueChange = { authViewModel.onConfirmPasswordChange(it) },
-                            placeholder = { Text("Confirma tu nueva contraseña") },
-                            visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                                    Icon(
-                                        if (showConfirmPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = if (showConfirmPassword) "Ocultar contraseña" else "Mostrar contraseña",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = changePasswordState.confirmPasswordError != null,
-                            supportingText = changePasswordState.confirmPasswordError?.let { { Text(it) } },
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-
-                    // Mensajes de error y éxito mejorados
-                    changePasswordState.errorMsg?.let { errorMsg ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.Error,
-                                    contentDescription = "Error",
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text = errorMsg,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-
-                    changePasswordState.successMsg?.let { successMsg ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.CheckCircle,
-                                    contentDescription = "Éxito",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text = successMsg,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // Botones de acción mejorados
-                    Row(
+                    OutlinedTextField(
+                        value = currentPassword,
+                        onValueChange = { 
+                            currentPassword = it
+                            currentPasswordError = null
+                            errorMessage = null
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { nav.popBackStack() },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Cancelar", fontWeight = FontWeight.Medium)
-                        }
-                        
-                        Button(
-                            onClick = {
-                                authViewModel.submitChangePassword(userEmail)
-                            },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            enabled = changePasswordState.canSubmit && !changePasswordState.isSubmitting,
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            if (changePasswordState.isSubmitting) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                        label = { Text("Contraseña Actual") },
+                        placeholder = { Text("Ingresa tu contraseña actual") },
+                        visualTransformation = if (showCurrentPassword) 
+                            VisualTransformation.None 
+                        else 
+                            PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showCurrentPassword = !showCurrentPassword }) {
+                                Icon(
+                                    if (showCurrentPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null
                                 )
-                                Spacer(Modifier.width(8.dp))
                             }
-                            Text("Actualizar", fontWeight = FontWeight.Medium)
+                        },
+                        isError = currentPasswordError != null,
+                        supportingText = currentPasswordError?.let { 
+                            { Text(it) }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    
+                    // Nueva contraseña
+                    OutlinedTextField(
+                        value = newPassword,
+                        onValueChange = { 
+                            newPassword = it
+                            newPasswordError = null
+                            errorMessage = null
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nueva Contraseña") },
+                        placeholder = { Text("Mínimo 8 caracteres") },
+                        visualTransformation = if (showNewPassword) 
+                            VisualTransformation.None 
+                        else 
+                            PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showNewPassword = !showNewPassword }) {
+                                Icon(
+                                    if (showNewPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        isError = newPasswordError != null,
+                        supportingText = newPasswordError?.let { 
+                            { Text(it) }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    
+                    // Confirmar contraseña
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { 
+                            confirmPassword = it
+                            confirmPasswordError = null
+                            errorMessage = null
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Confirmar Contraseña") },
+                        placeholder = { Text("Repite la nueva contraseña") },
+                        visualTransformation = if (showConfirmPassword) 
+                            VisualTransformation.None 
+                        else 
+                            PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
+                                Icon(
+                                    if (showConfirmPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        isError = confirmPasswordError != null,
+                        supportingText = confirmPasswordError?.let { 
+                            { Text(it) }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+                
+                // Mensaje de éxito
+                successMessage?.let { message ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = message,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF1B5E20)
+                            )
                         }
                     }
                 }
+                
+                // Mensaje de error
+                errorMessage?.let { message ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = message,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+                
+                // Botones
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Botón principal
+                    Button(
+                        onClick = { updatePassword() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isLoading && 
+                                 currentPassword.isNotBlank() && 
+                                 newPassword.isNotBlank() && 
+                                 confirmPassword.isNotBlank(),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                "Actualizando...",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                "Actualizar Contraseña",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    
+                    // Botón cancelar
+                    TextButton(
+                        onClick = { nav.popBackStack() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        enabled = !isLoading
+                    ) {
+                        Text(
+                            "Cancelar",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
             }
-
-            Spacer(Modifier.height(16.dp))
         }
     }
 }

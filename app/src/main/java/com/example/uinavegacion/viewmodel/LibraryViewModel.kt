@@ -35,28 +35,28 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     // Estado para forzar refrescos
     private val _refreshTrigger = MutableStateFlow(0)
 
-    // 🎮 JUEGOS DISPONIBLES EN MEMORIA (SIN BD)
+    // 🎮 JUEGOS DISPONIBLES EN MEMORIA (SIN BD) - IDs sincronizados con GamesScreen
     private val availableGames = listOf(
         LibraryGame(id = "1", name = "Super Mario Bros", price = 29.99, dateAdded = "", genre = "Plataformas"),
         LibraryGame(id = "2", name = "The Legend of Zelda", price = 39.99, dateAdded = "", genre = "Aventura"),
         LibraryGame(id = "3", name = "Pokémon Red", price = 24.99, dateAdded = "", genre = "RPG"),
         LibraryGame(id = "4", name = "Sonic the Hedgehog", price = 19.99, dateAdded = "", genre = "Plataformas"),
-        LibraryGame(id = "5", name = "Final Fantasy VII", price = 49.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "5", name = "Final Fantasy VII", price = 39.99, dateAdded = "", genre = "RPG"), // Precio con descuento 20%
         LibraryGame(id = "6", name = "Street Fighter II", price = 14.99, dateAdded = "", genre = "Lucha"),
-        LibraryGame(id = "7", name = "Minecraft", price = 26.99, dateAdded = "", genre = "Sandbox"),
+        LibraryGame(id = "7", name = "Minecraft", price = 21.59, dateAdded = "", genre = "Sandbox"), // Precio con descuento 20%
         LibraryGame(id = "8", name = "Call of Duty Modern Warfare", price = 59.99, dateAdded = "", genre = "Shooter"),
         LibraryGame(id = "9", name = "FIFA 24", price = 69.99, dateAdded = "", genre = "Deportes"),
         LibraryGame(id = "10", name = "The Witcher 3 Wild Hunt", price = 39.99, dateAdded = "", genre = "RPG"),
-        LibraryGame(id = "11", name = "Cyberpunk 2077", price = 59.99, dateAdded = "", genre = "RPG"),
-        LibraryGame(id = "12", name = "Red Dead Redemption 2", price = 49.99, dateAdded = "", genre = "Aventura"),
-        LibraryGame(id = "13", name = "Dark Souls III", price = 39.99, dateAdded = "", genre = "RPG"),
-        LibraryGame(id = "14", name = "Grand Theft Auto V", price = 29.99, dateAdded = "", genre = "Acción"),
-        LibraryGame(id = "15", name = "Elden Ring", price = 59.99, dateAdded = "", genre = "RPG"),
-        LibraryGame(id = "16", name = "Overwatch 2", price = 39.99, dateAdded = "", genre = "Shooter"),
-        LibraryGame(id = "17", name = "Among Us", price = 4.99, dateAdded = "", genre = "Social"),
-        LibraryGame(id = "18", name = "Valorant", price = 19.99, dateAdded = "", genre = "Shooter"),
-        LibraryGame(id = "19", name = "Assassin's Creed Valhalla", price = 59.99, dateAdded = "", genre = "Aventura"),
-        LibraryGame(id = "20", name = "Fortnite", price = 0.0, dateAdded = "", genre = "Battle Royale")
+        LibraryGame(id = "11", name = "Overwatch 2", price = 39.99, dateAdded = "", genre = "Shooter"),
+        LibraryGame(id = "12", name = "Cyberpunk 2077", price = 59.99, dateAdded = "", genre = "RPG"),
+        LibraryGame(id = "13", name = "Red Dead Redemption 2", price = 49.99, dateAdded = "", genre = "Aventura"),
+        LibraryGame(id = "14", name = "Among Us", price = 4.99, dateAdded = "", genre = "Social"),
+        LibraryGame(id = "15", name = "Valorant", price = 19.99, dateAdded = "", genre = "Shooter"),
+        LibraryGame(id = "16", name = "Assassin's Creed Valhalla", price = 59.99, dateAdded = "", genre = "Aventura"),
+        LibraryGame(id = "17", name = "Fortnite", price = 0.0, dateAdded = "", genre = "Battle Royale"),
+        LibraryGame(id = "18", name = "Dark Souls III", price = 31.99, dateAdded = "", genre = "RPG"), // Precio con descuento 20%
+        LibraryGame(id = "19", name = "Grand Theft Auto V", price = 29.99, dateAdded = "", genre = "Acción"),
+        LibraryGame(id = "20", name = "Elden Ring", price = 47.99, dateAdded = "", genre = "RPG") // Precio con descuento 20%
     )
 
     // 📚 BIBLIOTECA DEL USUARIO (EN MEMORIA)

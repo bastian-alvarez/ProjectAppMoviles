@@ -11,5 +11,6 @@ data class UserEntity(
     val phone: String,
     val password: String,
     val profilePhotoUri: String? = null,
-    val isBlocked: Boolean = false
+    val isBlocked: Boolean = false,
+    val gender: String = ""
 )

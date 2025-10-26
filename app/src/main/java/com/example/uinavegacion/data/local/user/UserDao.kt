@@ -29,8 +29,8 @@ interface UserDao{
     @Query("SELECT * FROM users ORDER BY id ASC")
     suspend fun getAllOrderedById(): List<UserEntity>
     //actualizar el usuario
-    @Query("UPDATE users SET name = :name, email = :email, phone = :phone, password = :password WHERE id = :id")
-    suspend fun update(id: Long, name: String, email: String, phone: String, password: String)
+    @Query("UPDATE users SET name = :name, email = :email, phone = :phone, password = :password, gender = :gender WHERE id = :id")
+    suspend fun update(id: Long, name: String, email: String, phone: String, password: String, gender: String = "")
     //actualizar la foto de perfil
     @Query("UPDATE users SET profilePhotoUri = :photoUri WHERE id = :id")
     suspend fun updateProfilePhoto(id: Long, photoUri: String?)

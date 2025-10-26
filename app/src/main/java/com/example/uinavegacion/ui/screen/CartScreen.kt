@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
@@ -45,6 +46,7 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val errorMessage by cartViewModel.errorMessage.collectAsState()
+    val successMessage by cartViewModel.successMessage.collectAsState()
     
     // Mostrar Snackbar cuando hay error
     LaunchedEffect(errorMessage) {
@@ -54,6 +56,17 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                 duration = SnackbarDuration.Short
             )
             cartViewModel.clearErrorMessage()
+        }
+    }
+    
+    // Mostrar Snackbar cuando hay éxito
+    LaunchedEffect(successMessage) {
+        successMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            cartViewModel.clearSuccessMessage()
         }
     }
 
@@ -459,7 +472,7 @@ private fun TabletCartItem(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = GameImages.getDefaultImage(),
+                    model = item.imageUrl.ifEmpty { GameImages.getDefaultImage() },
                     contentDescription = item.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -642,184 +655,192 @@ private fun MobileCartItem(
     cartViewModel: CartViewModel
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp), // Altura fija más grande para mejor equilibrio
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Imagen del producto más grande
-            Box(
-                modifier = Modifier
-                    .size(80.dp) // Aumentado de 60dp a 80dp
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
+            // Imagen del juego
+            Card(
+                modifier = Modifier.size(80.dp),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                AsyncImage(
-                    model = GameImages.getDefaultImage(),
-                    contentDescription = item.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = item.imageUrl.ifEmpty { GameImages.getDefaultImage() },
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
-            Spacer(Modifier.width(16.dp))
-
-            // Información del producto expandida
+            // Información del producto
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Nombre del juego
                 Text(
                     text = item.name,
-                    style = MaterialTheme.typography.titleLarge, // Texto más grande
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 2
-                )
-                
-                Text(
-                    text = "Cantidad: ${item.quantity}",
-                    style = MaterialTheme.typography.bodyLarge, // Texto más grande
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    maxLines = 2,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 
                 // Precio con descuento si aplica
-                if (item.hasDiscount) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (item.hasDiscount) {
+                        // Badge de descuento
                         Surface(
-                            color = androidx.compose.ui.graphics.Color(0xFFE74C3C),
-                            shape = RoundedCornerShape(4.dp)
+                            color = androidx.compose.ui.graphics.Color(0xFFFF3B30),
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 text = "-${item.discount}%",
-                                style = MaterialTheme.typography.labelMedium, // Más grande
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = androidx.compose.ui.graphics.Color.White,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
+                        
+                        // Precio original tachado
                         Text(
                             text = "$${String.format("%.2f", item.originalPrice)}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
                         )
-                        Text(
-                            text = "$${String.format("%.2f", item.price)}",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = androidx.compose.ui.graphics.Color(0xFF27AE60),
-                            fontWeight = FontWeight.Bold
-                        )
                     }
-                } else {
-                    Text(
-                        text = "Precio: $${String.format("%.2f", item.price)}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
                 }
                 
+                // Precio actual
                 Text(
-                    text = "Subtotal: $${String.format("%.2f", item.price * item.quantity)}",
-                    style = MaterialTheme.typography.titleMedium, // Más prominente
+                    text = "$${String.format("%.2f", item.price)}",
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = if (item.hasDiscount) 
+                        androidx.compose.ui.graphics.Color(0xFF34C759) 
+                    else 
+                        MaterialTheme.colorScheme.primary
                 )
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            // Botones de control mejorados para móvil
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+                
+                // Controles de cantidad y eliminar
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AnimatedIconButton(
-                        onClick = { 
-                            if (item.quantity > 1) {
-                                cartViewModel.updateQuantity(item.id, item.quantity - 1)
-                            }
-                        },
-                        modifier = Modifier
-                            .size(40.dp) // Más grande
-                            .background(
-                                MaterialTheme.colorScheme.secondaryContainer,
-                                RoundedCornerShape(10.dp)
+                    // Controles de cantidad
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Botón menos
+                        FilledIconButton(
+                            onClick = { 
+                                if (item.quantity > 1) {
+                                    cartViewModel.updateQuantity(item.id, item.quantity - 1)
+                                }
+                            },
+                            modifier = Modifier.size(32.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
                             )
-                    ) {
-                        Icon(
-                            Icons.Default.Remove,
-                            contentDescription = "Disminuir cantidad",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    
-                    Card(
-                        modifier = Modifier.size(44.dp), // Más grande
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                Icons.Default.Remove,
+                                contentDescription = "Disminuir",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        
+                        // Cantidad
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 text = "${item.quantity}",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                            )
+                        }
+                        
+                        // Botón más
+                        FilledIconButton(
+                            onClick = { 
+                                cartViewModel.updateQuantity(item.id, item.quantity + 1) 
+                            },
+                            modifier = Modifier.size(32.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Aumentar",
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
                     
-                    AnimatedIconButton(
-                        onClick = { cartViewModel.updateQuantity(item.id, item.quantity + 1) },
-                        modifier = Modifier
-                            .size(40.dp) // Más grande
-                            .background(
-                                MaterialTheme.colorScheme.secondaryContainer,
-                                RoundedCornerShape(10.dp)
-                            )
+                    // Botón eliminar
+                    FilledIconButton(
+                        onClick = { cartViewModel.removeGame(item.id) },
+                        modifier = Modifier.size(36.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
                     ) {
                         Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Aumentar cantidad",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(22.dp)
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
                 
-                AnimatedOutlinedButton(
-                    onClick = { cartViewModel.removeGame(item.id) },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    modifier = Modifier.height(36.dp)
+                // Subtotal
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Eliminar",
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Quitar", style = MaterialTheme.typography.bodyMedium)
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Subtotal",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$${String.format("%.2f", item.price * item.quantity)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -832,61 +853,109 @@ private fun CartSummary(
     totalPrice: Double,
     isTablet: Boolean
 ) {
-    // Resumen ultra compacto en una sola línea
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(if (isTablet) 16.dp else 12.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        // Info básica en una línea
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(if (isTablet) 20.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Resumen: $totalItems juegos",
-                style = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Subtotal: $${String.format("%.2f", totalPrice)}",
-                style = if (isTablet) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        
-        // Total destacado muy prominente
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = androidx.compose.ui.graphics.Color(0xFF1976D2) // Azul fuerte para contraste
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
+            // Encabezado con icono
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(if (isTablet) 20.dp else 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.ShoppingCart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Resumen de Compra",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            Divider(
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                thickness = 1.dp
+            )
+            
+            // Cantidad de juegos
+            Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Total a Pagar:",
-                    style = if (isTablet) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = androidx.compose.ui.graphics.Color.White // Blanco para máximo contraste
+                    text = "Total de juegos",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = "$${String.format("%.2f", totalPrice)}",
-                    style = if (isTablet) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = androidx.compose.ui.graphics.Color(0xFFFFC107) // Amarillo brillante para destacar
-                )
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "$totalItems",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            
+            Divider(
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                thickness = 1.dp
+            )
+            
+            // Total a pagar - Destacado
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Total a Pagar",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                        )
+                        Text(
+                            text = "Incluye todos los juegos",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        )
+                    }
+                    Text(
+                        text = "$${String.format("%.2f", totalPrice)}",
+                        style = if (isTablet) 
+                            MaterialTheme.typography.displaySmall 
+                        else 
+                            MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }

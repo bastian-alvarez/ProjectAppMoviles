@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 
 
@@ -88,209 +87,117 @@ class AuthViewModel(
 
     // ----------------- LOGIN: handlers y envío -----------------
 
-    fun onLoginEmailChange(value: String) {
-        _login.update { it.copy(email = value, emailError = null, errorMsg = null) } // Solo guardamos, sin validar en tiempo real
-        recomputeLoginCanSubmit()
-    }
-
-    fun onLoginPassChange(value: String) {                  // Handler cuando cambia la contraseña
-        _login.update { it.copy(pass = value, errorMsg = null) }             // Guardamos (sin validar fuerza aquí) + limpiamos error
+    fun onLoginEmailChange(value: String) {                 // Handler cuando cambia el email
+        _login.update { it.copy(email = value, emailError = validateEmail(value)) } // Guardamos + validamos
         recomputeLoginCanSubmit()                           // Recalculamos habilitado
     }
 
-    private fun recomputeLoginCanSubmit() {
-        val s = _login.value
-        // Solo requerimos que los campos no estén vacíos (sin validación estricta de email)
-        val can = s.email.isNotBlank() && s.pass.isNotBlank()
-        _login.update { it.copy(canSubmit = can) }
+    fun onLoginPassChange(value: String) {                  // Handler cuando cambia la contraseña
+        _login.update { it.copy(pass = value) }             // Guardamos (sin validar fuerza aquí)
+        recomputeLoginCanSubmit()                           // Recalculamos habilitado
     }
 
-    fun submitLogin() {
-        val s = _login.value
-        Log.d("AuthViewModel", "🚀 submitLogin iniciado: email='${s.email}', pass='${s.pass.take(3)}...'")
-        
-        // Validaciones básicas
-        val email = s.email.trim()
-        val pass = s.pass.trim()
-        
-        if (email.isBlank()) {
-            _login.update {
-                it.copy(
-                    success = false,
-                    errorMsg = "📧 El email es obligatorio",
-                    isAdmin = false,
-                    isSubmitting = false
-                )
-            }
-            return
-        }
-        
-        if (pass.isBlank()) {
-            _login.update {
-                it.copy(
-                    success = false,
-                    errorMsg = "🔑 La contraseña es obligatoria",
-                    isAdmin = false,
-                    isSubmitting = false
-                )
-            }
-            return
-        }
-        
-        // Limpiar estado previo
-        _login.update { it.copy(errorMsg = null, success = false, isAdmin = false, isSubmitting = false) }
-        
-        // Login hardcodeado para admin
-        if (email == "admin@steamish.com" && pass == "Admin123!") {
-            Log.d("AuthViewModel", "✅ Login admin exitoso")
-            
-            val tempAdmin = com.example.uinavegacion.data.local.admin.AdminEntity(
-                id = 1L,
-                name = "Admin Temporal",
-                email = email,
-                phone = "+56 9 8877 6655",
-                password = pass,
-                role = "SUPER_ADMIN"
-            )
-            SessionManager.loginAdmin(tempAdmin)
-            
-            _login.update {
-                it.copy(
-                    success = true,
-                    errorMsg = null,
-                    isAdmin = true,
-                    isSubmitting = false
-                )
-            }
-            return
-        }
-        
-        // Login hardcodeado para usuario de prueba (más opciones)
-        if ((email == "usuario@test.com" && pass == "123456") ||
-            (email == "user1@demo.com" && pass == "Password123!") ||
-            (email == "test@test.com" && pass == "123")) {
-            
-            Log.d("AuthViewModel", "✅ Login usuario hardcodeado exitoso")
-            
-            val tempUser = com.example.uinavegacion.data.local.user.UserEntity(
-                id = 1L,
-                name = "Usuario Prueba",
-                email = email,
-                phone = "+56 9 1234 5678",
-                password = pass,
-                isBlocked = false
-            )
-            SessionManager.loginUser(tempUser)
-            
-            _login.update {
-                it.copy(
-                    success = true,
-                    errorMsg = null,
-                    isAdmin = false,
-                    isSubmitting = false
-                )
-            }
-            Log.d("AuthViewModel", "🏁 Usuario hardcodeado autenticado, navegando...")
-            return
-        }
-        
-        // Buscar en la base de datos
-        viewModelScope.launch {
+    private fun recomputeLoginCanSubmit() {                 // Regla para habilitar botón "Entrar"
+        val s = _login.value                                // Tomamos el estado actual
+        val can = s.emailError == null &&                   // Email válido
+                s.email.isNotBlank() &&                   // Email no vacío
+                s.pass.isNotBlank()                       // Password no vacía
+        _login.update { it.copy(canSubmit = can) }          // Actualizamos el flag
+    }
+
+    fun submitLogin() {                                     // Acción de login (simulación async)
+        val s = _login.value                                // Snapshot del estado
+        if (!s.canSubmit || s.isSubmitting) return          // Si no se puede o ya está cargando, salimos
+        viewModelScope.launch {                             // Lanzamos corrutina
             try {
-                Log.d("AuthViewModel", "🔍 Buscando usuario en BD...")
-                Log.d("AuthViewModel", "📧 Email a buscar: '$email'")
+                Log.d("AuthViewModel", "=== INICIO LOGIN ===")
+                _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false, isAdmin = false) } // Seteamos loading
+
+                val email = s.email.trim()
+                val pass = s.pass.trim()
+                Log.d("AuthViewModel", "Attempting login with email: [$email], pass length: [${pass.length}]")
+
+                // Verificar que la BD esté inicializada
+                val adminCount = adminRepository.getAllAdmins().size
+                Log.d("AuthViewModel", "🔍 Total admins in DB: $adminCount")
                 
-                val existingUser = withTimeoutOrNull(3000) { // Timeout de 3 segundos
-                    userRepository.getUserByEmail(email)
-                }
-                
-                if (existingUser == null) {
-                    Log.d("AuthViewModel", "📋 Usuario no encontrado en BD")
-                } else {
-                    Log.d("AuthViewModel", "📋 Usuario encontrado: ${existingUser.email}")
-                }
-                
-                if (existingUser != null) {
-                    Log.d("AuthViewModel", "👤 Usuario encontrado: ${existingUser.email}")
-                    
-                    if (existingUser.password == pass) {
-                        if (existingUser.isBlocked) {
-                            _login.update {
-                                it.copy(
-                                    success = false,
-                                    errorMsg = "🚫 Cuenta bloqueada. Contacta al administrador.",
-                                    isAdmin = false,
-                                    isSubmitting = false
-                                )
-                            }
-                            Log.d("AuthViewModel", "🚫 Usuario bloqueado")
+                // Si no hay admins, crear el admin por defecto de emergencia
+                if (adminCount == 0) {
+                    Log.w("AuthViewModel", "⚠️ No hay admins en la BD, creando admin de emergencia...")
+                    try {
+                        val emergencyResult = adminRepository.registerAdmin(
+                            name = "Administrador Principal",
+                            email = "admin@steamish.com",
+                            phone = "+56 9 8877 6655",
+                            password = "Admin123!",
+                            role = "SUPER_ADMIN"
+                        )
+                        if (emergencyResult.isSuccess) {
+                            Log.d("AuthViewModel", "✅ Admin de emergencia creado exitosamente")
                         } else {
-                            // Login exitoso
-                            SessionManager.loginUser(existingUser)
-                            _login.update {
-                                it.copy(
-                                    success = true,
-                                    errorMsg = null,
-                                    isAdmin = false,
-                                    isSubmitting = false
-                                )
-                            }
-                            Log.d("AuthViewModel", "🎉 Login usuario BD exitoso")
+                            Log.e("AuthViewModel", "❌ Error creando admin de emergencia: ${emergencyResult.exceptionOrNull()?.message}")
                         }
-                    } else {
-                        // Contraseña incorrecta
-                        Log.d("AuthViewModel", "❌ Contraseña incorrecta para usuario existente")
-                        _login.update {
-                            it.copy(
-                                success = false,
-                                errorMsg = "❌ Credenciales inválidas",
-                                isAdmin = false,
-                                isSubmitting = false
-                            )
-                        }
-                        Log.d("AuthViewModel", "✅ Estado actualizado con error de contraseña")
-                    }
-                } else {
-                    Log.d("AuthViewModel", "❌ Usuario no encontrado, verificando admin...")
-                    // Verificar si es admin en BD
-                    val admin = withTimeoutOrNull(3000) {
-                        adminRepository.validateAdmin(email, pass)
-                    }
-                    Log.d("AuthViewModel", "🔍 Admin encontrado: ${admin?.email ?: "null"}")
-                    
-                    if (admin != null) {
-                        SessionManager.loginAdmin(admin)
-                        _login.update {
-                            it.copy(
-                                success = true,
-                                errorMsg = null,
-                                isAdmin = true,
-                                isSubmitting = false
-                            )
-                        }
-                        Log.d("AuthViewModel", "🎉 Login admin BD exitoso")
-                    } else {
-                        Log.d("AuthViewModel", "❌ Credenciales completamente inválidas")
-                        // Credenciales inválidas
-                        _login.update {
-                            it.copy(
-                                success = false,
-                                errorMsg = "❌ Credenciales inválidas",
-                                isAdmin = false,
-                                isSubmitting = false
-                            )
-                        }
-                        Log.d("AuthViewModel", "✅ Estado actualizado con mensaje de error")
+                    } catch (e: Exception) {
+                        Log.e("AuthViewModel", "💥 Excepción creando admin de emergencia", e)
                     }
                 }
+
+                // Validar credenciales de admin primero
+                Log.d("AuthViewModel", "🔐 Validando credenciales de admin...")
+                val admin = adminRepository.validateAdmin(email, pass)
+                val isAdmin = admin != null
+                Log.d("AuthViewModel", "🔍 ¿Es admin? $isAdmin")
+                
+                // Si no es admin, validar usuario normal
+                val userResult = if (!isAdmin) {
+                    Log.d("AuthViewModel", "👤 Validando usuario normal...")
+                    userRepository.login(email, pass)
+                } else null
+                
+                var ok = isAdmin || (userResult != null && userResult.isSuccess)
+                var errorMessage: String? = null
+                Log.d("AuthViewModel", "🎯 Login exitoso: $ok")
+
+                // Verificar si el usuario está bloqueado (solo para usuarios normales)
+                if (ok && !isAdmin) {
+                    val user = userRepository.getUserByEmail(email)
+                    if (user != null && user.isBlocked) {
+                        ok = false
+                        errorMessage = "Tu cuenta ha sido bloqueada. Contacta al administrador."
+                        Log.d("AuthViewModel", "🚫 User is blocked: $email")
+                    } else if (user != null) {
+                        SessionManager.loginUser(user)
+                        Log.d("AuthViewModel", "👤 Usuario logueado en sesión")
+                    }
+                } else if (ok && isAdmin && admin != null) {
+                    SessionManager.loginAdmin(admin)
+                    Log.d("AuthViewModel", "👨‍💼 Admin logueado en sesión")
+                }
+
+                // Si no es válido y no hay mensaje de bloqueo, mostrar mensaje genérico
+                if (!ok && errorMessage == null) {
+                    errorMessage = "Credenciales inválidas"
+                    Log.w("AuthViewModel", "❌ Credenciales inválidas para: $email")
+                }
+
+                Log.d("AuthViewModel", "🏁 Finalizando login - Success: $ok, IsAdmin: $isAdmin")
+                _login.update {                                 // Actualizamos con el resultado
+                    it.copy(
+                        isSubmitting = false,                   // Fin carga
+                        success = ok,                           // true si credenciales correctas
+                        errorMsg = errorMessage,                // Mensaje si falla
+                        isAdmin = isAdmin                       // Guardamos si es admin
+                    )
+                }
+                Log.d("AuthViewModel", "=== FIN LOGIN ===")
             } catch (e: Exception) {
-                Log.e("AuthViewModel", "💥 Error en login: ${e.message}", e)
+                Log.e("AuthViewModel", "💥 EXCEPCIÓN CRÍTICA EN LOGIN", e)
                 _login.update {
                     it.copy(
+                        isSubmitting = false,
                         success = false,
-                        errorMsg = "❌ Credenciales inválidas",
-                        isAdmin = false,
-                        isSubmitting = false
+                        errorMsg = "Error interno: ${e.message}",
+                        isAdmin = false
                     )
                 }
             }
@@ -298,7 +205,6 @@ class AuthViewModel(
     }
 
     fun clearLoginResult() {                                // Limpia banderas tras navegar
-        Log.d("AuthViewModel", "🧹 Limpiando estado de login")
         _login.update { it.copy(success = false, errorMsg = null, isAdmin = false) }
     }
 

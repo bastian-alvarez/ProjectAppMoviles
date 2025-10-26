@@ -148,6 +148,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                 // Formatear el teléfono al cargarlo desde la BD
                 phone = formatChileanPhoneNumber(userByEmail.phone)
                 profilePhotoUri = userByEmail.profilePhotoUri
+                gender = userByEmail.gender
             }
         }
     }
@@ -492,7 +493,8 @@ fun ProfileEditScreen(nav: NavHostController) {
                                         name = name.trim(),
                                         email = email.trim(),
                                         phone = phone.trim(),
-                                        password = currentUser.password // Mantener la contraseña actual
+                                        password = currentUser.password, // Mantener la contraseña actual
+                                        gender = gender.trim()
                                     )
                                     
                                     // Actualizar SessionManager con los nuevos datos

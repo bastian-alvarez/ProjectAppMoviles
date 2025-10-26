@@ -25,6 +25,9 @@ class CartViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
     
+    private val _successMessage = MutableStateFlow<String?>(null)
+    val successMessage: StateFlow<String?> = _successMessage
+    
     companion object {
         const val MAX_LICENSES_PER_PURCHASE = 3
     }
@@ -43,21 +46,25 @@ class CartViewModel : ViewModel() {
             
             if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
                 _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
+                _successMessage.value = null
                 return false
             }
             
             currentItems[existingIndex] = currentItems[existingIndex].copy(
                 quantity = newQuantity
             )
+            _successMessage.value = "✓ Cantidad actualizada en el carrito"
         } else {
             // Si no existe, verificar si hay espacio para agregarlo
             if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
                 _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
+                _successMessage.value = null
                 return false
             }
             
             // Agregarlo
             currentItems.add(CartItem(id, name, price, 1, imageUrl, originalPrice, discount))
+            _successMessage.value = "✓ $name agregado al carrito"
         }
         _items.value = currentItems
         _errorMessage.value = null
@@ -67,6 +74,11 @@ class CartViewModel : ViewModel() {
     // Limpiar mensaje de error
     fun clearErrorMessage() {
         _errorMessage.value = null
+    }
+    
+    // Limpiar mensaje de éxito
+    fun clearSuccessMessage() {
+        _successMessage.value = null
     }
 
     // Remover juego del carrito

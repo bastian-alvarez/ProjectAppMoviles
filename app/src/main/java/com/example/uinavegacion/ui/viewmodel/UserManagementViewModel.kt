@@ -55,7 +55,8 @@ class UserManagementViewModel(
                 email = "user1@demo.com",
                 phone = "+56 9 1234 5678",
                 password = "Password123!",
-                isBlocked = false
+                isBlocked = false,
+                gender = ""
             ),
             UserEntity(
                 id = 2L,
@@ -63,7 +64,8 @@ class UserManagementViewModel(
                 email = "test@test.com",
                 phone = "+56 9 8765 4321",
                 password = "Password123!",
-                isBlocked = false
+                isBlocked = false,
+                gender = ""
             )
         )
         

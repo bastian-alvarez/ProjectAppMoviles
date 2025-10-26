@@ -38,10 +38,10 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     
     // Juegos en oferta con 20% de descuento
     val gamesOnSale = listOf(
-        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "", discount = 20),
-        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "", discount = 20),
-        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "", discount = 20),
-        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "", discount = 20)
+        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://m.media-amazon.com/images/I/71UZ3-+pqdL.jpg", discount = 20),
+        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://m.media-amazon.com/images/I/81iqjuJ3W-L.jpg", discount = 20),
+        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://i.3djuegos.com/juegos/13678/dark_souls_iii__ashes_of_ariandel/fotos/ficha/dark_souls_iii__ashes_of_ariandel-3483598.webp", discount = 20),
+        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://i.3djuegos.com/juegos/16678/elden_ring/fotos/ficha/elden_ring-5953540.webp", discount = 20)
     )
 
     val categories = listOf("Acción", "Aventura", "RPG", "Plataformas", "Deportes", "Estrategia")
@@ -415,7 +415,7 @@ private fun CompactGameCard(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 AsyncImage(
-                    model = GameImages.getDefaultImage(),
+                    model = if (game.imageUrl.isNotEmpty()) game.imageUrl else GameImages.getDefaultImage(),
                     contentDescription = game.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -534,7 +534,7 @@ private fun MobileGameCard(
             ) {
                 // Imagen del juego
                 AsyncImage(
-                    model = GameImages.getDefaultImage(),
+                    model = if (game.imageUrl.isNotEmpty()) game.imageUrl else GameImages.getDefaultImage(),
                     contentDescription = game.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -658,7 +658,7 @@ private fun GameCard(
             ) {
                 // Imagen del juego con AsyncImage
                 AsyncImage(
-                    model = GameImages.getDefaultImage(),
+                    model = if (game.imageUrl.isNotEmpty()) game.imageUrl else GameImages.getDefaultImage(),
                     contentDescription = game.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

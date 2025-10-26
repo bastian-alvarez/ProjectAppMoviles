@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 17, // Biblioteca por usuario implementada
+    version = 18, // Campo género agregado a usuarios
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -139,6 +139,18 @@ abstract class AppDatabase : RoomDatabase() {
                 Log.d("AppDatabase", "MIGRATION 16->17: Biblioteca actualizada para usuarios específicos")
             }
         }
+        
+        // Migración de versión 17 a 18: Agregar columna gender a users
+        private val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 17->18: Agregando columna gender a users...")
+                // Agregar columna gender con valor por defecto vacío
+                database.execSQL(
+                    "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT ''"
+                )
+                Log.d("AppDatabase", "MIGRATION 17->18: Columna gender agregada correctamente")
+            }
+        }
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -147,7 +159,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18)
                     .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

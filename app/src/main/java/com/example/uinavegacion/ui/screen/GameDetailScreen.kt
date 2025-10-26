@@ -21,6 +21,19 @@ import com.example.uinavegacion.ui.utils.GameImages
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable  
 fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: CartViewModel = viewModel()) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val successMessage by cartViewModel.successMessage.collectAsState()
+    
+    // Mostrar Snackbar cuando se agrega al carrito
+    LaunchedEffect(successMessage) {
+        successMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            cartViewModel.clearSuccessMessage()
+        }
+    }
     
     // Modelo del juego con descripción e imagen
     data class Game(
@@ -40,28 +53,28 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
             get() = discount > 0
     }
 
-    // Lista de juegos con imágenes WebP optimizadas (misma que en GamesScreen)
+    // Lista de juegos con imágenes optimizadas (misma que en GamesScreen)
     val games = listOf(
-        Game("1",  "Super Mario Bros",            29.99, "Plataformas", 15,  "El clásico juego de plataformas",     "https://tudominio.com/imagenes/super_mario_bros.webp"),
-        Game("2",  "The Legend of Zelda",         39.99, "Aventura",    8,   "Épica aventura en Hyrule",            "https://tudominio.com/imagenes/the_legend_of_zelda.webp"),
-        Game("3",  "Pokémon Red",                 24.99, "RPG",         20,  "Conviértete en maestro Pokémon",      "https://tudominio.com/imagenes/pokemon_red.webp"),
-        Game("4",  "Sonic the Hedgehog",          19.99, "Plataformas", 12,  "Velocidad supersónica",               "https://tudominio.com/imagenes/sonic_the_hedgehog.webp"),
-        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://tudominio.com/imagenes/final_fantasy_vii.webp", discount = 20),
-        Game("6",  "Street Fighter II",           14.99, "Arcade",      10,  "El mejor juego de lucha",             "https://tudominio.com/imagenes/street_fighter_ii.webp"),
-        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://tudominio.com/imagenes/minecraft.webp", discount = 20),
-        Game("8",  "Call of Duty Modern Warfare", 59.99, "Acción",      7,   "Acción militar intensa",              "https://tudominio.com/imagenes/cod_modern_warfare.webp"),
-        Game("9",  "FIFA 24",                     69.99, "Deportes",    18,  "El mejor fútbol virtual",             "https://tudominio.com/imagenes/fifa_24.webp"),
-        Game("10", "The Witcher 3 Wild Hunt",     39.99, "RPG",         6,   "Aventura de Geralt de Rivia",         "https://tudominio.com/imagenes/witcher_3.webp"),
-        Game("11", "Overwatch 2",                 39.99, "Acción",      14,  "Shooter por equipos",                 "https://tudominio.com/imagenes/overwatch_2.webp"),
-        Game("12", "Cyberpunk 2077",              59.99, "RPG",         9,   "Futuro cyberpunk",                    "https://tudominio.com/imagenes/cyberpunk_2077.webp"),
-        Game("13", "Red Dead Redemption 2",       49.99, "Aventura",    11,  "Western épico",                       "https://tudominio.com/imagenes/red_dead_redemption_2.webp"),
-        Game("14", "Among Us",                    4.99,  "Arcade",      30,  "Encuentra al impostor",               "https://tudominio.com/imagenes/among_us.webp"),
-        Game("15", "Valorant",                    19.99, "Acción",      100, "Shooter táctico",                     "https://tudominio.com/imagenes/valorant.webp"),
-        Game("16", "Assassin's Creed Valhalla",   59.99, "Aventura",    13,  "Aventura vikinga",                    "https://tudominio.com/imagenes/assassins_creed_valhalla.webp"),
-        Game("17", "Fortnite",                    0.0,   "Acción",      100, "Battle Royale",                       "https://tudominio.com/imagenes/fortnite.webp"),
-        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://tudominio.com/imagenes/dark_souls_iii.webp", discount = 20),
-        Game("19", "Grand Theft Auto V",          29.99, "Acción",      22,  "Mundo abierto épico",                 "https://tudominio.com/imagenes/gta_v.webp"),
-        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://tudominio.com/imagenes/elden_ring.webp", discount = 20)
+        Game("1",  "Super Mario Bros",            29.99, "Plataformas", 15,  "El clásico juego de plataformas",     "https://i.3djuegos.com/juegos/5327/super_mario_bros/fotos/ficha/super_mario_bros-1698422.webp"),
+        Game("2",  "The Legend of Zelda",         39.99, "Aventura",    8,   "Épica aventura en Hyrule",            "https://m.media-amazon.com/images/I/71O5ruhtraL._AC_UF894,1000_QL80_.jpg"),
+        Game("3",  "Pokémon Red",                 24.99, "RPG",         20,  "Conviértete en maestro Pokémon",      "https://m.media-amazon.com/images/I/71aow5iRsfL.jpg"),
+        Game("4",  "Sonic the Hedgehog",          19.99, "Plataformas", 12,  "Velocidad supersónica",               "https://m.media-amazon.com/images/I/81nUDCS3c9L.jpg"),
+        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://m.media-amazon.com/images/I/71UZ3-+pqdL.jpg", discount = 20),
+        Game("6",  "Street Fighter II",           14.99, "Arcade",      10,  "El mejor juego de lucha",             "https://i.pinimg.com/736x/d7/29/1e/d7291ed7be120fef50d1d6710f9d440a.jpg"),
+        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://m.media-amazon.com/images/I/81iqjuJ3W-L.jpg", discount = 20),
+        Game("8",  "Call of Duty Modern Warfare", 59.99, "Acción",      7,   "Acción militar intensa",              "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg"),
+        Game("9",  "FIFA 24",                     69.99, "Deportes",    18,  "El mejor fútbol virtual",             "https://m.media-amazon.com/images/I/81HfMbWZ8HL.jpg"),
+        Game("10", "The Witcher 3 Wild Hunt",     39.99, "RPG",         6,   "Aventura de Geralt de Rivia",         "https://m.media-amazon.com/images/I/91Pc3H7hJ3L.jpg"),
+        Game("11", "Overwatch 2",                 39.99, "Acción",      14,  "Shooter por equipos",                 "https://cdn.mobygames.com/covers/11037272-overwatch-2-playstation-4-front-cover.jpg"),
+        Game("12", "Cyberpunk 2077",              59.99, "RPG",         9,   "Futuro cyberpunk",                    "https://m.media-amazon.com/images/I/81vEkH3KBBL.jpg"),
+        Game("13", "Red Dead Redemption 2",       49.99, "Aventura",    11,  "Western épico",                       "https://m.media-amazon.com/images/I/81mhIv+tobL.jpg"),
+        Game("14", "Among Us",                    4.99,  "Arcade",      30,  "Encuentra al impostor",               "https://i.3djuegos.com/juegos/17520/fotos/ficha/-5245512.webp"),
+        Game("15", "Valorant",                    19.99, "Acción",      100, "Shooter táctico",                     "https://m.media-amazon.com/images/I/71bZMfiKVeL.jpg"),
+        Game("16", "Assassin's Creed Valhalla",   59.99, "Aventura",    13,  "Aventura vikinga",                    "https://i.3djuegos.com/juegos/17280/assassin__039_s_creed__2020_/fotos/ficha/assassin__039_s_creed__2020_-5296873.webp"),
+        Game("17", "Fortnite",                    0.0,   "Acción",      100, "Battle Royale",                       "https://i.3djuegos.com/juegos/8298/fortnite/fotos/ficha/fortnite-5154590.webp"),
+        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://i.3djuegos.com/juegos/13678/dark_souls_iii__ashes_of_ariandel/fotos/ficha/dark_souls_iii__ashes_of_ariandel-3483598.webp", discount = 20),
+        Game("19", "Grand Theft Auto V",          29.99, "Acción",      22,  "Mundo abierto épico",                 "https://i.3djuegos.com/juegos/5065/grand_theft_auto_v/fotos/ficha/grand_theft_auto_v-2654943.webp"),
+        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://i.3djuegos.com/juegos/16678/elden_ring/fotos/ficha/elden_ring-5953540.webp", discount = 20)
     )
 
     val game = games.find { it.id == gameId } ?: games[0]
@@ -76,7 +89,8 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) 
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -95,7 +109,12 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                     .background(MaterialTheme.colorScheme.secondaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Text("🎮", style = MaterialTheme.typography.displayLarge)
+                coil.compose.AsyncImage(
+                    model = game.imageUrl.ifEmpty { "https://via.placeholder.com/400x200?text=🎮" },
+                    contentDescription = game.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
             }
 
             // Información principal
@@ -240,7 +259,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                                 id = game.id,
                                 name = game.name,
                                 price = game.discountedPrice,
-                                imageUrl = GameImages.getDefaultImage(),
+                                imageUrl = game.imageUrl,
                                 originalPrice = if (game.hasDiscount) game.price else null,
                                 discount = game.discount
                             )
