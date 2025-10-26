@@ -105,109 +105,148 @@ class AuthViewModel(
         _login.update { it.copy(canSubmit = can) }          // Actualizamos el flag
     }
 
-    fun submitLogin() {                                     // Acción de login (simulación async)
+    fun submitLogin() {                                     // Acción de login (simplificado)
         val s = _login.value                                // Snapshot del estado
         if (!s.canSubmit || s.isSubmitting) return          // Si no se puede o ya está cargando, salimos
-        viewModelScope.launch {                             // Lanzamos corrutina
-            try {
-                Log.d("AuthViewModel", "=== INICIO LOGIN SIMPLIFICADO ===")
-                _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false, isAdmin = false) }
+        
+        try {
+            Log.d("AuthViewModel", "=== INICIO LOGIN INMEDIATO ===")
+            
+            val email = s.email.trim()
+            val pass = s.pass.trim()
+            Log.d("AuthViewModel", "Email: [$email], Pass: [${pass.take(3)}...]")
 
-                val email = s.email.trim()
-                val pass = s.pass.trim()
-                Log.d("AuthViewModel", "Email: [$email], Pass: [${pass.take(3)}...]")
+            // 1. MOSTRAR LOADING INMEDIATAMENTE
+            _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false, isAdmin = false) }
 
-                // HARDCODED LOGIN PARA TESTING - TEMPORAL
-                if (email == "admin@steamish.com" && pass == "Admin123!") {
-                    Log.d("AuthViewModel", "✅ HARDCODED LOGIN EXITOSO")
-                    // Crear admin temporal en sesión
-                    val tempAdmin = com.example.uinavegacion.data.local.admin.AdminEntity(
-                        id = 1L,
-                        name = "Admin Temporal",
-                        email = email,
-                        phone = "+56 9 8877 6655",
-                        password = pass,
-                        role = "SUPER_ADMIN"
+            // 2. HARDCODED LOGIN INSTANTÁNEO (sin corrutinas)
+            if (email == "admin@steamish.com" && pass == "Admin123!") {
+                Log.d("AuthViewModel", "✅ HARDCODED LOGIN INSTANTÁNEO - ADMIN")
+                
+                // Crear admin temporal en sesión
+                val tempAdmin = com.example.uinavegacion.data.local.admin.AdminEntity(
+                    id = 1L,
+                    name = "Admin Temporal",
+                    email = email,
+                    phone = "+56 9 8877 6655",
+                    password = pass,
+                    role = "SUPER_ADMIN"
+                )
+                SessionManager.loginAdmin(tempAdmin)
+                
+                _login.update {
+                    it.copy(
+                        isSubmitting = false,
+                        success = true,
+                        errorMsg = null,
+                        isAdmin = true
                     )
-                    SessionManager.loginAdmin(tempAdmin)
+                }
+                Log.d("AuthViewModel", "🏁 LOGIN HARDCODED COMPLETADO INSTANTÁNEAMENTE")
+                return
+            }
+
+            // 3. VALIDAR USUARIOS REGULARES (con validación de bloqueo)
+            Log.d("AuthViewModel", "🔍 Verificando usuarios regulares...")
+            
+            // Verificar usuarios de BD en background
+            viewModelScope.launch {
+                try {
+                    Log.d("AuthViewModel", "🔐 Validando usuario en BD...")
+                    val userResult = userRepository.login(email, pass)
                     
+                    if (userResult != null && userResult.isSuccess) {
+                        val user = userRepository.getUserByEmail(email)
+                        
+                        if (user != null) {
+                            if (user.isBlocked) {
+                                // Usuario encontrado pero está bloqueado
+                                _login.update {
+                                    it.copy(
+                                        isSubmitting = false,
+                                        success = false,
+                                        errorMsg = "🚫 Tu cuenta ha sido bloqueada. Contacta al administrador.",
+                                        isAdmin = false
+                                    )
+                                }
+                                Log.w("AuthViewModel", "❌ Usuario bloqueado: ${user.email}")
+                            } else {
+                                // Usuario válido y no bloqueado
+                                SessionManager.loginUser(user)
+                                _login.update {
+                                    it.copy(
+                                        isSubmitting = false,
+                                        success = true,
+                                        errorMsg = null,
+                                        isAdmin = false
+                                    )
+                                }
+                                Log.d("AuthViewModel", "✅ Usuario regular logueado: ${user.email}")
+                            }
+                        } else {
+                            // Usuario no encontrado
+                            _login.update {
+                                it.copy(
+                                    isSubmitting = false,
+                                    success = false,
+                                    errorMsg = "❌ Credenciales incorrectas. Verifica tu email y contraseña.",
+                                    isAdmin = false
+                                )
+                            }
+                        }
+                    } else {
+                        // Credenciales incorrectas
+                        _login.update {
+                            it.copy(
+                                isSubmitting = false,
+                                success = false,
+                                errorMsg = "❌ Credenciales incorrectas. Admin: admin@steamish.com / Admin123!",
+                                isAdmin = false
+                            )
+                        }
+                    }
+                    
+                    // También verificar admin en BD
+                    try {
+                        val admin = adminRepository.validateAdmin(email, pass)
+                        if (admin != null) {
+                            SessionManager.loginAdmin(admin)
+                            _login.update {
+                                it.copy(
+                                    isSubmitting = false,
+                                    success = true,
+                                    errorMsg = null,
+                                    isAdmin = true
+                                )
+                            }
+                            Log.d("AuthViewModel", "✅ Admin BD encontrado: ${admin.email}")
+                        }
+                    } catch (adminException: Exception) {
+                        Log.w("AuthViewModel", "⚠️ Error verificando admin BD: ${adminException.message}")
+                    }
+                    
+                } catch (e: Exception) {
+                    Log.e("AuthViewModel", "❌ Error BD: ${e.message}")
                     _login.update {
                         it.copy(
                             isSubmitting = false,
-                            success = true,
-                            errorMsg = null,
-                            isAdmin = true
+                            success = false,
+                            errorMsg = "❌ Error de conexión. Admin: admin@steamish.com / Admin123!",
+                            isAdmin = false
                         )
                     }
-                    Log.d("AuthViewModel", "🏁 LOGIN HARDCODED COMPLETADO")
-                    return@launch
                 }
-
-                // Si no es el admin hardcoded, intentar BD normal
-                var ok = false
-                var isAdmin = false
-                var errorMessage: String? = null
-
-                Log.d("AuthViewModel", "🔍 Credenciales no coinciden con admin hardcoded, intentando BD...")
-                
-                try {
-                    // Intentar validar admin desde BD
-                    Log.d("AuthViewModel", "🔐 Validando admin en BD...")
-                    val admin = adminRepository.validateAdmin(email, pass)
-                    if (admin != null) {
-                        isAdmin = true
-                        ok = true
-                        SessionManager.loginAdmin(admin)
-                        Log.d("AuthViewModel", "✅ Admin desde BD logueado")
-                    } else {
-                        Log.d("AuthViewModel", "❌ No es admin válido, intentando usuario normal...")
-                        // Intentar usuario normal
-                        val userResult = userRepository.login(email, pass)
-                        if (userResult != null && userResult.isSuccess) {
-                            val user = userRepository.getUserByEmail(email)
-                            if (user != null && !user.isBlocked) {
-                                ok = true
-                                SessionManager.loginUser(user)
-                                Log.d("AuthViewModel", "✅ Usuario desde BD logueado")
-                            } else {
-                                errorMessage = "Tu cuenta ha sido bloqueada. Contacta al administrador."
-                                Log.w("AuthViewModel", "❌ Usuario bloqueado")
-                            }
-                        } else {
-                            Log.w("AuthViewModel", "❌ Usuario no encontrado o credenciales incorrectas")
-                        }
-                    }
-                } catch (dbException: Exception) {
-                    Log.e("AuthViewModel", "❌ Error de BD: ${dbException.message}")
-                    errorMessage = "Error de conexión con la base de datos. Intenta nuevamente."
-                }
-
-                // Mensaje específico para credenciales incorrectas
-                if (!ok && errorMessage == null) {
-                    errorMessage = "❌ Credenciales incorrectas. Verifica tu email y contraseña."
-                    Log.w("AuthViewModel", "❌ Credenciales incorrectas para: $email")
-                }
-
-                _login.update {
-                    it.copy(
-                        isSubmitting = false,
-                        success = ok,
-                        errorMsg = errorMessage,
-                        isAdmin = isAdmin
-                    )
-                }
-                Log.d("AuthViewModel", "🏁 LOGIN NORMAL - Success: $ok, IsAdmin: $isAdmin")
-
-            } catch (e: Exception) {
-                Log.e("AuthViewModel", "💥 EXCEPCIÓN CRÍTICA", e)
-                _login.update {
-                    it.copy(
-                        isSubmitting = false,
-                        success = false,
-                        errorMsg = "Error crítico: ${e.message}",
-                        isAdmin = false
-                    )
-                }
+            }
+            
+        } catch (e: Exception) {
+            Log.e("AuthViewModel", "💥 EXCEPCIÓN CRÍTICA", e)
+            _login.update {
+                it.copy(
+                    isSubmitting = false,
+                    success = false,
+                    errorMsg = "Error crítico: ${e.message}",
+                    isAdmin = false
+                )
             }
         }
     }

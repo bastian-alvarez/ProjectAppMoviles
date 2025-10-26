@@ -49,6 +49,11 @@ fun UserManagementScreen(navController: NavHostController) {
     val error by viewModel.error.collectAsState()
     val successMessage by viewModel.successMessage.collectAsState()
     
+    // Refrescar usuarios cada vez que se abre la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.onScreenResumed()
+    }
+    
     // Estado para el diálogo de confirmación
     var showBlockDialog by remember { mutableStateOf(false) }
     var selectedUser by remember { mutableStateOf<UserEntity?>(null) }

@@ -125,7 +125,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 val userDao = getInstance(context).userDao()
                                 val adminDao = getInstance(context).adminDao()
 
-                                // Precargamos usuarios con formato chileno +56 9
+                                // Precargamos usuarios 
                                 val userSeed = listOf(
                                     UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "+56 9 1234 5678", password = "Password123!"),
                                     UserEntity(name = "Usuario Test", email = "test@test.com", phone = "+56 9 8765 4321", password = "Password123!")
