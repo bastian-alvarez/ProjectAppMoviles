@@ -29,17 +29,29 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     // Formato de fecha
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    // Agregar juegos comprados a la biblioteca y persistir en Room
+    // Agregar juegos comprados a la biblioteca del usuario específico
     fun addPurchasedGames(cartItems: List<com.example.uinavegacion.viewmodel.CartItem>) {
         val dao = AppDatabase.getInstance(getApplication()).libraryDao()
         val currentDate = dateFormat.format(Date())
+        
+        // Obtener el usuario actual de la sesión
+        val sessionManager = com.example.uinavegacion.data.SessionManager
+        val currentUser = sessionManager.currentUser.value
+        val currentAdmin = sessionManager.currentAdmin.value
+        
+        // Determinar el userId (priorizar usuario regular, luego admin)
+        val userId = currentUser?.id ?: currentAdmin?.id ?: 1L
+        
+        android.util.Log.d("LibraryViewModel", "🛒 Agregando ${cartItems.size} juegos comprados al usuario $userId")
 
         viewModelScope.launch {
             cartItems.forEach { item ->
-                val exists = dao.exists(item.id) > 0
-                if (!exists) {
+                // Verificar si el usuario ya posee este juego
+                val alreadyOwns = dao.userOwnsGame(userId, item.id) > 0
+                if (!alreadyOwns) {
                     val entity = LibraryEntity(
-                        id = item.id,
+                        userId = userId,
+                        juegoId = item.id,
                         name = item.name,
                         price = item.price,
                         dateAdded = currentDate,
@@ -47,19 +59,29 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                         genre = getGenreForGame(item.name)
                     )
                     dao.insert(entity)
+                    android.util.Log.d("LibraryViewModel", "✅ Juego agregado a biblioteca: ${item.name}")
+                } else {
+                    android.util.Log.w("LibraryViewModel", "⚠️ Usuario ya posee el juego: ${item.name}")
                 }
             }
+            // Recargar la biblioteca del usuario actual
+            loadUserLibrary()
         }
     }
-
-    init {
-        // Cargar biblioteca desde la base de datos
+    
+    // Cargar biblioteca del usuario actual
+    private fun loadUserLibrary() {
         val dao = AppDatabase.getInstance(getApplication()).libraryDao()
+        val sessionManager = com.example.uinavegacion.data.SessionManager
+        val currentUser = sessionManager.currentUser.value
+        val currentAdmin = sessionManager.currentAdmin.value
+        val userId = currentUser?.id ?: currentAdmin?.id ?: 1L
+        
         viewModelScope.launch {
-            dao.getAll().collect { list ->
+            dao.getUserLibrary(userId).collect { list ->
                 _games.value = list.map { e ->
                     LibraryGame(
-                        id = e.id,
+                        id = e.juegoId,
                         name = e.name,
                         price = e.price,
                         dateAdded = e.dateAdded,
@@ -67,14 +89,32 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                         genre = e.genre
                     )
                 }
+                android.util.Log.d("LibraryViewModel", "📚 Biblioteca cargada: ${list.size} juegos para usuario $userId")
             }
         }
+    }
+
+    init {
+        // Cargar biblioteca del usuario actual al inicializar
+        loadUserLibrary()
     }
 
     // Cambiar estado de un juego (para simular descarga/instalación)
     fun updateGameStatus(gameId: String, newStatus: String) {
         _games.value = _games.value.map { game ->
             if (game.id == gameId) game.copy(status = newStatus) else game
+        }
+        
+        // También actualizar en la base de datos
+        viewModelScope.launch {
+            val dao = AppDatabase.getInstance(getApplication()).libraryDao()
+            val sessionManager = com.example.uinavegacion.data.SessionManager
+            val currentUser = sessionManager.currentUser.value
+            val currentAdmin = sessionManager.currentAdmin.value
+            val userId = currentUser?.id ?: currentAdmin?.id ?: 1L
+            
+            // Aquí podrías agregar una función para actualizar el estado en BD si lo necesitas
+            android.util.Log.d("LibraryViewModel", "🔄 Estado actualizado: $gameId -> $newStatus")
         }
     }
 

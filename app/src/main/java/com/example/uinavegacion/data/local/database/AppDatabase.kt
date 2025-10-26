@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 16, // Forzar recreación completa con 20 juegos
+    version = 17, // Actualización para biblioteca por usuario
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -107,6 +107,39 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Migración de versión 16 a 17: Actualizar biblioteca para usuarios específicos
+        private val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 16->17: Actualizando tabla biblioteca para usuarios...")
+                
+                // Crear tabla temporal con nueva estructura
+                database.execSQL(
+                    """
+                    CREATE TABLE biblioteca_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        userId INTEGER NOT NULL,
+                        juegoId TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        price REAL NOT NULL,
+                        dateAdded TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'Disponible',
+                        genre TEXT NOT NULL DEFAULT 'Acción',
+                        FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                    """
+                )
+                
+                // Crear índice para userId
+                database.execSQL("CREATE INDEX index_biblioteca_userId ON biblioteca_new(userId)")
+                
+                // Eliminar tabla antigua y renombrar nueva
+                database.execSQL("DROP TABLE IF EXISTS biblioteca")
+                database.execSQL("ALTER TABLE biblioteca_new RENAME TO biblioteca")
+                
+                Log.d("AppDatabase", "MIGRATION 16->17: Biblioteca actualizada para usuarios específicos")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -114,7 +147,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17)
                     .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
@@ -125,7 +158,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 val userDao = getInstance(context).userDao()
                                 val adminDao = getInstance(context).adminDao()
 
-                                // Precargamos usuarios 
+                                // Precargamos usuarios
                                 val userSeed = listOf(
                                     UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "+56 9 1234 5678", password = "Password123!"),
                                     UserEntity(name = "Usuario Test", email = "test@test.com", phone = "+56 9 8765 4321", password = "Password123!")
