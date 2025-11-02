@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoriaDao {
@@ -22,6 +23,9 @@ interface CategoriaDao {
     // Obtener todas las categorías
     @Query("SELECT * FROM categorias")
     suspend fun getAll(): List<CategoriaEntity>
+
+    @Query("SELECT * FROM categorias")
+    fun observeAll(): Flow<List<CategoriaEntity>>
 
     // Contar categorías
     @Query("SELECT COUNT(*) FROM categorias")

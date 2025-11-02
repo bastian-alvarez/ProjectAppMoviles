@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GeneroDao {
@@ -22,6 +23,9 @@ interface GeneroDao {
     // Obtener todos los géneros
     @Query("SELECT * FROM generos")
     suspend fun getAll(): List<GeneroEntity>
+
+    @Query("SELECT * FROM generos")
+    fun observeAll(): Flow<List<GeneroEntity>>
 
     // Contar géneros
     @Query("SELECT COUNT(*) FROM generos")

@@ -25,8 +25,6 @@ import com.example.uinavegacion.data.local.user.UserEntity
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.ui.viewmodel.UserManagementViewModel
 import com.example.uinavegacion.ui.viewmodel.UserManagementViewModelFactory
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * Pantalla de gestión de usuarios para administradores
@@ -54,8 +52,10 @@ fun UserManagementScreen(navController: NavHostController) {
         viewModel.onScreenResumed()
     }
     
-    // Estado para el diálogo de confirmación
+    // Estado para los diálogos de confirmación
     var showBlockDialog by remember { mutableStateOf(false) }
+    var showUnblockDialog by remember { mutableStateOf(false) }
+    var showDetailsDialog by remember { mutableStateOf(false) }
     var selectedUser by remember { mutableStateOf<UserEntity?>(null) }
     
     Scaffold(
@@ -102,37 +102,54 @@ fun UserManagementScreen(navController: NavHostController) {
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .padding(16.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${users.size}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Total Usuarios",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${users.count { it.profilePhotoUri != null }}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "Con Foto de Perfil",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "${users.size}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                "Total Usuarios",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "${users.count { !it.isBlocked }}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                "Activos",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "${users.count { it.isBlocked }}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                "Bloqueados",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                 }
             }
@@ -229,8 +246,13 @@ fun UserManagementScreen(navController: NavHostController) {
                                     selectedUser = user
                                     showBlockDialog = true
                                 },
+                                onUnblock = {
+                                    selectedUser = user
+                                    showUnblockDialog = true
+                                },
                                 onViewDetails = { 
-                                    // TODO: Ver detalles del usuario
+                                    selectedUser = user
+                                    showDetailsDialog = true
                                 }
                             )
                         }
@@ -257,23 +279,31 @@ fun UserManagementScreen(navController: NavHostController) {
             }
         }
         
-        // Diálogo de confirmación de bloqueo
+        // Diálogo de confirmación de BLOQUEO
         if (showBlockDialog && selectedUser != null) {
             AlertDialog(
-                onDismissRequest = { showBlockDialog = false },
+                onDismissRequest = { 
+                    showBlockDialog = false
+                    selectedUser = null
+                },
+                icon = {
+                    Icon(
+                        Icons.Default.Block,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(48.dp)
+                    )
+                },
                 title = { 
                     Text(
-                        if (selectedUser!!.isBlocked) "Desbloquear Usuario" 
-                        else "Bloquear Usuario"
+                        "Bloquear Usuario",
+                        fontWeight = FontWeight.Bold
                     ) 
                 },
                 text = {
                     Text(
-                        if (selectedUser!!.isBlocked) {
-                            "¿Estás seguro de que deseas desbloquear a ${selectedUser!!.name}? El usuario podrá volver a acceder a la aplicación."
-                        } else {
-                            "¿Estás seguro de que deseas bloquear a ${selectedUser!!.name}? El usuario no podrá acceder a la aplicación hasta que sea desbloqueado."
-                        }
+                        "¿Estás seguro de que deseas bloquear a ${selectedUser!!.name}?\n\n" +
+                        "El usuario no podrá acceder a la aplicación hasta que sea desbloqueado por un administrador."
                     )
                 },
                 confirmButton = {
@@ -287,13 +317,13 @@ fun UserManagementScreen(navController: NavHostController) {
                             selectedUser = null
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedUser!!.isBlocked) 
-                                MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.error
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
                         )
                     ) {
-                        Text(if (selectedUser!!.isBlocked) "Desbloquear" else "Bloquear")
+                        Icon(Icons.Default.Block, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Bloquear")
                     }
                 },
                 dismissButton = {
@@ -306,6 +336,246 @@ fun UserManagementScreen(navController: NavHostController) {
                 }
             )
         }
+        
+        // Diálogo de confirmación de DESBLOQUEO
+        if (showUnblockDialog && selectedUser != null) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showUnblockDialog = false
+                    selectedUser = null
+                },
+                icon = {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                },
+                title = { 
+                    Text(
+                        "Desbloquear Usuario",
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
+                text = {
+                    Text(
+                        "¿Estás seguro de que deseas desbloquear a ${selectedUser!!.name}?\n\n" +
+                        "El usuario podrá volver a acceder a la aplicación normalmente."
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.toggleUserBlockStatus(
+                                selectedUser!!.id,
+                                selectedUser!!.isBlocked
+                            )
+                            showUnblockDialog = false
+                            selectedUser = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Desbloquear")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { 
+                        showUnblockDialog = false
+                        selectedUser = null
+                    }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
+        
+        // Diálogo de DETALLES del usuario
+        if (showDetailsDialog && selectedUser != null) {
+            val user = selectedUser!!
+            
+            AlertDialog(
+                onDismissRequest = { 
+                    showDetailsDialog = false
+                    selectedUser = null
+                },
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (user.isBlocked) 
+                                    MaterialTheme.colorScheme.errorContainer
+                                else 
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (user.isBlocked) {
+                            Icon(
+                                Icons.Default.Block,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        } else {
+                            Text(
+                                user.name.take(1).uppercase(),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                },
+                title = { 
+                    Column {
+                        Text(
+                            user.name,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            color = if (user.isBlocked) 
+                                MaterialTheme.colorScheme.error 
+                            else 
+                                MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                if (user.isBlocked) "BLOQUEADO" else "ACTIVO",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (user.isBlocked) 
+                                    MaterialTheme.colorScheme.onError 
+                                else 
+                                    MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Email
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Email",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    user.email,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        
+                        // Teléfono
+                        if (user.phone.isNotEmpty()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Phone,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Teléfono",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        user.phone,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // ID
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Label,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "ID de Usuario",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    user.id.toString(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        
+                        // Género (si existe)
+                        if (user.gender.isNotEmpty()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Género",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        user.gender,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { 
+                            showDetailsDialog = false
+                            selectedUser = null
+                        }
+                    ) {
+                        Text("Cerrar")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -313,16 +583,22 @@ fun UserManagementScreen(navController: NavHostController) {
 private fun UserManagementItem(
     user: UserEntity,
     onBlock: () -> Unit,
+    onUnblock: () -> Unit,
     onViewDetails: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (user.isBlocked) 
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
             else 
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (user.isBlocked) 1.dp else 2.dp
         )
     ) {
         Row(
@@ -334,20 +610,14 @@ private fun UserManagementItem(
             // Avatar del usuario
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(56.dp)
                     .clip(CircleShape)
-                    .then(
-                        if (user.profilePhotoUri != null) {
-                            Modifier // TODO: Cargar imagen del usuario
-                        } else {
-                            Modifier.background(
-                                if (user.isBlocked) 
-                                    MaterialTheme.colorScheme.error
-                                else 
-                                    MaterialTheme.colorScheme.primary,
-                                CircleShape
-                            )
-                        }
+                    .background(
+                        if (user.isBlocked) 
+                            MaterialTheme.colorScheme.errorContainer
+                        else 
+                            MaterialTheme.colorScheme.primaryContainer,
+                        CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -356,13 +626,14 @@ private fun UserManagementItem(
                         Icon(
                             Icons.Default.Block,
                             contentDescription = "Bloqueado",
-                            tint = MaterialTheme.colorScheme.onError
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(28.dp)
                         )
                     } else {
                         Text(
                             user.name.take(1).uppercase(),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -373,72 +644,147 @@ private fun UserManagementItem(
             
             // Información del usuario
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         user.name,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     if (user.isBlocked) {
-                        Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             color = MaterialTheme.colorScheme.error,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 "BLOQUEADO",
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onError,
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                    } else {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "ACTIVO",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
-                Text(
-                    user.email,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (user.phone.isNotEmpty()) {
-                    Text(
-                        "Tel: ${user.phone}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Email,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Text(
+                        user.email,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (user.phone.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Phone,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            user.phone,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             
-            // Acciones
-            Row {
-                IconButton(
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            // Acciones - Botones separados y claros
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Botón Ver Detalles
+                FilledTonalButton(
                     onClick = onViewDetails,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
+                    modifier = Modifier.width(120.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 ) {
                     Icon(
                         Icons.Default.Visibility,
-                        contentDescription = "Ver detalles"
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Ver", style = MaterialTheme.typography.labelMedium)
                 }
-                IconButton(
-                    onClick = onBlock,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (user.isBlocked) 
-                            MaterialTheme.colorScheme.primary 
-                        else 
-                            MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Icon(
-                        if (user.isBlocked) Icons.Default.CheckCircle else Icons.Default.Block,
-                        contentDescription = if (user.isBlocked) "Desbloquear usuario" else "Bloquear usuario"
-                    )
+                
+                // Botón Bloquear o Desbloquear según el estado
+                if (user.isBlocked) {
+                    // Botón DESBLOQUEAR (visible solo si está bloqueado)
+                    Button(
+                        onClick = onUnblock,
+                        modifier = Modifier.width(120.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Desbloquear", style = MaterialTheme.typography.labelMedium)
+                    }
+                } else {
+                    // Botón BLOQUEAR (visible solo si NO está bloqueado)
+                    Button(
+                        onClick = onBlock,
+                        modifier = Modifier.width(120.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Block,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Bloquear", style = MaterialTheme.typography.labelMedium)
+                    }
                 }
             }
         }

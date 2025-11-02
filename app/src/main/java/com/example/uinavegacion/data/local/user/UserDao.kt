@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 //usar delete, insert, select, update
 @Dao
@@ -25,6 +26,9 @@ interface UserDao{
     //contar el total de usuarios
     @Query("SELECT COUNT(*) FROM users")
     suspend fun count(): Int
+
+    @Query("SELECT COUNT(*) FROM users")
+    fun observeCount(): Flow<Int>
     //lista de usuarios ordenada ascendente por su id
     @Query("SELECT * FROM users ORDER BY id ASC")
     suspend fun getAllOrderedById(): List<UserEntity>

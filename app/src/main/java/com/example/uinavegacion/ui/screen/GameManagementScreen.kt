@@ -27,6 +27,7 @@ import com.example.uinavegacion.data.local.genero.GeneroEntity
 import com.example.uinavegacion.data.repository.GameRepository
 import com.example.uinavegacion.ui.viewmodel.GameManagementViewModel
 import com.example.uinavegacion.ui.viewmodel.GameManagementViewModelFactory
+import android.widget.Toast
 
 /**
  * Pantalla de gestión de juegos para administradores
@@ -43,9 +44,6 @@ fun GameManagementScreen(navController: NavHostController) {
     val viewModel: GameManagementViewModel = viewModel(
         factory = GameManagementViewModelFactory(gameRepository)
     )
-    
-    // Estado para controlar si ya se intentó cargar datos
-    var dataInitialized by remember { mutableStateOf(false) }
     
     // Función para forzar recreación de datos
     val forceResetDatabase = suspend {
@@ -106,13 +104,10 @@ fun GameManagementScreen(navController: NavHostController) {
             
             // Eliminar juegos existentes si los hay
             try {
-                val existingGames = db.juegoDao().getAll()
-                existingGames.forEach { game ->
-                    db.juegoDao().delete(game.id)
-                    android.util.Log.d("GameManagementScreen", "🗑️ Eliminado: ${game.nombre}")
-                }
+                android.util.Log.d("GameManagementScreen", "🧹 Eliminando catálogo previo...")
+                db.juegoDao().deleteAll()
             } catch (e: Exception) {
-                android.util.Log.w("GameManagementScreen", "No hay juegos previos para eliminar")
+                android.util.Log.e("GameManagementScreen", "❌ Error eliminando juegos previos: ${e.message}")
             }
             
             android.util.Log.d("GameManagementScreen", "💾 INSERTANDO CATÁLOGO COMPLETO...")
@@ -140,11 +135,10 @@ fun GameManagementScreen(navController: NavHostController) {
             }
             
             val finalCount = db.juegoDao().count()
-            android.util.Log.d("GameManagementScreen", "� RESULTADO FINAL: $finalCount juegos en base de datos")
+            android.util.Log.d("GameManagementScreen", "📊 RESULTADO FINAL: $finalCount juegos en base de datos")
             
             if (finalCount > 0) {
                 android.util.Log.d("GameManagementScreen", "🎉 ¡ÉXITO! Base de datos inicializada correctamente")
-                dataInitialized = true
             } else {
                 android.util.Log.e("GameManagementScreen", "💥 ERROR: No se pudo insertar ningún juego")
             }
@@ -155,14 +149,6 @@ fun GameManagementScreen(navController: NavHostController) {
     }
     
     // Inicialización automática
-    LaunchedEffect(Unit) {
-        if (!dataInitialized) {
-            forceResetDatabase()
-            kotlinx.coroutines.delay(1000) // Más tiempo para asegurar que todo se guarde
-            viewModel.refreshGames()
-        }
-    }
-    
     // Observar estados
     val games by viewModel.games.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -181,6 +167,7 @@ fun GameManagementScreen(navController: NavHostController) {
     // Mostrar mensajes
     LaunchedEffect(error) {
         error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             snackbarHostState.showSnackbar(
                 message = it,
                 duration = SnackbarDuration.Long
@@ -191,6 +178,7 @@ fun GameManagementScreen(navController: NavHostController) {
     
     LaunchedEffect(successMessage) {
         successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             snackbarHostState.showSnackbar(
                 message = it,
                 duration = SnackbarDuration.Short
@@ -204,6 +192,7 @@ fun GameManagementScreen(navController: NavHostController) {
     var gameToEdit by remember { mutableStateOf<JuegoEntity?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var gameToDelete by remember { mutableStateOf<JuegoEntity?>(null) }
+    var showResetDialog by remember { mutableStateOf(false) }
     
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -225,12 +214,10 @@ fun GameManagementScreen(navController: NavHostController) {
                 },
                 actions = {
                     // Botón de diagnóstico
-                    IconButton(onClick = { 
-                        viewModel.diagnosticAndFix()
-                    }) {
+                    IconButton(onClick = { showResetDialog = true }) {
                         Icon(
                             Icons.Default.Refresh,
-                            contentDescription = "Diagnosticar BD"
+                            contentDescription = "Restablecer catálogo"
                         )
                     }
                     IconButton(onClick = { 
@@ -392,7 +379,6 @@ fun GameManagementScreen(navController: NavHostController) {
                             Button(
                                 onClick = { 
                                     scope.launch {
-                                        dataInitialized = false // Reset para forzar inicialización
                                         forceResetDatabase()
                                         kotlinx.coroutines.delay(1000)
                                         viewModel.refreshGames()
@@ -477,6 +463,36 @@ fun GameManagementScreen(navController: NavHostController) {
                     showDeleteDialog = false
                     gameToDelete = null
                 }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Restablecer catálogo") },
+            text = { Text("Se eliminarán los juegos actuales y se cargarán los datos de prueba. ¿Deseas continuar?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showResetDialog = false
+                        scope.launch {
+                            forceResetDatabase()
+                            kotlinx.coroutines.delay(1000)
+                            viewModel.refreshGames()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Restablecer")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
                     Text("Cancelar")
                 }
             }
@@ -674,13 +690,30 @@ private fun GameManagementItem(
         ) {
             // Información del juego
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    game.nombre,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        game.nombre,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (!game.activo) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.errorContainer
+                        ) {
+                            Text(
+                                "INACTIVO",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
                 Text(
                     game.descripcion,
                     style = MaterialTheme.typography.bodyMedium,

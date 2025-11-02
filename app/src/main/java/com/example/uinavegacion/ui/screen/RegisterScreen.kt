@@ -30,19 +30,21 @@ import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel
 import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(nav: NavHostController) {
     // Configurar ViewModel con dependencias
-    val context = LocalContext.current.applicationContext
-    val db = remember { AppDatabase.getInstance(context) }
+    val localContext = LocalContext.current
+    val appContext = localContext.applicationContext
+    val db = remember { AppDatabase.getInstance(appContext) }
     val userRepository = remember { UserRepository(db.userDao()) }
     val adminRepository = remember { AdminRepository(db.adminDao()) }
     
     val viewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(
-            application = context as android.app.Application,
+            application = appContext as android.app.Application,
             userRepository = userRepository,
             adminRepository = adminRepository
         )
@@ -57,6 +59,9 @@ fun RegisterScreen(nav: NavHostController) {
     // Navegación después de registro exitoso
     LaunchedEffect(registerState.success) {
         if (registerState.success) {
+            val email = registerState.email.takeIf { it.isNotBlank() }
+            val message = email?.let { "Te has registrado con éxito: $it" } ?: "Te has registrado con éxito"
+            Toast.makeText(localContext, message, Toast.LENGTH_LONG).show()
             viewModel.clearRegisterResult()
             nav.navigate(Route.Login.path) {
                 popUpTo(Route.Register.path) { inclusive = true }

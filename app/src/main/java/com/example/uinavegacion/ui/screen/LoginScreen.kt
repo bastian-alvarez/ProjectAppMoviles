@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.platform.LocalContext
 import android.app.Application
+import android.widget.Toast
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
@@ -36,11 +37,12 @@ fun LoginScreenVm(
     navController: NavHostController
 ){
     // Crear ViewModel con factory (Room)
-    val context = LocalContext.current.applicationContext
-    val db = remember { AppDatabase.getInstance(context) }
+    val localContext = LocalContext.current
+    val appContext = localContext.applicationContext
+    val db = remember { AppDatabase.getInstance(appContext) }
     val vm: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(
-            application = context as Application,
+            application = appContext as Application,
             userRepository = remember { UserRepository(db.userDao()) },
             adminRepository = remember { AdminRepository(db.adminDao()) }
         )
@@ -49,6 +51,12 @@ fun LoginScreenVm(
 
     if (state.success) {
         Log.d("LoginScreen", "🎯 Login exitoso detectado! isAdmin=${state.isAdmin}")
+        val welcomeMessage = if (state.isAdmin) {
+            if (state.email.isBlank()) "Bienvenido administrador" else "Bienvenido administrador ${state.email}"
+        } else {
+            if (state.email.isBlank()) "Bienvenido" else "Bienvenido ${state.email}"
+        }
+        Toast.makeText(localContext, welcomeMessage, Toast.LENGTH_SHORT).show()
         vm.clearLoginResult()
         // Navegar según el tipo de usuario resuelto en el ViewModel
         if (state.isAdmin) {

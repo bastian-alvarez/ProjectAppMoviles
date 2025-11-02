@@ -7,20 +7,39 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.uinavegacion.viewmodel.CartViewModel
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.GameRepository
 import com.example.uinavegacion.navigation.*
-import com.example.uinavegacion.ui.utils.GameImages
+import com.example.uinavegacion.ui.model.toGame
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModelFactory
+import com.example.uinavegacion.viewmodel.CartViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable  
 fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: CartViewModel = viewModel()) {
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val gameRepository = remember { GameRepository(db.juegoDao()) }
+    val catalogViewModel: GameCatalogViewModel = viewModel(
+        factory = GameCatalogViewModelFactory(
+            gameRepository = gameRepository,
+            categoriaDao = db.categoriaDao(),
+            generoDao = db.generoDao()
+        )
+    )
+    
+    val catalogGames by catalogViewModel.games.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val successMessage by cartViewModel.successMessage.collectAsState()
     
@@ -35,50 +54,20 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
         }
     }
     
-    // Modelo del juego con descripción e imagen
-    data class Game(
-        val id: String, 
-        val name: String, 
-        val price: Double, 
-        val category: String, 
-        val stock: Int,
-        val description: String = "Descripción del juego",
-        val imageUrl: String = "",
-        val discount: Int = 0
-    ) {
-        val discountedPrice: Double
-            get() = if (discount > 0) price * (1 - discount / 100.0) else price
-        
-        val hasDiscount: Boolean
-            get() = discount > 0
+    // Buscar el juego desde la BD
+    val catalogGame = catalogGames.find { it.id.toString() == gameId }
+    
+    // Si no se encuentra el juego, mostrar mensaje de error y volver
+    if (catalogGame == null) {
+        LaunchedEffect(Unit) {
+            nav.popBackStack()
+        }
+        return
     }
-
-    // Lista de juegos con imágenes optimizadas (misma que en GamesScreen)
-    val games = listOf(
-        Game("1",  "Super Mario Bros",            29.99, "Plataformas", 15,  "El clásico juego de plataformas",     "https://i.3djuegos.com/juegos/5327/super_mario_bros/fotos/ficha/super_mario_bros-1698422.webp"),
-        Game("2",  "The Legend of Zelda",         39.99, "Aventura",    8,   "Épica aventura en Hyrule",            "https://m.media-amazon.com/images/I/71O5ruhtraL._AC_UF894,1000_QL80_.jpg"),
-        Game("3",  "Pokémon Red",                 24.99, "RPG",         20,  "Conviértete en maestro Pokémon",      "https://m.media-amazon.com/images/I/71aow5iRsfL.jpg"),
-        Game("4",  "Sonic the Hedgehog",          19.99, "Plataformas", 12,  "Velocidad supersónica",               "https://m.media-amazon.com/images/I/81nUDCS3c9L.jpg"),
-        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://m.media-amazon.com/images/I/71UZ3-+pqdL.jpg", discount = 20),
-        Game("6",  "Street Fighter II",           14.99, "Arcade",      10,  "El mejor juego de lucha",             "https://i.pinimg.com/736x/d7/29/1e/d7291ed7be120fef50d1d6710f9d440a.jpg"),
-        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://m.media-amazon.com/images/I/81iqjuJ3W-L.jpg", discount = 20),
-        Game("8",  "Call of Duty Modern Warfare", 59.99, "Acción",      7,   "Acción militar intensa",              "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg"),
-        Game("9",  "FIFA 24",                     69.99, "Deportes",    18,  "El mejor fútbol virtual",             "https://m.media-amazon.com/images/I/81HfMbWZ8HL.jpg"),
-        Game("10", "The Witcher 3 Wild Hunt",     39.99, "RPG",         6,   "Aventura de Geralt de Rivia",         "https://m.media-amazon.com/images/I/91Pc3H7hJ3L.jpg"),
-        Game("11", "Overwatch 2",                 39.99, "Acción",      14,  "Shooter por equipos",                 "https://cdn.mobygames.com/covers/11037272-overwatch-2-playstation-4-front-cover.jpg"),
-        Game("12", "Cyberpunk 2077",              59.99, "RPG",         9,   "Futuro cyberpunk",                    "https://m.media-amazon.com/images/I/81vEkH3KBBL.jpg"),
-        Game("13", "Red Dead Redemption 2",       49.99, "Aventura",    11,  "Western épico",                       "https://m.media-amazon.com/images/I/81mhIv+tobL.jpg"),
-        Game("14", "Among Us",                    4.99,  "Arcade",      30,  "Encuentra al impostor",               "https://i.3djuegos.com/juegos/17520/fotos/ficha/-5245512.webp"),
-        Game("15", "Valorant",                    19.99, "Acción",      100, "Shooter táctico",                     "https://m.media-amazon.com/images/I/71bZMfiKVeL.jpg"),
-        Game("16", "Assassin's Creed Valhalla",   59.99, "Aventura",    13,  "Aventura vikinga",                    "https://i.3djuegos.com/juegos/17280/assassin__039_s_creed__2020_/fotos/ficha/assassin__039_s_creed__2020_-5296873.webp"),
-        Game("17", "Fortnite",                    0.0,   "Acción",      100, "Battle Royale",                       "https://i.3djuegos.com/juegos/8298/fortnite/fotos/ficha/fortnite-5154590.webp"),
-        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://i.3djuegos.com/juegos/13678/dark_souls_iii__ashes_of_ariandel/fotos/ficha/dark_souls_iii__ashes_of_ariandel-3483598.webp", discount = 20),
-        Game("19", "Grand Theft Auto V",          29.99, "Acción",      22,  "Mundo abierto épico",                 "https://i.3djuegos.com/juegos/5065/grand_theft_auto_v/fotos/ficha/grand_theft_auto_v-2654943.webp"),
-        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://i.3djuegos.com/juegos/16678/elden_ring/fotos/ficha/elden_ring-5953540.webp", discount = 20)
-    )
-
-    val game = games.find { it.id == gameId } ?: games[0]
-    val isInCart by remember { derivedStateOf { cartViewModel.isInCart(gameId) } }
+    
+    val game = catalogGame.toGame()
+    val cartItems by cartViewModel.items.collectAsState()
+    val currentQuantity = cartItems.find { it.id == game.id }?.quantity ?: 0
 
     Scaffold(
         topBar = { 
@@ -172,7 +161,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                     
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Stock disponible: ${game.stock}",
+                        text = "Stock disponible: ${(game.stock - currentQuantity).coerceAtLeast(0)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (game.stock > 5) MaterialTheme.colorScheme.onSurfaceVariant 
                                else MaterialTheme.colorScheme.error
@@ -242,7 +231,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Stock:", fontWeight = FontWeight.Medium)
-                        Text("${game.stock} unidades")
+                        Text("${(game.stock - currentQuantity).coerceAtLeast(0)} unidades")
                     }
                 }
             }
@@ -252,26 +241,31 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val currentQuantity = cartViewModel.getQuantity(game.id)
+                val canAddMore = game.stock > currentQuantity && cartViewModel.getTotalItems() < com.example.uinavegacion.viewmodel.CartViewModel.MAX_LICENSES_PER_PURCHASE
                 Button(
                     onClick = {
-                        if (game.stock > 0) {
+                        if (canAddMore) {
                             cartViewModel.addGame(
                                 id = game.id,
                                 name = game.name,
                                 price = game.discountedPrice,
                                 imageUrl = game.imageUrl,
                                 originalPrice = if (game.hasDiscount) game.price else null,
-                                discount = game.discount
+                                discount = game.discount,
+                                maxStock = game.stock
                             )
                         }
                     },
-                    enabled = game.stock > 0 && !isInCart,
+                    enabled = canAddMore,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        if (isInCart) "En Carrito" 
-                        else if (game.stock > 0) "Agregar al Carrito"
-                        else "Sin Stock"
+                        when {
+                            game.stock <= currentQuantity -> "Sin stock"
+                            currentQuantity > 0 -> "Agregar más"
+                            else -> "Agregar al Carrito"
+                        }
                     )
                 }
                 

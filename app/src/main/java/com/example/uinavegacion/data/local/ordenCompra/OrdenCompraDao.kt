@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface OrdenCompraDao {
@@ -34,6 +35,9 @@ interface OrdenCompraDao {
     // Contar órdenes
     @Query("SELECT COUNT(*) FROM ordenes_compra")
     suspend fun count(): Int
+
+    @Query("SELECT COUNT(*) FROM ordenes_compra")
+    fun observeCount(): Flow<Int>
 
     // Calcular total de ventas
     @Query("SELECT SUM(total) FROM ordenes_compra")

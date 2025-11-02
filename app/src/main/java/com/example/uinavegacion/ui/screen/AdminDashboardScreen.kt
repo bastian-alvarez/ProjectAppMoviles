@@ -24,8 +24,11 @@ import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.Route
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.AdminStatsRepository
+import com.example.uinavegacion.data.repository.GameRepository
 import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModel
 import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModelFactory
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,19 +44,31 @@ fun AdminDashboardScreen(navController: NavHostController) {
             adminDao = db.adminDao()
         )
     }
+    val gameRepository = remember { GameRepository(db.juegoDao()) }
     
     val viewModel: AdminDashboardViewModel = viewModel(
         factory = AdminDashboardViewModelFactory(adminStatsRepository)
+    )
+    val gameCatalogViewModel: GameCatalogViewModel = viewModel(
+        factory = GameCatalogViewModelFactory(
+            gameRepository = gameRepository,
+            categoriaDao = db.categoriaDao(),
+            generoDao = db.generoDao()
+        )
     )
     
     // Observar estados
     val dashboardStats by viewModel.dashboardStats.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val catalogGames by gameCatalogViewModel.games.collectAsState()
+    val gamesLoading by gameCatalogViewModel.isLoading.collectAsState()
+    val realtimeGamesCount = catalogGames.count { it.activo }
+    val combinedGamesLoading = isLoading || gamesLoading
     
-    // Refrescar estadísticas cada vez que se abre la pantalla
+    // Refrescar estadísticas manualmente al entrar por primera vez
     LaunchedEffect(Unit) {
-        viewModel.onScreenResumed()
+        viewModel.refreshStats()
     }
     LazyColumn(
         modifier = Modifier
@@ -238,7 +253,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                if (isLoading) {
+                                if (combinedGamesLoading) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(20.dp),
                                         strokeWidth = 2.dp,
@@ -246,7 +261,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                     )
                                 } else {
                                     Text(
-                                        "${dashboardStats.totalGames}", 
+                                        "$realtimeGamesCount", 
                                         style = MaterialTheme.typography.headlineSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer

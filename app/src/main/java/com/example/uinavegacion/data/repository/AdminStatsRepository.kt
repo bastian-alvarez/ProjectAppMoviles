@@ -4,6 +4,8 @@ import com.example.uinavegacion.data.local.user.UserDao
 import com.example.uinavegacion.data.local.juego.JuegoDao
 import com.example.uinavegacion.data.local.ordenCompra.OrdenCompraDao
 import com.example.uinavegacion.data.local.admin.AdminDao
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /**
  * Repositorio para obtener estadísticas del panel de administrador
@@ -53,6 +55,22 @@ class AdminStatsRepository(
             totalOrders = getTotalOrders(),
             totalAdmins = getTotalAdmins()
         )
+    }
+
+    fun observeDashboardStats(): Flow<DashboardStats> {
+        return combine(
+            userDao.observeCount(),
+            juegoDao.observeCount(),
+            ordenCompraDao.observeCount(),
+            adminDao.observeCount()
+        ) { totalUsers, totalGames, totalOrders, totalAdmins ->
+            DashboardStats(
+                totalUsers = totalUsers,
+                totalGames = totalGames,
+                totalOrders = totalOrders,
+                totalAdmins = totalAdmins
+            )
+        }
     }
 }
 

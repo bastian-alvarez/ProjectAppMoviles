@@ -12,6 +12,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.uinavegacion.viewmodel.CartViewModel
 import androidx.compose.ui.Alignment
@@ -30,38 +34,52 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import com.example.uinavegacion.utils.GameImages
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.GameRepository
+import com.example.uinavegacion.ui.model.Game
+import com.example.uinavegacion.ui.model.toGame
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel()) {
     val windowInfo = rememberWindowInfo()
-    
-    // Juegos en oferta con 20% de descuento
-    val gamesOnSale = listOf(
-        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://m.media-amazon.com/images/I/71UZ3-+pqdL.jpg", discount = 20),
-        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://m.media-amazon.com/images/I/81iqjuJ3W-L.jpg", discount = 20),
-        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://i.3djuegos.com/juegos/13678/dark_souls_iii__ashes_of_ariandel/fotos/ficha/dark_souls_iii__ashes_of_ariandel-3483598.webp", discount = 20),
-        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://i.3djuegos.com/juegos/16678/elden_ring/fotos/ficha/elden_ring-5953540.webp", discount = 20)
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val gameRepository = remember { GameRepository(db.juegoDao()) }
+    val catalogViewModel: GameCatalogViewModel = viewModel(
+        factory = GameCatalogViewModelFactory(
+            gameRepository = gameRepository,
+            categoriaDao = db.categoriaDao(),
+            generoDao = db.generoDao()
+        )
     )
 
-    val categories = listOf("Acción", "Aventura", "RPG", "Plataformas", "Deportes", "Estrategia")
+    val catalogGames by catalogViewModel.games.collectAsState()
+    val isLoading by catalogViewModel.isLoading.collectAsState()
+    val catalogCategories by catalogViewModel.categories.collectAsState()
 
-    // Usar diseño adaptativo según el tamaño de pantalla
+    val featuredGames = catalogGames.take(6).map { it.toGame() }
+    val categories = if (catalogCategories.isNotEmpty()) catalogCategories else listOf("General")
+
     when (windowInfo.deviceType) {
         DeviceType.PHONE_PORTRAIT, DeviceType.PHONE_LANDSCAPE -> {
             PhoneHomeLayout(
                 nav = nav,
-                gamesOnSale = gamesOnSale,
+                gamesOnSale = featuredGames,
                 categories = categories,
-                windowInfo = windowInfo
+                windowInfo = windowInfo,
+                isLoading = isLoading
             )
         }
         DeviceType.TABLET_PORTRAIT, DeviceType.TABLET_LANDSCAPE, DeviceType.DESKTOP -> {
             TabletHomeLayout(
                 nav = nav,
-                gamesOnSale = gamesOnSale,
+                gamesOnSale = featuredGames,
                 categories = categories,
-                windowInfo = windowInfo
+                windowInfo = windowInfo,
+                isLoading = isLoading
             )
         }
     }
@@ -72,7 +90,8 @@ private fun PhoneHomeLayout(
     nav: NavHostController,
     gamesOnSale: List<Game>,
     categories: List<String>,
-    windowInfo: WindowInfo
+    windowInfo: WindowInfo,
+    isLoading: Boolean
 ) {
     Column(
         modifier = Modifier
@@ -114,17 +133,54 @@ private fun PhoneHomeLayout(
             isMobile = true
         )
 
-        LazyRow(
-            modifier = Modifier.height(270.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            items(gamesOnSale) { game ->
-                CompactGameCard(
-                    game = game,
-                    onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
-                )
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            gamesOnSale.isEmpty() -> {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No hay juegos disponibles",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                LazyRow(
+                    modifier = Modifier.height(270.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    items(gamesOnSale) { game ->
+                        CompactGameCard(
+                            game = game,
+                            onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
+                        )
+                    }
+                }
             }
         }
     }
@@ -135,7 +191,8 @@ private fun TabletHomeLayout(
     nav: NavHostController,
     gamesOnSale: List<Game>,
     categories: List<String>,
-    windowInfo: WindowInfo
+    windowInfo: WindowInfo,
+    isLoading: Boolean
 ) {
     val maxContentWidth = AdaptiveUtils.getMaxContentWidth(windowInfo)
     val horizontalPadding = AdaptiveUtils.getHorizontalPadding(windowInfo)
@@ -257,18 +314,55 @@ private fun TabletHomeLayout(
             // Juegos destacados en grid para tablets
             SectionHeader(title = "🔥 Juegos en Oferta - 20% OFF", onSeeAll = { nav.navigate(Route.Games.build()) })
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(AdaptiveUtils.getGridColumns(windowInfo)),
-                verticalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
-                horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
-                modifier = Modifier.height(600.dp)
-            ) {
-                items(gamesOnSale) { game ->
-                    GameCard(
-                        game = game,
-                        onClick = { nav.navigate(Route.GameDetail.build(game.id)) },
-                        windowInfo = windowInfo
-                    )
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(320.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                gamesOnSale.isEmpty() -> {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(320.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No hay juegos disponibles",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(AdaptiveUtils.getGridColumns(windowInfo)),
+                        verticalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
+                        horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
+                        modifier = Modifier.height(600.dp)
+                    ) {
+                        items(gamesOnSale) { game ->
+                            GameCard(
+                                game = game,
+                                onClick = { nav.navigate(Route.GameDetail.build(game.id)) },
+                                windowInfo = windowInfo
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -437,6 +531,24 @@ private fun CompactGameCard(
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+
+                if (game.stock <= 0) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+                    ) {
+                        Text(
+                            text = "Sin stock",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(4.dp),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }

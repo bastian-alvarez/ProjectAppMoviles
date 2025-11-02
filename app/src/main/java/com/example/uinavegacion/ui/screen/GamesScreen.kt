@@ -17,8 +17,11 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.uinavegacion.viewmodel.SearchViewModel
 import androidx.compose.ui.Alignment
@@ -34,23 +37,12 @@ import coil.compose.AsyncImage
 import com.example.uinavegacion.navigation.*
 import com.example.uinavegacion.ui.utils.*
 import com.example.uinavegacion.ui.utils.GameImages
-
-data class Game(
-    val id: String, 
-    val name: String, 
-    val price: Double, 
-    val category: String, 
-    val stock: Int,
-    val description: String = "Descripción del juego",
-    val imageUrl: String = "", // URL de la imagen del juego
-    val discount: Int = 0 // Descuento en porcentaje (0-100)
-) {
-    val discountedPrice: Double
-        get() = if (discount > 0) price * (1 - discount / 100.0) else price
-    
-    val hasDiscount: Boolean
-        get() = discount > 0
-}
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.GameRepository
+import com.example.uinavegacion.ui.model.Game
+import com.example.uinavegacion.ui.model.toGame
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
+import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +57,19 @@ fun GamesScreen(
     val scope = rememberCoroutineScope()
     val errorMessage by cartViewModel.errorMessage.collectAsState()
     val successMessage by cartViewModel.successMessage.collectAsState()
+    val context = LocalContext.current.applicationContext
+    val db = remember { AppDatabase.getInstance(context) }
+    val gameRepository = remember { GameRepository(db.juegoDao()) }
+    val catalogViewModel: GameCatalogViewModel = viewModel(
+        factory = GameCatalogViewModelFactory(
+            gameRepository = gameRepository,
+            categoriaDao = db.categoriaDao(),
+            generoDao = db.generoDao()
+        )
+    )
+    val catalogGames by catalogViewModel.games.collectAsState()
+    val isLoadingCatalog by catalogViewModel.isLoading.collectAsState()
+    val catalogCategories by catalogViewModel.categories.collectAsState()
     
     // Mostrar Snackbar cuando hay error
     LaunchedEffect(errorMessage) {
@@ -88,33 +93,11 @@ fun GamesScreen(
         }
     }
     
-    // Lista de juegos con imágenes optimizadas
-    val allGames = listOf(
-        Game("1",  "Super Mario Bros",            29.99, "Plataformas", 15,  "El clásico juego de plataformas",     "https://i.3djuegos.com/juegos/5327/super_mario_bros/fotos/ficha/super_mario_bros-1698422.webp"),
-        Game("2",  "The Legend of Zelda",         39.99, "Aventura",    8,   "Épica aventura en Hyrule",            "https://m.media-amazon.com/images/I/71O5ruhtraL._AC_UF894,1000_QL80_.jpg"),
-        Game("3",  "Pokémon Red",                 24.99, "RPG",         20,  "Conviértete en maestro Pokémon",      "https://m.media-amazon.com/images/I/71aow5iRsfL.jpg"),
-        Game("4",  "Sonic the Hedgehog",          19.99, "Plataformas", 12,  "Velocidad supersónica",               "https://m.media-amazon.com/images/I/81nUDCS3c9L.jpg"),
-        Game("5",  "Final Fantasy VII",           49.99, "RPG",         5,   "RPG épico de Square Enix",            "https://m.media-amazon.com/images/I/71UZ3-+pqdL.jpg", discount = 20),
-        Game("6",  "Street Fighter II",           14.99, "Arcade",      10,  "El mejor juego de lucha",             "https://i.pinimg.com/736x/d7/29/1e/d7291ed7be120fef50d1d6710f9d440a.jpg"),
-        Game("7",  "Minecraft",                   26.99, "Aventura",    25,  "Construye tu mundo",                  "https://m.media-amazon.com/images/I/81iqjuJ3W-L.jpg", discount = 20),
-        Game("8",  "Call of Duty Modern Warfare", 59.99, "Acción",      7,   "Acción militar intensa",              "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg"),
-        Game("9",  "FIFA 24",                     69.99, "Deportes",    18,  "El mejor fútbol virtual",             "https://m.media-amazon.com/images/I/81HfMbWZ8HL.jpg"),
-        Game("10", "The Witcher 3 Wild Hunt",     39.99, "RPG",         6,   "Aventura de Geralt de Rivia",         "https://m.media-amazon.com/images/I/91Pc3H7hJ3L.jpg"),
-        Game("11", "Overwatch 2",                 39.99, "Acción",      14,  "Shooter por equipos",                 "https://cdn.mobygames.com/covers/11037272-overwatch-2-playstation-4-front-cover.jpg"),
-        Game("12", "Cyberpunk 2077",              59.99, "RPG",         9,   "Futuro cyberpunk",                    "https://m.media-amazon.com/images/I/81vEkH3KBBL.jpg"),
-        Game("13", "Red Dead Redemption 2",       49.99, "Aventura",    11,  "Western épico",                       "https://m.media-amazon.com/images/I/81mhIv+tobL.jpg"),
-        Game("14", "Among Us",                    4.99,  "Arcade",      30,  "Encuentra al impostor",               "https://i.3djuegos.com/juegos/17520/fotos/ficha/-5245512.webp"),
-        Game("15", "Valorant",                    19.99, "Acción",      100, "Shooter táctico",                     "https://m.media-amazon.com/images/I/71bZMfiKVeL.jpg"),
-        Game("16", "Assassin's Creed Valhalla",   59.99, "Aventura",    13,  "Aventura vikinga",                    "https://i.3djuegos.com/juegos/17280/assassin__039_s_creed__2020_/fotos/ficha/assassin__039_s_creed__2020_-5296873.webp"),
-        Game("17", "Fortnite",                    0.0,   "Acción",      100, "Battle Royale",                       "https://i.3djuegos.com/juegos/8298/fortnite/fotos/ficha/fortnite-5154590.webp"),
-        Game("18", "Dark Souls III",              39.99, "RPG",         8,   "Desafío extremo",                     "https://i.3djuegos.com/juegos/13678/dark_souls_iii__ashes_of_ariandel/fotos/ficha/dark_souls_iii__ashes_of_ariandel-3483598.webp", discount = 20),
-        Game("19", "Grand Theft Auto V",          29.99, "Acción",      22,  "Mundo abierto épico",                 "https://i.3djuegos.com/juegos/5065/grand_theft_auto_v/fotos/ficha/grand_theft_auto_v-2654943.webp"),
-        Game("20", "Elden Ring",                  59.99, "RPG",         10,  "Obra maestra de FromSoftware",        "https://i.3djuegos.com/juegos/16678/elden_ring/fotos/ficha/elden_ring-5953540.webp", discount = 20)
-    )
+    val allGames = catalogGames.map { it.toGame() }
     val query by searchViewModel.query.collectAsState()
     
-    // categorías disponibles
-    val categories = listOf("Todos", "Plataformas", "Aventura", "RPG", "Arcade", "Acción", "Deportes")
+    val availableCategories = catalogCategories.ifEmpty { listOf("General") }
+    val categories = listOf("Todos") + availableCategories
     var selectedCategory by remember { mutableStateOf(initialCategory ?: "Todos") }
 
     val games = allGames.filter { game ->
@@ -134,7 +117,8 @@ fun GamesScreen(
                 nav = nav,
                 cartViewModel = cartViewModel,
                 windowInfo = windowInfo,
-                snackbarHostState = snackbarHostState
+                snackbarHostState = snackbarHostState,
+                isLoading = isLoadingCatalog
             )
         }
         DeviceType.TABLET_PORTRAIT, DeviceType.TABLET_LANDSCAPE, DeviceType.DESKTOP -> {
@@ -146,7 +130,8 @@ fun GamesScreen(
                 nav = nav,
                 cartViewModel = cartViewModel,
                 windowInfo = windowInfo,
-                snackbarHostState = snackbarHostState
+                snackbarHostState = snackbarHostState,
+                isLoading = isLoadingCatalog
             )
         }
     }
@@ -162,7 +147,8 @@ private fun PhoneGamesLayout(
     nav: NavHostController,
     cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel,
     windowInfo: WindowInfo,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    isLoading: Boolean
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -180,24 +166,55 @@ private fun PhoneGamesLayout(
                 )
             }
 
-            items(games) { game ->
+            when {
+                isLoading -> {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+
+                games.isEmpty() -> {
+                    item {
+                        Text(
+                            text = "No hay juegos disponibles",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                else -> {
+                    items(games) { game ->
                 GameListItem(
                     game = game,
                     nav = nav,
                     cartViewModel = cartViewModel,
                     windowInfo = windowInfo
                 )
-            }
+                    }
 
-            item {
-                Text(
-                    text = "Total de juegos: ${games.size}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                )
+                    item {
+                        Text(
+                            text = "Total de juegos: ${games.size}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        )
+                    }
+                }
             }
         }
         
@@ -220,7 +237,8 @@ private fun TabletGamesLayout(
     nav: NavHostController,
     cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel,
     windowInfo: WindowInfo,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    isLoading: Boolean
 ) {
     val maxContentWidth = AdaptiveUtils.getMaxContentWidth(windowInfo)
     val horizontalPadding = AdaptiveUtils.getHorizontalPadding(windowInfo)
@@ -244,19 +262,46 @@ private fun TabletGamesLayout(
             )
             
             // Usar grid para tablets
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(AdaptiveUtils.getGridColumns(windowInfo)),
-                verticalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
-                horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(games) { game ->
-                    GameGridItem(
-                        game = game,
-                        nav = nav,
-                        cartViewModel = cartViewModel,
-                        windowInfo = windowInfo
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                games.isEmpty() -> {
+                    Text(
+                        text = "No hay juegos disponibles",
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(AdaptiveUtils.getGridColumns(windowInfo)),
+                        verticalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
+                        horizontalArrangement = Arrangement.spacedBy(AdaptiveUtils.getItemSpacing(windowInfo)),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(games) { game ->
+                            GameGridItem(
+                                game = game,
+                                nav = nav,
+                                cartViewModel = cartViewModel,
+                                windowInfo = windowInfo
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -383,6 +428,8 @@ private fun GameListItem(
     cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel,
     windowInfo: WindowInfo
 ) {
+    val cartItems by cartViewModel.items.collectAsState()
+    val currentQuantity = cartItems.find { it.id == game.id }?.quantity ?: 0
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -491,11 +538,12 @@ private fun GameListItem(
                 if (!windowInfo.isTablet) {
                     Spacer(Modifier.height(4.dp))
                     // Stock compacto para móviles
+                    val remainingStock = (game.stock - currentQuantity).coerceAtLeast(0)
                     Text(
-                        text = "Stock: ${game.stock}",
+                        text = "Stock: $remainingStock",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (game.stock > 5) MaterialTheme.colorScheme.primary 
+                        color = if (remainingStock > 5) MaterialTheme.colorScheme.primary 
                                else MaterialTheme.colorScheme.error
                     )
                 } else {
@@ -509,11 +557,12 @@ private fun GameListItem(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        val remainingTabletStock = (game.stock - currentQuantity).coerceAtLeast(0)
                         Text(
-                            text = "${game.stock}",
+                            text = "$remainingTabletStock",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (game.stock > 5) MaterialTheme.colorScheme.primary 
+                            color = if (remainingTabletStock > 5) MaterialTheme.colorScheme.primary 
                                    else MaterialTheme.colorScheme.error
                         )
                     }
@@ -521,20 +570,22 @@ private fun GameListItem(
             }
 
             // Botón de acción optimizado
+            val canAddMore = game.stock > currentQuantity && cartViewModel.getTotalItems() < com.example.uinavegacion.viewmodel.CartViewModel.MAX_LICENSES_PER_PURCHASE
             Button(
                 onClick = {
-                    if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
+                    if (canAddMore) {
                         cartViewModel.addGame(
                             id = game.id,
                             name = game.name,
                             price = game.discountedPrice,
                             imageUrl = game.imageUrl,
                             originalPrice = if (game.hasDiscount) game.price else null,
-                            discount = game.discount
+                            discount = game.discount,
+                            maxStock = game.stock
                         )
                     }
                 },
-                enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
+                enabled = canAddMore,
                 modifier = Modifier
                     .height(if (windowInfo.isTablet) 56.dp else 40.dp)
                     .widthIn(min = if (windowInfo.isTablet) 200.dp else 100.dp),
@@ -553,18 +604,18 @@ private fun GameListItem(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = if (cartViewModel.isInCart(game.id)) 
-                            Icons.Default.Done 
-                        else Icons.Default.Add,
+                        imageVector = if (canAddMore.not() && currentQuantity > 0) Icons.Default.Done else Icons.Default.Add,
                         contentDescription = null,
                         modifier = Modifier.size(if (windowInfo.isTablet) 20.dp else 18.dp)
                     )
                     if (windowInfo.isTablet) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            if (cartViewModel.isInCart(game.id)) "En Carrito"
-                            else if (game.stock > 0) "Agregar"
-                            else "Sin Stock",
+                            when {
+                                game.stock <= currentQuantity -> "Sin stock"
+                                currentQuantity > 0 -> "Agregar"
+                                else -> "Agregar"
+                            },
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
@@ -572,8 +623,7 @@ private fun GameListItem(
                     } else {
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            if (cartViewModel.isInCart(game.id)) "✓"
-                            else "+",
+                            if (game.stock <= currentQuantity) "-" else "+",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -592,6 +642,8 @@ private fun GameGridItem(
     cartViewModel: com.example.uinavegacion.viewmodel.CartViewModel,
     windowInfo: WindowInfo
 ) {
+    val cartItems by cartViewModel.items.collectAsState()
+    val currentQuantity = cartItems.find { it.id == game.id }?.quantity ?: 0
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -686,20 +738,22 @@ private fun GameGridItem(
                 }
                 
                 // Botón de acción compacto con icono
+                val canAddMore = game.stock > currentQuantity && cartViewModel.getTotalItems() < com.example.uinavegacion.viewmodel.CartViewModel.MAX_LICENSES_PER_PURCHASE
                 Button(
                     onClick = {
-                        if (game.stock > 0 && !cartViewModel.isInCart(game.id)) {
+                        if (canAddMore) {
                             cartViewModel.addGame(
                                 id = game.id,
                                 name = game.name,
                                 price = game.discountedPrice,
                                 imageUrl = game.imageUrl,
                                 originalPrice = if (game.hasDiscount) game.price else null,
-                                discount = game.discount
+                                discount = game.discount,
+                                maxStock = game.stock
                             )
                         }
                     },
-                    enabled = game.stock > 0 && !cartViewModel.isInCart(game.id),
+                    enabled = canAddMore,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(if (windowInfo.isTablet) 44.dp else 36.dp),
@@ -716,17 +770,17 @@ private fun GameGridItem(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
-                            imageVector = if (cartViewModel.isInCart(game.id)) 
-                                Icons.Default.Done 
-                            else Icons.Default.Add,
+                            imageVector = if (game.stock <= currentQuantity) Icons.Default.Done else Icons.Default.Add,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = if (cartViewModel.isInCart(game.id)) "✓ Añadido"
-                            else if (game.stock > 0) "Agregar"
-                            else "Agotado",
+                            text = when {
+                                game.stock <= currentQuantity -> "Sin stock"
+                                currentQuantity > 0 -> "Agregar"
+                                else -> "Agregar"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1

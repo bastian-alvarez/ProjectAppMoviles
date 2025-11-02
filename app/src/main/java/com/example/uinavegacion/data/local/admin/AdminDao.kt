@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AdminDao {
@@ -30,6 +31,9 @@ interface AdminDao {
     // Contar admins
     @Query("SELECT COUNT(*) FROM admins")
     suspend fun count(): Int
+
+    @Query("SELECT COUNT(*) FROM admins")
+    fun observeCount(): Flow<Int>
 
     // Verificar si tiene rol específico
     @Query("SELECT COUNT(*) FROM admins WHERE email = :email AND role = :role")

@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 18, // Campo género agregado a usuarios
+    version = 19, // Campo activo agregado a juegos
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -151,6 +151,18 @@ abstract class AppDatabase : RoomDatabase() {
                 Log.d("AppDatabase", "MIGRATION 17->18: Columna gender agregada correctamente")
             }
         }
+        
+        // Migración de versión 18 a 19: Agregar columna activo a juegos
+        private val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 18->19: Agregando columna activo a juegos...")
+                // Agregar columna activo con valor por defecto 1 (true)
+                database.execSQL(
+                    "ALTER TABLE juegos ADD COLUMN activo INTEGER NOT NULL DEFAULT 1"
+                )
+                Log.d("AppDatabase", "MIGRATION 18->19: Columna activo agregada correctamente")
+            }
+        }
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -159,7 +171,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
                     .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
@@ -248,17 +260,17 @@ abstract class AppDatabase : RoomDatabase() {
 
                                 // Finalmente, precargamos catálogo completo de juegos con imágenes por defecto
                                 val juegoDao = getInstance(context).juegoDao()
-                                val currentCount = juegoDao.count()
-                                Log.d("AppDatabase", "🎮 Juegos actuales en BD: $currentCount")
+                                val currentCountAll = juegoDao.countAll()
+                                Log.d("AppDatabase", "🎮 Juegos totales en BD (activos + inactivos): $currentCountAll")
                                 
-                                // Si hay datos incompletos (menos de 20 juegos), limpiamos y reiniciamos
-                                if (currentCount > 0 && currentCount < 20) {
-                                    Log.w("AppDatabase", "🧹 Datos incompletos detectados ($currentCount juegos), limpiando BD...")
+                                // Si hay datos incompletos (menos de 20 juegos TOTALES), limpiamos y reiniciamos
+                                if (currentCountAll > 0 && currentCountAll < 20) {
+                                    Log.w("AppDatabase", "🧹 Datos incompletos detectados ($currentCountAll juegos totales), limpiando BD...")
                                     juegoDao.deleteAll()
                                     Log.d("AppDatabase", "🧹 Juegos eliminados, reiniciando seeding...")
                                 }
                                 
-                                val finalCurrentCount = juegoDao.count()
+                                val finalCurrentCount = juegoDao.countAll()
                                 if (finalCurrentCount == 0) {
                                     Log.d("AppDatabase", "Seeding games...")
                                     val juegosSeed = listOf(
@@ -294,7 +306,7 @@ abstract class AppDatabase : RoomDatabase() {
                                             Log.e("AppDatabase", "  ❌ [$index] Error insertando ${juego.nombre}: ${e.message}")
                                         }
                                     }
-                                    val finalCount = juegoDao.count()
+                                    val finalCount = juegoDao.countAll()
                                     Log.d("AppDatabase", "✅ Insertados: $finalCount/$successCount juegos en total")
                                     
                                     // Verificación adicional
@@ -305,7 +317,7 @@ abstract class AppDatabase : RoomDatabase() {
                                         Log.w("AppDatabase", "⚠️ Géneros disponibles: ${generoDao.count()}")
                                     }
                                 } else {
-                                    Log.d("AppDatabase", "⚠️ BD ya tiene $currentCount juegos, omitiendo seed")
+                                    Log.d("AppDatabase", "⚠️ BD ya tiene $currentCountAll juegos, omitiendo seed")
                                 }
 
                                 // Precargamos algunas órdenes para las estadísticas

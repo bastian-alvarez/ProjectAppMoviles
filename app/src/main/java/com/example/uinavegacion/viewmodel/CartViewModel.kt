@@ -1,18 +1,24 @@
 package com.example.uinavegacion.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.GameRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-// Modelo simple para el carrito
 data class CartItem(
     val id: String,
     val name: String,
     val price: Double,
     val quantity: Int,
     val imageUrl: String = "",
-    val originalPrice: Double? = null,  // Precio original si hay descuento
-    val discount: Int = 0  // Porcentaje de descuento
+    val originalPrice: Double? = null,
+    val discount: Int = 0,
+    val maxStock: Int
 ) {
     val hasDiscount: Boolean
         get() = discount > 0 && originalPrice != null
@@ -21,87 +27,112 @@ data class CartItem(
 class CartViewModel : ViewModel() {
     private val _items = MutableStateFlow<List<CartItem>>(emptyList())
     val items: StateFlow<List<CartItem>> = _items
-    
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
-    
+
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage
-    
+
     companion object {
         const val MAX_LICENSES_PER_PURCHASE = 3
     }
 
-    // Agregar juego al carrito
-    fun addGame(id: String, name: String, price: Double, imageUrl: String = "", originalPrice: Double? = null, discount: Int = 0): Boolean {
+    fun addGame(
+        id: String,
+        name: String,
+        price: Double,
+        imageUrl: String = "",
+        originalPrice: Double? = null,
+        discount: Int = 0,
+        maxStock: Int
+    ): Boolean {
         val currentItems = _items.value.toMutableList()
         val existingIndex = currentItems.indexOfFirst { it.id == id }
-        
-        // Calcular el total de licencias actual
         val currentTotalLicenses = currentItems.sumOf { it.quantity }
-        
+
         if (existingIndex >= 0) {
-            // Si ya existe, verificar si se puede aumentar cantidad
-            val newQuantity = currentItems[existingIndex].quantity + 1
-            
+            val existingItem = currentItems[existingIndex]
+            val newQuantity = existingItem.quantity + 1
+
+            if (newQuantity > existingItem.maxStock) {
+                _errorMessage.value = "Solo hay ${existingItem.maxStock} unidades disponibles"
+                _successMessage.value = null
+                return false
+            }
+
             if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
                 _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
                 _successMessage.value = null
                 return false
             }
-            
-            currentItems[existingIndex] = currentItems[existingIndex].copy(
-                quantity = newQuantity
-            )
+
+            currentItems[existingIndex] = existingItem.copy(quantity = newQuantity)
             _successMessage.value = "✓ Cantidad actualizada en el carrito"
         } else {
-            // Si no existe, verificar si hay espacio para agregarlo
+            if (maxStock <= 0) {
+                _errorMessage.value = "Este juego no tiene stock disponible"
+                _successMessage.value = null
+                return false
+            }
+
             if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
                 _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
                 _successMessage.value = null
                 return false
             }
-            
-            // Agregarlo
-            currentItems.add(CartItem(id, name, price, 1, imageUrl, originalPrice, discount))
+
+            currentItems.add(
+                CartItem(
+                    id = id,
+                    name = name,
+                    price = price,
+                    quantity = 1,
+                    imageUrl = imageUrl,
+                    originalPrice = originalPrice,
+                    discount = discount,
+                    maxStock = maxStock
+                )
+            )
             _successMessage.value = "✓ $name agregado al carrito"
         }
+
         _items.value = currentItems
         _errorMessage.value = null
         return true
     }
-    
-    // Limpiar mensaje de error
+
     fun clearErrorMessage() {
         _errorMessage.value = null
     }
-    
-    // Limpiar mensaje de éxito
+
     fun clearSuccessMessage() {
         _successMessage.value = null
     }
 
-    // Remover juego del carrito
     fun removeGame(id: String) {
         _items.value = _items.value.filter { it.id != id }
     }
 
-    // Cambiar cantidad
     fun updateQuantity(id: String, newQuantity: Int): Boolean {
         if (newQuantity <= 0) {
             removeGame(id)
             return true
         }
-        
-        // Calcular el total de licencias sin contar el item actual
+
+        val item = _items.value.find { it.id == id } ?: return false
         val currentTotalLicenses = _items.value.filter { it.id != id }.sumOf { it.quantity }
-        
-        // Verificar si el nuevo total excede el límite
+
+        if (newQuantity > item.maxStock) {
+            _errorMessage.value = "Solo hay ${item.maxStock} unidades disponibles"
+            return false
+        }
+
         if (currentTotalLicenses + newQuantity > MAX_LICENSES_PER_PURCHASE) {
             _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
             return false
         }
-        
+
         _items.value = _items.value.map {
             if (it.id == id) it.copy(quantity = newQuantity) else it
         }
@@ -109,23 +140,68 @@ class CartViewModel : ViewModel() {
         return true
     }
 
-    // Limpiar carrito
     fun clearCart() {
         _items.value = emptyList()
     }
 
-    // Obtener cantidad total de items
     fun getTotalItems(): Int {
         return _items.value.sumOf { it.quantity }
     }
 
-    // Obtener total del carrito
     fun getTotalPrice(): Double {
         return _items.value.sumOf { it.price * it.quantity }
     }
 
-    // Verificar si un juego está en el carrito
     fun isInCart(gameId: String): Boolean {
         return _items.value.any { it.id == gameId }
+    }
+
+    fun getQuantity(gameId: String): Int {
+        return _items.value.find { it.id == gameId }?.quantity ?: 0
+    }
+
+    fun checkout(context: Context, onResult: (Boolean, String?) -> Unit) {
+        val currentItems = _items.value
+        if (currentItems.isEmpty()) {
+            onResult(false, "El carrito está vacío")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val db = AppDatabase.getInstance(context.applicationContext)
+                val repository = GameRepository(db.juegoDao())
+
+                currentItems.forEach { item ->
+                    val gameId = item.id.toLongOrNull()
+                        ?: throw IllegalArgumentException("ID de juego inválido")
+                    val game = repository.getGameById(gameId)
+                        ?: throw IllegalStateException("Juego no encontrado")
+
+                    if (!game.activo) {
+                        throw IllegalStateException("El juego ${game.nombre} ya no está disponible")
+                    }
+
+                    if (game.stock < item.quantity) {
+                        throw IllegalStateException("Stock insuficiente para ${game.nombre}")
+                    }
+
+                    val updateResult = repository.updateStock(gameId, game.stock - item.quantity)
+                    if (updateResult.isFailure) {
+                        throw updateResult.exceptionOrNull()
+                            ?: IllegalStateException("No se pudo actualizar el stock de ${game.nombre}")
+                    }
+                }
+
+                launch(Dispatchers.Main) {
+                    clearCart()
+                    onResult(true, "Compra confirmada")
+                }
+            } catch (e: Exception) {
+                launch(Dispatchers.Main) {
+                    onResult(false, e.message ?: "Error al procesar la compra")
+                }
+            }
+        }
     }
 }

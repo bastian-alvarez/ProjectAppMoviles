@@ -2,6 +2,7 @@ package com.example.uinavegacion.data.repository
 
 import com.example.uinavegacion.data.local.juego.JuegoDao
 import com.example.uinavegacion.data.local.juego.JuegoEntity
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Repositorio para gestión de juegos
@@ -13,8 +14,12 @@ class GameRepository(
     /**
      * Obtiene todos los juegos
      */
-    suspend fun getAllGames(): List<JuegoEntity> {
-        return juegoDao.getAll()
+    suspend fun getAllGames(includeInactive: Boolean = false): List<JuegoEntity> {
+        return if (includeInactive) juegoDao.getAllIncludingInactive() else juegoDao.getAll()
+    }
+
+    fun observeAllGames(includeInactive: Boolean = false): Flow<List<JuegoEntity>> {
+        return if (includeInactive) juegoDao.observeAll() else juegoDao.observeActive()
     }
     
     /**
@@ -29,7 +34,7 @@ class GameRepository(
      */
     suspend fun addGame(game: JuegoEntity): Result<Long> {
         return try {
-            val id = juegoDao.insert(game)
+            val id = juegoDao.insert(game.copy(activo = true))
             Result.success(id)
         } catch (e: Exception) {
             Result.failure(e)
@@ -41,7 +46,7 @@ class GameRepository(
      */
     suspend fun updateGame(game: JuegoEntity): Result<Unit> {
         return try {
-            juegoDao.update(
+            juegoDao.updateFull(
                 id = game.id,
                 nombre = game.nombre,
                 descripcion = game.descripcion,
@@ -51,7 +56,8 @@ class GameRepository(
                 desarrollador = game.desarrollador,
                 fechaLanzamiento = game.fechaLanzamiento,
                 categoriaId = game.categoriaId,
-                generoId = game.generoId
+                generoId = game.generoId,
+                activo = game.activo
             )
             Result.success(Unit)
         } catch (e: Exception) {
@@ -64,8 +70,12 @@ class GameRepository(
      */
     suspend fun deleteGame(id: Long): Result<Unit> {
         return try {
-            juegoDao.delete(id)
-            Result.success(Unit)
+            val rows = juegoDao.deactivate(id)
+            if (rows > 0) {
+                Result.success(Unit)
+            } else {
+                Result.failure(IllegalStateException("Juego con id=$id no encontrado"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -74,8 +84,12 @@ class GameRepository(
     /**
      * Busca juegos por nombre
      */
-    suspend fun searchGamesByName(name: String): List<JuegoEntity> {
-        return juegoDao.getByNombre(name)
+    suspend fun searchGamesByName(name: String, includeInactive: Boolean = false): List<JuegoEntity> {
+        return if (includeInactive) {
+            juegoDao.getByNombreIncludingInactive(name)
+        } else {
+            juegoDao.getByNombre(name)
+        }
     }
     
     /**
@@ -84,18 +98,37 @@ class GameRepository(
     suspend fun getTotalGamesCount(): Int {
         return juegoDao.count()
     }
+
+    fun observeTotalGamesCount(): Flow<Int> {
+        return juegoDao.observeCount()
+    }
+
+    suspend fun updateStock(id: Long, newStock: Int): Result<Unit> {
+        return try {
+            juegoDao.updateStock(id, newStock)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun reactivateGame(id: Long) {
+        juegoDao.reactivate(id)
+    }
     
     /**
      * Diagnostica y corrige datos incompletos en la base de datos
      */
     suspend fun diagnosticAndFixIncompleteData(): Result<String> {
         return try {
-            val currentCount = juegoDao.count()
+            val currentCountActive = juegoDao.count()
+            val currentCountAll = juegoDao.countAll()
             val message = StringBuilder()
             message.append("🔍 Diagnóstico de BD:\n")
-            message.append("- Juegos actuales: $currentCount\n")
+            message.append("- Juegos activos: $currentCountActive\n")
+            message.append("- Juegos totales: $currentCountAll\n")
             
-            if (currentCount < 20) {
+            if (currentCountAll < 20) {
                 message.append("⚠️ Datos incompletos detectados\n")
                 message.append("🧹 Limpiando datos parciales...\n")
                 
