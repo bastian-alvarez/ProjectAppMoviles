@@ -1,16 +1,26 @@
 package com.example.uinavegacion.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.navigation.Route
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Rail de navegación para tablets y pantallas medianas
@@ -142,22 +152,84 @@ fun AppPermanentNavigationDrawer(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Header del drawer
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 16.dp)
+            // Header del drawer con información del usuario
+            val context = LocalContext.current
+            val db = remember { AppDatabase.getInstance(context) }
+            
+            // Observar cambios en SessionManager para actualizar automáticamente
+            val currentUser by SessionManager.currentUser.collectAsStateWithLifecycle()
+            val currentAdmin by SessionManager.currentAdmin.collectAsStateWithLifecycle()
+            
+            // Obtener datos actualizados del usuario o admin
+            val displayName = remember(currentUser, currentAdmin) {
+                currentUser?.name ?: currentAdmin?.name ?: "Usuario"
+            }
+            
+            val displayEmail = remember(currentUser, currentAdmin) {
+                currentUser?.email ?: currentAdmin?.email ?: ""
+            }
+            
+            val profilePhotoUri = remember(currentUser, currentAdmin) {
+                currentUser?.profilePhotoUri ?: currentAdmin?.profilePhotoUri
+            }
+            
+            // Recargar datos desde BD cuando cambia la ruta o cuando se actualiza el SessionManager
+            LaunchedEffect(currentRoute, currentUser, currentAdmin) {
+                val email = SessionManager.getCurrentUserEmail()
+                if (email != null) {
+                    if (SessionManager.isAdmin()) {
+                        val admin = db.adminDao().getByEmail(email)
+                        if (admin != null) {
+                            SessionManager.loginAdmin(admin)
+                        }
+                    } else {
+                        val user = db.userDao().getByEmail(email)
+                        if (user != null) {
+                            SessionManager.loginUser(user)
+                        }
+                    }
+                }
+            }
+            
+            // Información del usuario en el header
+            Column(
+                modifier = Modifier.padding(vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.Gamepad,
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.width(12.dp))
+                // Foto de perfil
+                Surface(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    if (profilePhotoUri != null) {
+                        AsyncImage(
+                            model = profilePhotoUri,
+                            contentDescription = "Foto de perfil",
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.AccountCircle,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.padding(12.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    text = if (isAdmin) "Admin Panel" else "GameStore Pro",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    text = displayName,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = displayEmail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
             

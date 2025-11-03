@@ -23,6 +23,7 @@ import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.navigation.Route
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 
 @Composable
@@ -39,28 +40,43 @@ fun AppDrawer(
         Column(modifier = Modifier.padding(16.dp)) {
             val context = LocalContext.current
             val db = remember { AppDatabase.getInstance(context) }
-            var profilePhotoUri by remember { mutableStateOf<String?>(null) }
-            var displayName by remember { mutableStateOf("Usuario Demo") }
-            var displayEmail by remember { mutableStateOf("user1@demo.com") }
             
-            // Cargar datos del usuario desde SessionManager
-            // Se actualiza cuando cambia la ruta (por ejemplo, al volver de editar perfil)
-            LaunchedEffect(currentRoute) {
-                val currentUserEmail = SessionManager.getCurrentUserEmail()
-                if (currentUserEmail != null) {
-                    val user = db.userDao().getByEmail(currentUserEmail)
-                    if (user != null) {
-                        displayName = user.name
-                        displayEmail = user.email
-                        profilePhotoUri = user.profilePhotoUri
-                    }
-                } else {
-                    // Fallback para usuarios demo
-                    val user = db.userDao().getByEmail(if (isAdmin) "admin@steamish.com" else "user1@demo.com")
-                    if (user != null) {
-                        displayName = user.name
-                        displayEmail = user.email
-                        profilePhotoUri = user.profilePhotoUri
+            // Observar cambios en SessionManager para actualizar automáticamente
+            val currentUser by SessionManager.currentUser.collectAsStateWithLifecycle()
+            val currentAdmin by SessionManager.currentAdmin.collectAsStateWithLifecycle()
+            
+            // Obtener datos actualizados del usuario o admin
+            val displayName = remember(currentUser, currentAdmin) {
+                currentUser?.name ?: currentAdmin?.name ?: "Usuario"
+            }
+            
+            val displayEmail = remember(currentUser, currentAdmin) {
+                currentUser?.email ?: currentAdmin?.email ?: ""
+            }
+            
+            val profilePhotoUri = remember(currentUser, currentAdmin) {
+                currentUser?.profilePhotoUri ?: currentAdmin?.profilePhotoUri
+            }
+            
+            // Recargar datos desde BD cuando cambia la ruta o cuando se actualiza el SessionManager
+            // Esto asegura que si se actualiza el perfil, se refleje inmediatamente
+            LaunchedEffect(currentRoute, currentUser, currentAdmin) {
+                val email = SessionManager.getCurrentUserEmail()
+                if (email != null) {
+                    // Si es admin, cargar desde tabla de admins
+                    if (SessionManager.isAdmin()) {
+                        val admin = db.adminDao().getByEmail(email)
+                        if (admin != null) {
+                            // Actualizar SessionManager con los datos más recientes de la BD
+                            SessionManager.loginAdmin(admin)
+                        }
+                    } else {
+                        // Si es usuario, cargar desde tabla de usuarios
+                        val user = db.userDao().getByEmail(email)
+                        if (user != null) {
+                            // Actualizar SessionManager con los datos más recientes de la BD
+                            SessionManager.loginUser(user)
+                        }
                     }
                 }
             }
@@ -91,11 +107,11 @@ fun AppDrawer(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = if (SessionManager.isAdmin()) "Administrador" else displayName, 
+                text = displayName, 
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = SessionManager.getCurrentUserEmail() ?: displayEmail, 
+                text = displayEmail, 
                 style = MaterialTheme.typography.bodySmall
             )
         }

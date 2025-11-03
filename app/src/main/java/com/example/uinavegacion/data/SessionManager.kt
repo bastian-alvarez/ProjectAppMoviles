@@ -49,7 +49,7 @@ object SessionManager {
     }
     
     fun getCurrentUserPhotoUri(): String? {
-        return _currentUser.value?.profilePhotoUri
+        return _currentUser.value?.profilePhotoUri ?: _currentAdmin.value?.profilePhotoUri
     }
 }
 
