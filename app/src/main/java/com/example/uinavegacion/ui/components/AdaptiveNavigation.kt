@@ -20,7 +20,7 @@ import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.navigation.Route
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.livedata.observeAsState
 
 /**
  * Rail de navegación para tablets y pantallas medianas
@@ -157,8 +157,8 @@ fun AppPermanentNavigationDrawer(
             val db = remember { AppDatabase.getInstance(context) }
             
             // Observar cambios en SessionManager para actualizar automáticamente
-            val currentUser by SessionManager.currentUser.collectAsStateWithLifecycle()
-            val currentAdmin by SessionManager.currentAdmin.collectAsStateWithLifecycle()
+            val currentUser by SessionManager.currentUser.observeAsState()
+            val currentAdmin by SessionManager.currentAdmin.observeAsState()
             
             // Obtener datos actualizados del usuario o admin
             val displayName = remember(currentUser, currentAdmin) {
