@@ -32,6 +32,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
+import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.data.SessionManager
 import kotlinx.coroutines.launch
 import java.io.File
@@ -56,8 +57,12 @@ fun ProfileEditScreen(nav: NavHostController) {
     val context = LocalContext.current
     val db = remember { AppDatabase.getInstance(context) }
     val userRepository = remember { UserRepository(db.userDao()) }
+    val adminRepository = remember { AdminRepository(db.adminDao()) }
     val scope = rememberCoroutineScope()
     
+    // Determinar si es admin o usuario
+    var isAdmin by remember { mutableStateOf(false) }
+    var adminId by remember { mutableStateOf<Long?>(null) }
 
     // Crear archivo temporal para foto
     fun createImageFile(): File {
@@ -88,16 +93,22 @@ fun ProfileEditScreen(nav: NavHostController) {
         if (success) {
             profilePhotoUri = photoUri.toString()
             scope.launch {
-                if (userId != null) {
+                if (isAdmin && adminId != null) {
+                    adminRepository.updateProfilePhoto(adminId!!, profilePhotoUri)
+                    val updatedAdmin = db.adminDao().getById(adminId!!)
+                    if (updatedAdmin != null) {
+                        SessionManager.loginAdmin(updatedAdmin)
+                    }
+                    photoSavedMessage = "Foto tomada y guardada"
+                } else if (userId != null) {
                     userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
-                    // Actualizar SessionManager con la nueva foto
                     val updatedUser = db.userDao().getById(userId!!)
                     if (updatedUser != null) {
                         SessionManager.loginUser(updatedUser)
                     }
                     photoSavedMessage = "Foto tomada y guardada"
                 } else {
-                    photoSavedMessage = "Error: Usuario no identificado"
+                    photoSavedMessage = "Error: Usuario/Admin no identificado"
                 }
             }
         }
@@ -110,16 +121,22 @@ fun ProfileEditScreen(nav: NavHostController) {
         if (uri != null) {
             profilePhotoUri = uri.toString()
             scope.launch {
-                if (userId != null) {
+                if (isAdmin && adminId != null) {
+                    adminRepository.updateProfilePhoto(adminId!!, profilePhotoUri)
+                    val updatedAdmin = db.adminDao().getById(adminId!!)
+                    if (updatedAdmin != null) {
+                        SessionManager.loginAdmin(updatedAdmin)
+                    }
+                    photoSavedMessage = "Foto de galería guardada"
+                } else if (userId != null) {
                     userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
-                    // Actualizar SessionManager con la nueva foto
                     val updatedUser = db.userDao().getById(userId!!)
                     if (updatedUser != null) {
                         SessionManager.loginUser(updatedUser)
                     }
                     photoSavedMessage = "Foto de galería guardada"
                 } else {
-                    photoSavedMessage = "Error: Usuario no identificado"
+                    photoSavedMessage = "Error: Usuario/Admin no identificado"
                 }
             }
         }
@@ -136,19 +153,34 @@ fun ProfileEditScreen(nav: NavHostController) {
         }
     }
 
-    // Cargar datos del usuario desde SessionManager
+    // Cargar datos del usuario o admin desde SessionManager
     LaunchedEffect(Unit) {
         val currentUserEmail = SessionManager.getCurrentUserEmail()
         if (currentUserEmail != null) {
-            val userByEmail = db.userDao().getByEmail(currentUserEmail)
-            if (userByEmail != null) {
-                userId = userByEmail.id
-                name = userByEmail.name
-                email = userByEmail.email
-                // Formatear el teléfono al cargarlo desde la BD
-                phone = formatChileanPhoneNumber(userByEmail.phone)
-                profilePhotoUri = userByEmail.profilePhotoUri
-                gender = userByEmail.gender
+            // Verificar si es admin primero
+            val adminByEmail = db.adminDao().getByEmail(currentUserEmail)
+            if (adminByEmail != null) {
+                isAdmin = true
+                adminId = adminByEmail.id
+                userId = null // Limpiar userId
+                name = adminByEmail.name
+                email = adminByEmail.email
+                phone = formatChileanPhoneNumber(adminByEmail.phone)
+                profilePhotoUri = adminByEmail.profilePhotoUri
+                gender = "" // Los admins no tienen género
+            } else {
+                // Es un usuario normal
+                isAdmin = false
+                adminId = null
+                val userByEmail = db.userDao().getByEmail(currentUserEmail)
+                if (userByEmail != null) {
+                    userId = userByEmail.id
+                    name = userByEmail.name
+                    email = userByEmail.email
+                    phone = formatChileanPhoneNumber(userByEmail.phone)
+                    profilePhotoUri = userByEmail.profilePhotoUri
+                    gender = userByEmail.gender
+                }
             }
         }
     }
@@ -297,7 +329,14 @@ fun ProfileEditScreen(nav: NavHostController) {
                             onClick = {
                                 profilePhotoUri = null
                                 scope.launch {
-                                    if (userId != null) {
+                                    if (isAdmin && adminId != null) {
+                                        adminRepository.updateProfilePhoto(adminId!!, null)
+                                        val updatedAdmin = db.adminDao().getById(adminId!!)
+                                        if (updatedAdmin != null) {
+                                            SessionManager.loginAdmin(updatedAdmin)
+                                        }
+                                        photoSavedMessage = "Foto eliminada"
+                                    } else if (userId != null) {
                                         userRepository.updateProfilePhoto(userId!!, null)
                                         val updatedUser = db.userDao().getById(userId!!)
                                         if (updatedUser != null) {
@@ -377,39 +416,41 @@ fun ProfileEditScreen(nav: NavHostController) {
                         singleLine = true
                     )
 
-                    // Género
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        OutlinedTextField(
-                            value = gender,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Género") },
-                            leadingIcon = {
-                                Icon(Icons.Default.Person, contentDescription = "Género", modifier = Modifier.size(20.dp))
-                            },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
-                        )
-                        
-                        ExposedDropdownMenu(
+                    // Género (solo para usuarios, no para admins)
+                    if (!isAdmin) {
+                        ExposedDropdownMenuBox(
                             expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                            onExpandedChange = { expanded = !expanded }
                         ) {
-                            genderOptions.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option) },
-                                    onClick = {
-                                        gender = option
-                                        expanded = false
-                                    }
-                                )
+                            OutlinedTextField(
+                                value = gender,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Género") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Person, contentDescription = "Género", modifier = Modifier.size(20.dp))
+                                },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor()
+                            )
+                            
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                genderOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option) },
+                                        onClick = {
+                                            gender = option
+                                            expanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -457,7 +498,11 @@ fun ProfileEditScreen(nav: NavHostController) {
                 
                 Button(
                     onClick = {
-                        if (userId == null) {
+                        if (isAdmin && adminId == null) {
+                            photoSavedMessage = "Error: Admin no identificado"
+                            return@Button
+                        }
+                        if (!isAdmin && userId == null) {
                             photoSavedMessage = "Error: Usuario no identificado"
                             return@Button
                         }
@@ -484,28 +529,50 @@ fun ProfileEditScreen(nav: NavHostController) {
                         isLoading = true
                         scope.launch {
                             try {
-                                // Obtener el usuario actual por ID para mantener la contraseña
-                                val currentUser = db.userDao().getById(userId!!)
-                                if (currentUser != null) {
-                                    // Actualizar todos los campos en la base de datos
-                                    db.userDao().update(
-                                        id = userId!!,
-                                        name = name.trim(),
-                                        email = email.trim(),
-                                        phone = phone.trim(),
-                                        password = currentUser.password, // Mantener la contraseña actual
-                                        gender = gender.trim()
-                                    )
-                                    
-                                    // Actualizar SessionManager con los nuevos datos
-                                    val updatedUser = db.userDao().getById(userId!!)
-                                    if (updatedUser != null) {
-                                        SessionManager.loginUser(updatedUser)
-                                        showSuccessMessage = true
-                                        photoSavedMessage = null // Limpiar mensaje anterior
+                                if (isAdmin && adminId != null) {
+                                    // Actualizar admin
+                                    val currentAdmin = db.adminDao().getById(adminId!!)
+                                    if (currentAdmin != null) {
+                                        db.adminDao().update(
+                                            id = adminId!!,
+                                            name = name.trim(),
+                                            email = email.trim(),
+                                            phone = phone.trim(),
+                                            password = currentAdmin.password, // Mantener la contraseña actual
+                                            role = currentAdmin.role // Mantener el rol
+                                        )
+                                        
+                                        val updatedAdmin = db.adminDao().getById(adminId!!)
+                                        if (updatedAdmin != null) {
+                                            SessionManager.loginAdmin(updatedAdmin)
+                                            showSuccessMessage = true
+                                            photoSavedMessage = null
+                                        }
+                                    } else {
+                                        photoSavedMessage = "Error: Admin no encontrado"
                                     }
-                                } else {
-                                    photoSavedMessage = "Error: Usuario no encontrado"
+                                } else if (userId != null) {
+                                    // Actualizar usuario
+                                    val currentUser = db.userDao().getById(userId!!)
+                                    if (currentUser != null) {
+                                        db.userDao().update(
+                                            id = userId!!,
+                                            name = name.trim(),
+                                            email = email.trim(),
+                                            phone = phone.trim(),
+                                            password = currentUser.password, // Mantener la contraseña actual
+                                            gender = gender.trim()
+                                        )
+                                        
+                                        val updatedUser = db.userDao().getById(userId!!)
+                                        if (updatedUser != null) {
+                                            SessionManager.loginUser(updatedUser)
+                                            showSuccessMessage = true
+                                            photoSavedMessage = null
+                                        }
+                                    } else {
+                                        photoSavedMessage = "Error: Usuario no encontrado"
+                                    }
                                 }
                                 isLoading = false
                             } catch (e: Exception) {

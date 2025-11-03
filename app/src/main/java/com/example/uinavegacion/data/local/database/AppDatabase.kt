@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 19, // Campo activo agregado a juegos
+    version = 20, // Campo profilePhotoUri agregado a admins
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -163,6 +163,18 @@ abstract class AppDatabase : RoomDatabase() {
                 Log.d("AppDatabase", "MIGRATION 18->19: Columna activo agregada correctamente")
             }
         }
+        
+        // Migración de versión 19 a 20: Agregar columna profilePhotoUri a admins
+        private val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 19->20: Agregando columna profilePhotoUri a admins...")
+                // Agregar columna profilePhotoUri (nullable)
+                database.execSQL(
+                    "ALTER TABLE admins ADD COLUMN profilePhotoUri TEXT"
+                )
+                Log.d("AppDatabase", "MIGRATION 19->20: Columna profilePhotoUri agregada correctamente")
+            }
+        }
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -171,7 +183,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
                     .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
@@ -182,10 +194,16 @@ abstract class AppDatabase : RoomDatabase() {
                                 val userDao = getInstance(context).userDao()
                                 val adminDao = getInstance(context).adminDao()
 
-                                // Precargamos usuarios
+                                // Precargamos usuarios con más datos de prueba
                                 val userSeed = listOf(
-                                    UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "+56 9 1234 5678", password = "Password123!"),
-                                    UserEntity(name = "Usuario Test", email = "test@test.com", phone = "+56 9 8765 4321", password = "Password123!")
+                                    UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "+56 9 1234 5678", password = "Password123!", gender = "Masculino"),
+                                    UserEntity(name = "Usuario Test", email = "test@test.com", phone = "+56 9 8765 4321", password = "Password123!", gender = "Femenino"),
+                                    UserEntity(name = "María González", email = "maria.gonzalez@email.com", phone = "+56 9 1111 2222", password = "Password123!", gender = "Femenino"),
+                                    UserEntity(name = "Carlos Ramírez", email = "carlos.ramirez@email.com", phone = "+56 9 3333 4444", password = "Password123!", gender = "Masculino"),
+                                    UserEntity(name = "Ana Martínez", email = "ana.martinez@email.com", phone = "+56 9 5555 6666", password = "Password123!", gender = "Femenino"),
+                                    UserEntity(name = "Luis Fernández", email = "luis.fernandez@email.com", phone = "+56 9 7777 8888", password = "Password123!", gender = "Masculino"),
+                                    UserEntity(name = "Sofía López", email = "sofia.lopez@email.com", phone = "+56 9 9999 0000", password = "Password123!", gender = "Femenino"),
+                                    UserEntity(name = "Diego Torres", email = "diego.torres@email.com", phone = "+56 9 2222 3333", password = "Password123!", gender = "Masculino")
                                 )
 
 
@@ -258,42 +276,41 @@ abstract class AppDatabase : RoomDatabase() {
                                     }
                                 }
 
-                                // Finalmente, precargamos catálogo completo de juegos con imágenes por defecto
+                                // Finalmente, precargamos exactamente 10 juegos (2 por cada categoría)
                                 val juegoDao = getInstance(context).juegoDao()
                                 val currentCountAll = juegoDao.countAll()
                                 Log.d("AppDatabase", "🎮 Juegos totales en BD (activos + inactivos): $currentCountAll")
                                 
-                                // Si hay datos incompletos (menos de 20 juegos TOTALES), limpiamos y reiniciamos
-                                if (currentCountAll > 0 && currentCountAll < 20) {
-                                    Log.w("AppDatabase", "🧹 Datos incompletos detectados ($currentCountAll juegos totales), limpiando BD...")
+                                // Si hay datos incompletos (no son exactamente 10 juegos), limpiamos y reiniciamos
+                                if (currentCountAll > 0 && currentCountAll != 10) {
+                                    Log.w("AppDatabase", "🧹 Datos incompletos detectados ($currentCountAll juegos, esperado: 10), limpiando BD...")
                                     juegoDao.deleteAll()
                                     Log.d("AppDatabase", "🧹 Juegos eliminados, reiniciando seeding...")
                                 }
                                 
                                 val finalCurrentCount = juegoDao.countAll()
                                 if (finalCurrentCount == 0) {
-                                    Log.d("AppDatabase", "Seeding games...")
+                                    Log.d("AppDatabase", "Seeding games... (10 juegos totales, 2 por categoría)")
                                     val juegosSeed = listOf(
-                                        JuegoEntity(nombre = "Super Mario Bros",            precio = 29.99, imagenUrl = "",            descripcion = "El clásico juego de plataformas",     stock = 15,  desarrollador = "Nintendo",        fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "The Legend of Zelda",         precio = 39.99, imagenUrl = "",         descripcion = "Épica aventura en Hyrule",            stock = 8,   desarrollador = "Nintendo",        fechaLanzamiento = "1986", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Pokémon Red",                 precio = 24.99, imagenUrl = "",                 descripcion = "Conviértete en maestro Pokémon",      stock = 20,  desarrollador = "Game Freak",      fechaLanzamiento = "1996", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Sonic the Hedgehog",          precio = 19.99, imagenUrl = "",          descripcion = "Velocidad supersónica",               stock = 12,  desarrollador = "Sega",            fechaLanzamiento = "1991", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Final Fantasy VII",           precio = 49.99, imagenUrl = "",           descripcion = "RPG épico de Square Enix",            stock = 5,   desarrollador = "Square Enix",     fechaLanzamiento = "1997", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Street Fighter II",           precio = 14.99, imagenUrl = "",           descripcion = "El mejor juego de lucha",             stock = 10,  desarrollador = "Capcom",          fechaLanzamiento = "1991", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Minecraft",                   precio = 26.99, imagenUrl = "",                   descripcion = "Construye tu mundo",                  stock = 25,  desarrollador = "Mojang",          fechaLanzamiento = "2011", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Call of Duty Modern Warfare", precio = 59.99, imagenUrl = "",          descripcion = "Acción militar intensa",              stock = 7,   desarrollador = "Infinity Ward",   fechaLanzamiento = "2019", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "FIFA 24",                     precio = 69.99, imagenUrl = "",                     descripcion = "El mejor fútbol virtual",             stock = 18,  desarrollador = "EA Sports",       fechaLanzamiento = "2023", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "The Witcher 3 Wild Hunt",     precio = 39.99, imagenUrl = "",                   descripcion = "Aventura de Geralt de Rivia",         stock = 6,   desarrollador = "CD Projekt RED",  fechaLanzamiento = "2015", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Cyberpunk 2077",              precio = 59.99, imagenUrl = "",              descripcion = "Futuro cyberpunk",                    stock = 9,   desarrollador = "CD Projekt RED",  fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Red Dead Redemption 2",       precio = 49.99, imagenUrl = "",       descripcion = "Western épico",                       stock = 11,  desarrollador = "Rockstar Games",  fechaLanzamiento = "2018", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Dark Souls III",              precio = 39.99, imagenUrl = "",              descripcion = "Desafío extremo",                     stock = 8,   desarrollador = "FromSoftware",    fechaLanzamiento = "2016", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Grand Theft Auto V",          precio = 29.99, imagenUrl = "",                       descripcion = "Mundo abierto épico",                 stock = 22,  desarrollador = "Rockstar Games",  fechaLanzamiento = "2013", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Elden Ring",                  precio = 59.99, imagenUrl = "",                  descripcion = "Obra maestra de FromSoftware",        stock = 10,  desarrollador = "FromSoftware",    fechaLanzamiento = "2022", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Overwatch 2",                 precio = 39.99, imagenUrl = "",                 descripcion = "Shooter por equipos",                 stock = 14,  desarrollador = "Blizzard",        fechaLanzamiento = "2022", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Among Us",                    precio = 4.99,  imagenUrl = "",                    descripcion = "Encuentra al impostor",               stock = 30,  desarrollador = "InnerSloth",      fechaLanzamiento = "2018", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Valorant",                    precio = 19.99, imagenUrl = "",                    descripcion = "Shooter táctico",                     stock = 100, desarrollador = "Riot Games",      fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Assassin's Creed Valhalla",   precio = 59.99, imagenUrl = "",   descripcion = "Aventura vikinga",                    stock = 13,  desarrollador = "Ubisoft",         fechaLanzamiento = "2020", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Fortnite",                    precio = 0.0,   imagenUrl = "",                    descripcion = "Battle Royale",                       stock = 100, desarrollador = "Epic Games",      fechaLanzamiento = "2017", categoriaId = 1, generoId = 1)
+                                        // Categoría 1: Acción (2 juegos)
+                                        JuegoEntity(nombre = "Super Mario Bros",            precio = 29.99, imagenUrl = "", descripcion = "El clásico juego de plataformas",     stock = 15,  desarrollador = "Nintendo",        fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
+                                        JuegoEntity(nombre = "Call of Duty Modern Warfare", precio = 59.99, imagenUrl = "", descripcion = "Acción militar intensa",              stock = 7,   desarrollador = "Infinity Ward",   fechaLanzamiento = "2019", categoriaId = 1, generoId = 2),
+                                        
+                                        // Categoría 2: Aventura (2 juegos)
+                                        JuegoEntity(nombre = "The Legend of Zelda",         precio = 39.99, imagenUrl = "", descripcion = "Épica aventura en Hyrule",            stock = 8,   desarrollador = "Nintendo",        fechaLanzamiento = "1986", categoriaId = 2, generoId = 2),
+                                        JuegoEntity(nombre = "Red Dead Redemption 2",       precio = 49.99, imagenUrl = "", descripcion = "Western épico",                       stock = 11,  desarrollador = "Rockstar Games", fechaLanzamiento = "2018", categoriaId = 2, generoId = 2),
+                                        
+                                        // Categoría 3: RPG (2 juegos)
+                                        JuegoEntity(nombre = "Final Fantasy VII",          precio = 49.99, imagenUrl = "", descripcion = "RPG épico de Square Enix",            stock = 5,   desarrollador = "Square Enix",     fechaLanzamiento = "1997", categoriaId = 3, generoId = 3),
+                                        JuegoEntity(nombre = "The Witcher 3 Wild Hunt",     precio = 39.99, imagenUrl = "", descripcion = "Aventura de Geralt de Rivia",         stock = 6,   desarrollador = "CD Projekt RED",  fechaLanzamiento = "2015", categoriaId = 3, generoId = 3),
+                                        
+                                        // Categoría 4: Deportes (2 juegos)
+                                        JuegoEntity(nombre = "FIFA 24",                     precio = 69.99, imagenUrl = "", descripcion = "El mejor fútbol virtual",             stock = 18,  desarrollador = "EA Sports",       fechaLanzamiento = "2023", categoriaId = 4, generoId = 4),
+                                        JuegoEntity(nombre = "NBA 2K24",                    precio = 59.99, imagenUrl = "", descripcion = "Basketball profesional",                stock = 12,  desarrollador = "Visual Concepts", fechaLanzamiento = "2023", categoriaId = 4, generoId = 4),
+                                        
+                                        // Categoría 5: Estrategia (2 juegos)
+                                        JuegoEntity(nombre = "Civilization VI",            precio = 39.99, imagenUrl = "", descripcion = "Construye tu imperio",                stock = 10,  desarrollador = "Firaxis",         fechaLanzamiento = "2016", categoriaId = 5, generoId = 5),
+                                        JuegoEntity(nombre = "Age of Empires IV",         precio = 49.99, imagenUrl = "", descripcion = "Estrategia en tiempo real",            stock = 8,   desarrollador = "Relic",            fechaLanzamiento = "2021", categoriaId = 5, generoId = 5)
                                     )
                                     Log.d("AppDatabase", "🎮 Insertando ${juegosSeed.size} juegos...")
                                     var successCount = 0
@@ -310,14 +327,20 @@ abstract class AppDatabase : RoomDatabase() {
                                     Log.d("AppDatabase", "✅ Insertados: $finalCount/$successCount juegos en total")
                                     
                                     // Verificación adicional
-                                    if (finalCount < juegosSeed.size) {
-                                        Log.w("AppDatabase", "⚠️ Solo se insertaron $finalCount de ${juegosSeed.size} juegos")
+                                    if (finalCount != 10) {
+                                        Log.w("AppDatabase", "⚠️ Se insertaron $finalCount juegos, se esperaban 10")
                                         Log.w("AppDatabase", "⚠️ Verificando foreign keys...")
                                         Log.w("AppDatabase", "⚠️ Categorías disponibles: ${categoriaDao.count()}")
                                         Log.w("AppDatabase", "⚠️ Géneros disponibles: ${generoDao.count()}")
+                                    } else {
+                                        Log.d("AppDatabase", "✅ Se insertaron correctamente los 10 juegos (2 por categoría)")
                                     }
                                 } else {
-                                    Log.d("AppDatabase", "⚠️ BD ya tiene $currentCountAll juegos, omitiendo seed")
+                                    if (finalCurrentCount == 10) {
+                                        Log.d("AppDatabase", "✅ BD ya tiene los 10 juegos requeridos, omitiendo seed")
+                                    } else {
+                                        Log.w("AppDatabase", "⚠️ BD tiene $finalCurrentCount juegos (esperado: 10), pero no se reinició")
+                                    }
                                 }
 
                                 // Precargamos algunas órdenes para las estadísticas

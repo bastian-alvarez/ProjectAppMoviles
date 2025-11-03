@@ -42,6 +42,10 @@ interface AdminDao {
     // Actualizar admin
     @Query("UPDATE admins SET name = :name, email = :email, phone = :phone, password = :password, role = :role WHERE id = :id")
     suspend fun update(id: Long, name: String, email: String, phone: String, password: String, role: String)
+    
+    // Actualizar foto de perfil
+    @Query("UPDATE admins SET profilePhotoUri = :photoUri WHERE id = :id")
+    suspend fun updateProfilePhoto(id: Long, photoUri: String?)
 
     // Actualizar solo el rol
     @Query("UPDATE admins SET role = :role WHERE id = :id")

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,9 +19,14 @@ import com.example.uinavegacion.ui.screen.*
 import com.example.uinavegacion.ui.utils.*
 import com.example.uinavegacion.viewmodel.CartViewModel
 import com.example.uinavegacion.viewmodel.LibraryViewModel
+import com.example.uinavegacion.viewmodel.LibraryViewModelFactory
 import com.example.uinavegacion.viewmodel.SearchViewModel
 import com.example.uinavegacion.data.SessionManager
+import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.data.repository.LibraryRepository
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import android.app.Application
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,10 +37,20 @@ fun AppNavGraph(navController: NavHostController) {
     
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    
+    // Contexto y base de datos para LibraryViewModel
+    val context = LocalContext.current
+    val db = remember { AppDatabase.getInstance(context) }
+    val libraryRepository = remember { LibraryRepository(db.libraryDao()) }
 
     // ViewModel compartidos
     val cartViewModel: CartViewModel = viewModel()
-    val libraryViewModel: LibraryViewModel = viewModel()
+    val libraryViewModel: LibraryViewModel = viewModel(
+        factory = LibraryViewModelFactory(
+            application = context.applicationContext as Application,
+            libraryRepository = libraryRepository
+        )
+    )
     val searchViewModel: SearchViewModel = viewModel()
 
     // Obtener la ruta actual para saber qué pantalla está activa

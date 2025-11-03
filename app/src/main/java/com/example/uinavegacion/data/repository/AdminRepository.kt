@@ -88,4 +88,23 @@ class AdminRepository(
     suspend fun removeAdmin(id: Long) {
         adminDao.delete(id)
     }
+    
+    /**
+     * Actualiza la foto de perfil de un administrador
+     */
+    suspend fun updateProfilePhoto(adminId: Long, photoUri: String?): Result<Unit> {
+        return try {
+            adminDao.updateProfilePhoto(adminId, photoUri)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Obtiene un administrador por ID
+     */
+    suspend fun getAdminById(id: Long): AdminEntity? {
+        return adminDao.getById(id)
+    }
 }
