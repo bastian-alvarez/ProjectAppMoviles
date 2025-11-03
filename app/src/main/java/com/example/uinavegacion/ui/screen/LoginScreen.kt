@@ -58,6 +58,7 @@ fun LoginScreenVm(
         }
         Toast.makeText(localContext, welcomeMessage, Toast.LENGTH_SHORT).show()
         vm.clearLoginResult()
+
         // Navegar según el tipo de usuario resuelto en el ViewModel
         if (state.isAdmin) {
             Log.d("LoginScreen", "🔑 Navegando a AdminDashboard")
@@ -67,6 +68,7 @@ fun LoginScreenVm(
             onLoginOkNavigateHome()
         }
     }
+
     LoginScreen(
         email = state.email,
         pass = state.pass,
