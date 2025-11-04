@@ -29,7 +29,7 @@ fun CatalogGameUi.toGame(): Game {
         stock = stock,
         description = descripcion,
         imageUrl = imagenUrl,
-        discount = 0,
+        discount = descuento,
         isActive = activo
     )
 }

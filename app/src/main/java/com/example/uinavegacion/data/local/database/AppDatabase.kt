@@ -33,6 +33,7 @@ import com.example.uinavegacion.data.local.user.UserEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 
 @Database(
@@ -51,7 +52,7 @@ import kotlinx.coroutines.launch
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 20, // Campo profilePhotoUri agregado a admins
+    version = 22, // Forzar recreación de BD para asegurar seeding correcto
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -73,6 +74,137 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
         private const val DB_NAME = "ui_navegacion.db"
+        
+        // Función helper para obtener la lista de juegos seed
+        private fun getJuegosSeed(): List<JuegoEntity> {
+            return listOf(
+                // Categoría 1: Acción (2 juegos)
+                JuegoEntity(
+                    nombre = "Super Mario Bros", 
+                    precio = 29.99, 
+                    imagenUrl = "", 
+                    descripcion = "Únete a Mario en su aventura épica para rescatar a la Princesa Peach. Este clásico juego de plataformas de Nintendo ofrece horas de diversión con sus niveles desafiantes, enemigos icónicos y mecánicas de juego atemporales.", 
+                    stock = 15, 
+                    desarrollador = "Nintendo", 
+                    fechaLanzamiento = "1985", 
+                    categoriaId = 1, 
+                    generoId = 1,
+                    descuento = 25
+                ),
+                JuegoEntity(
+                    nombre = "Call of Duty Modern Warfare", 
+                    precio = 59.99, 
+                    imagenUrl = "", 
+                    descripcion = "Sumérgete en un intenso campo de batalla moderno con gráficos de última generación. Experimenta una campaña cinematográfica y un multijugador competitivo que define la acción militar de primera persona.", 
+                    stock = 7, 
+                    desarrollador = "Infinity Ward", 
+                    fechaLanzamiento = "2019", 
+                    categoriaId = 1, 
+                    generoId = 2,
+                    descuento = 0
+                ),
+                // Categoría 2: Aventura (2 juegos)
+                JuegoEntity(
+                    nombre = "The Legend of Zelda", 
+                    precio = 39.99, 
+                    imagenUrl = "", 
+                    descripcion = "Embárcate en una épica aventura en el reino de Hyrule. Explora vastos territorios, resuelve puzzles ingeniosos y lucha contra poderosos enemigos mientras descubres la historia de Link y la Princesa Zelda.", 
+                    stock = 8, 
+                    desarrollador = "Nintendo", 
+                    fechaLanzamiento = "1986", 
+                    categoriaId = 2, 
+                    generoId = 2,
+                    descuento = 30
+                ),
+                JuegoEntity(
+                    nombre = "Red Dead Redemption 2", 
+                    precio = 49.99, 
+                    imagenUrl = "", 
+                    descripcion = "Vive la experiencia del Lejano Oeste en este western épico. Únete a la banda de forajidos de Arthur Morgan mientras atraviesas un mundo abierto increíblemente detallado lleno de acción, drama y decisiones morales.", 
+                    stock = 11, 
+                    desarrollador = "Rockstar Games", 
+                    fechaLanzamiento = "2018", 
+                    categoriaId = 2, 
+                    generoId = 2,
+                    descuento = 0
+                ),
+                // Categoría 3: RPG (2 juegos)
+                JuegoEntity(
+                    nombre = "Final Fantasy VII", 
+                    precio = 49.99, 
+                    imagenUrl = "", 
+                    descripcion = "Sumérgete en el mundo de Midgar con Cloud Strife y sus aliados en este RPG épico. Combate por turnos estratégico, desarrollo profundo de personajes y una historia memorable hacen de este uno de los mejores RPGs de todos los tiempos.", 
+                    stock = 5, 
+                    desarrollador = "Square Enix", 
+                    fechaLanzamiento = "1997", 
+                    categoriaId = 3, 
+                    generoId = 3,
+                    descuento = 20
+                ),
+                JuegoEntity(
+                    nombre = "The Witcher 3 Wild Hunt", 
+                    precio = 39.99, 
+                    imagenUrl = "", 
+                    descripcion = "Acompaña a Geralt de Rivia, el legendario cazador de monstruos, en una aventura de mundo abierto llena de decisiones que moldean el destino. Con combate dinámico, misiones envolventes y un mundo rico en detalles.", 
+                    stock = 6, 
+                    desarrollador = "CD Projekt RED", 
+                    fechaLanzamiento = "2015", 
+                    categoriaId = 3, 
+                    generoId = 3,
+                    descuento = 0
+                ),
+                // Categoría 4: Deportes (2 juegos)
+                JuegoEntity(
+                    nombre = "FIFA 24", 
+                    precio = 69.99, 
+                    imagenUrl = "", 
+                    descripcion = "El simulador de fútbol más realista del mercado. Disfruta de gráficos mejorados, física avanzada y todas las ligas y equipos oficiales. Vive la emoción del fútbol desde la comodidad de tu hogar.", 
+                    stock = 18, 
+                    desarrollador = "EA Sports", 
+                    fechaLanzamiento = "2023", 
+                    categoriaId = 4, 
+                    generoId = 4,
+                    descuento = 15
+                ),
+                JuegoEntity(
+                    nombre = "NBA 2K24", 
+                    precio = 59.99, 
+                    imagenUrl = "", 
+                    descripcion = "Experimenta el baloncesto profesional con la simulación más auténtica. Controla a los mejores jugadores de la NBA, juega en el modo MyCareer o compite en línea con jugadores de todo el mundo.", 
+                    stock = 12, 
+                    desarrollador = "Visual Concepts", 
+                    fechaLanzamiento = "2023", 
+                    categoriaId = 4, 
+                    generoId = 4,
+                    descuento = 0
+                ),
+                // Categoría 5: Estrategia (2 juegos)
+                JuegoEntity(
+                    nombre = "Civilization VI", 
+                    precio = 39.99, 
+                    imagenUrl = "", 
+                    descripcion = "Construye y lidera tu civilización desde la antigüedad hasta la era moderna. Toma decisiones estratégicas, expande tu imperio, investiga tecnologías y compite con otros líderes para dominar el mundo.", 
+                    stock = 10, 
+                    desarrollador = "Firaxis", 
+                    fechaLanzamiento = "2016", 
+                    categoriaId = 5, 
+                    generoId = 5,
+                    descuento = 35
+                ),
+                JuegoEntity(
+                    nombre = "Age of Empires IV", 
+                    precio = 49.99, 
+                    imagenUrl = "", 
+                    descripcion = "Estrategia en tiempo real que te lleva a través de las épocas históricas. Construye ciudades, forma ejércitos y conquista a tus enemigos en batallas épicas con gráficos modernos y mecánicas mejoradas.", 
+                    stock = 8, 
+                    desarrollador = "Relic", 
+                    fechaLanzamiento = "2021", 
+                    categoriaId = 5, 
+                    generoId = 5,
+                    descuento = 0
+                )
+            )
+        }
         
         // Migración de versión 5 a 6: Agregar columna isBlocked a users
         private val MIGRATION_5_6 = object : Migration(5, 6) {
@@ -175,24 +307,52 @@ abstract class AppDatabase : RoomDatabase() {
                 Log.d("AppDatabase", "MIGRATION 19->20: Columna profilePhotoUri agregada correctamente")
             }
         }
+        
+        // Migración de versión 20 a 21: Agregar columna descuento a juegos
+        private val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 20->21: Agregando columna descuento a juegos...")
+                // Agregar columna descuento con valor por defecto 0
+                database.execSQL(
+                    "ALTER TABLE juegos ADD COLUMN descuento INTEGER NOT NULL DEFAULT 0"
+                )
+                Log.d("AppDatabase", "MIGRATION 20->21: Columna descuento agregada correctamente")
+            }
+        }
+        
+        // Migración de versión 21 a 22: Forzar recreación de juegos con descuentos
+        private val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 21->22: Forzando recreación de juegos...")
+                // Eliminar todos los juegos existentes para forzar re-seeding
+                database.execSQL("DELETE FROM juegos")
+                Log.d("AppDatabase", "MIGRATION 21->22: Juegos eliminados, se insertarán en onCreate")
+            }
+        }
 
+        @Volatile
+        private var seedingContext: Context? = null
+        
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
+                seedingContext = context.applicationContext
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
                     .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
                             Log.d("AppDatabase", "onCreate CALLED. Seeding data...")
-                            // Usar runBlocking para asegurar que el seeding se complete antes de continuar
+                            // Seeding completo solo en onCreate (cuando se crea la BD)
                             runBlocking(Dispatchers.IO) {
-                                val userDao = getInstance(context).userDao()
-                                val adminDao = getInstance(context).adminDao()
+                                val ctx = seedingContext ?: return@runBlocking
+                                val dbInstance = INSTANCE ?: return@runBlocking
+                                val userDao = dbInstance.userDao()
+                                val adminDao = dbInstance.adminDao()
 
                                 // Precargamos usuarios con más datos de prueba
                                 val userSeed = listOf(
@@ -239,7 +399,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 }
 
                                 // Primero, precargamos categorías
-                                val categoriaDao = getInstance(context).categoriaDao()
+                                val categoriaDao = dbInstance.categoriaDao()
                                 val categoriaCount = categoriaDao.count()
                                 Log.d("AppDatabase", "📁 Categorías actuales en BD: $categoriaCount")
                                 if (categoriaCount == 0) {
@@ -258,7 +418,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 }
 
                                 // Luego, precargamos géneros
-                                val generoDao = getInstance(context).generoDao()
+                                val generoDao = dbInstance.generoDao()
                                 val generoCount = generoDao.count()
                                 Log.d("AppDatabase", "🎯 Géneros actuales en BD: $generoCount")
                                 if (generoCount == 0) {
@@ -277,41 +437,21 @@ abstract class AppDatabase : RoomDatabase() {
                                 }
 
                                 // Finalmente, precargamos exactamente 10 juegos (2 por cada categoría)
-                                val juegoDao = getInstance(context).juegoDao()
+                                val juegoDao = dbInstance.juegoDao()
                                 val currentCountAll = juegoDao.countAll()
+                                val currentCountActive = juegoDao.count()
                                 Log.d("AppDatabase", "🎮 Juegos totales en BD (activos + inactivos): $currentCountAll")
+                                Log.d("AppDatabase", "🎮 Juegos activos en BD: $currentCountActive")
                                 
-                                // Si hay datos incompletos (no son exactamente 10 juegos), limpiamos y reiniciamos
-                                if (currentCountAll > 0 && currentCountAll != 10) {
-                                    Log.w("AppDatabase", "🧹 Datos incompletos detectados ($currentCountAll juegos, esperado: 10), limpiando BD...")
-                                    juegoDao.deleteAll()
-                                    Log.d("AppDatabase", "🧹 Juegos eliminados, reiniciando seeding...")
-                                }
-                                
-                                val finalCurrentCount = juegoDao.countAll()
-                                if (finalCurrentCount == 0) {
+                                // Siempre insertar los 10 juegos si no existen exactamente 10 activos
+                                if (currentCountActive != 10) {
+                                    if (currentCountAll > 0) {
+                                        Log.w("AppDatabase", "🧹 Limpiando juegos existentes para insertar los 10 correctos...")
+                                        juegoDao.deleteAll()
+                                    }
+                                    
                                     Log.d("AppDatabase", "Seeding games... (10 juegos totales, 2 por categoría)")
-                                    val juegosSeed = listOf(
-                                        // Categoría 1: Acción (2 juegos)
-                                        JuegoEntity(nombre = "Super Mario Bros",            precio = 29.99, imagenUrl = "", descripcion = "El clásico juego de plataformas",     stock = 15,  desarrollador = "Nintendo",        fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
-                                        JuegoEntity(nombre = "Call of Duty Modern Warfare", precio = 59.99, imagenUrl = "", descripcion = "Acción militar intensa",              stock = 7,   desarrollador = "Infinity Ward",   fechaLanzamiento = "2019", categoriaId = 1, generoId = 2),
-                                        
-                                        // Categoría 2: Aventura (2 juegos)
-                                        JuegoEntity(nombre = "The Legend of Zelda",         precio = 39.99, imagenUrl = "", descripcion = "Épica aventura en Hyrule",            stock = 8,   desarrollador = "Nintendo",        fechaLanzamiento = "1986", categoriaId = 2, generoId = 2),
-                                        JuegoEntity(nombre = "Red Dead Redemption 2",       precio = 49.99, imagenUrl = "", descripcion = "Western épico",                       stock = 11,  desarrollador = "Rockstar Games", fechaLanzamiento = "2018", categoriaId = 2, generoId = 2),
-                                        
-                                        // Categoría 3: RPG (2 juegos)
-                                        JuegoEntity(nombre = "Final Fantasy VII",          precio = 49.99, imagenUrl = "", descripcion = "RPG épico de Square Enix",            stock = 5,   desarrollador = "Square Enix",     fechaLanzamiento = "1997", categoriaId = 3, generoId = 3),
-                                        JuegoEntity(nombre = "The Witcher 3 Wild Hunt",     precio = 39.99, imagenUrl = "", descripcion = "Aventura de Geralt de Rivia",         stock = 6,   desarrollador = "CD Projekt RED",  fechaLanzamiento = "2015", categoriaId = 3, generoId = 3),
-                                        
-                                        // Categoría 4: Deportes (2 juegos)
-                                        JuegoEntity(nombre = "FIFA 24",                     precio = 69.99, imagenUrl = "", descripcion = "El mejor fútbol virtual",             stock = 18,  desarrollador = "EA Sports",       fechaLanzamiento = "2023", categoriaId = 4, generoId = 4),
-                                        JuegoEntity(nombre = "NBA 2K24",                    precio = 59.99, imagenUrl = "", descripcion = "Basketball profesional",                stock = 12,  desarrollador = "Visual Concepts", fechaLanzamiento = "2023", categoriaId = 4, generoId = 4),
-                                        
-                                        // Categoría 5: Estrategia (2 juegos)
-                                        JuegoEntity(nombre = "Civilization VI",            precio = 39.99, imagenUrl = "", descripcion = "Construye tu imperio",                stock = 10,  desarrollador = "Firaxis",         fechaLanzamiento = "2016", categoriaId = 5, generoId = 5),
-                                        JuegoEntity(nombre = "Age of Empires IV",         precio = 49.99, imagenUrl = "", descripcion = "Estrategia en tiempo real",            stock = 8,   desarrollador = "Relic",            fechaLanzamiento = "2021", categoriaId = 5, generoId = 5)
-                                    )
+                                    val juegosSeed = getJuegosSeed()
                                     Log.d("AppDatabase", "🎮 Insertando ${juegosSeed.size} juegos...")
                                     var successCount = 0
                                     juegosSeed.forEachIndexed { index, juego ->
@@ -320,31 +460,27 @@ abstract class AppDatabase : RoomDatabase() {
                                             Log.d("AppDatabase", "  ✅ [$index] ${juego.nombre} -> ID: $id")
                                             successCount++
                                         } catch (e: Exception) {
-                                            Log.e("AppDatabase", "  ❌ [$index] Error insertando ${juego.nombre}: ${e.message}")
+                                            Log.e("AppDatabase", "  ❌ [$index] Error insertando ${juego.nombre}: ${e.message}", e)
                                         }
                                     }
                                     val finalCount = juegoDao.countAll()
-                                    Log.d("AppDatabase", "✅ Insertados: $finalCount/$successCount juegos en total")
+                                    val finalActive = juegoDao.count()
+                                    Log.d("AppDatabase", "✅ Insertados: $finalCount/$successCount juegos en total (activos: $finalActive)")
                                     
-                                    // Verificación adicional
-                                    if (finalCount != 10) {
-                                        Log.w("AppDatabase", "⚠️ Se insertaron $finalCount juegos, se esperaban 10")
-                                        Log.w("AppDatabase", "⚠️ Verificando foreign keys...")
+                                    // Verificación final
+                                    if (finalCount != 10 || finalActive != 10) {
+                                        Log.w("AppDatabase", "⚠️ Se insertaron $finalCount juegos (activos: $finalActive), se esperaban 10")
                                         Log.w("AppDatabase", "⚠️ Categorías disponibles: ${categoriaDao.count()}")
                                         Log.w("AppDatabase", "⚠️ Géneros disponibles: ${generoDao.count()}")
                                     } else {
-                                        Log.d("AppDatabase", "✅ Se insertaron correctamente los 10 juegos (2 por categoría)")
+                                        Log.d("AppDatabase", "✅ Se insertaron correctamente los 10 juegos (2 por categoría), todos activos")
                                     }
                                 } else {
-                                    if (finalCurrentCount == 10) {
-                                        Log.d("AppDatabase", "✅ BD ya tiene los 10 juegos requeridos, omitiendo seed")
-                                    } else {
-                                        Log.w("AppDatabase", "⚠️ BD tiene $finalCurrentCount juegos (esperado: 10), pero no se reinició")
-                                    }
+                                    Log.d("AppDatabase", "✅ BD ya tiene los 10 juegos requeridos (todos activos), omitiendo seed")
                                 }
 
                                 // Precargamos algunas órdenes para las estadísticas
-                                val ordenDao = getInstance(context).ordenCompraDao()
+                                val ordenDao = dbInstance.ordenCompraDao()
                                 if (ordenDao.count() == 0) {
                                     Log.d("AppDatabase", "Seeding orders...")
                                     val ordenesSeed = listOf(
@@ -374,6 +510,40 @@ abstract class AppDatabase : RoomDatabase() {
                                 }
                                 
                                 Log.d("AppDatabase", "🏁 ¡SEEDING COMPLETADO! Base de datos inicializada correctamente")
+                            }
+                        }
+                        
+                        override fun onOpen(db: SupportSQLiteDatabase) {
+                            super.onOpen(db)
+                            Log.d("AppDatabase", "onOpen CALLED. Verificación rápida...")
+                            // Verificación rápida y asíncrona (sin bloquear)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                try {
+                                    val dbInstance = INSTANCE ?: return@launch
+                                    val juegoDao = dbInstance.juegoDao()
+                                    val activeCount = juegoDao.count()
+                                    
+                                    // Solo si faltan juegos, insertarlos en background (no bloquea el login)
+                                    if (activeCount < 10) {
+                                        Log.w("AppDatabase", "⚠️ onOpen: Solo $activeCount juegos activos, insertando en background...")
+                                        val currentCountAll = juegoDao.countAll()
+                                        if (currentCountAll > 0 && currentCountAll < 10) {
+                                            juegoDao.deleteAll()
+                                        }
+                                        val juegosSeed = getJuegosSeed()
+                                        juegosSeed.forEach { juego ->
+                                            try {
+                                                juegoDao.insert(juego)
+                                            } catch (e: Exception) {
+                                                Log.e("AppDatabase", "Error insertando ${juego.nombre}: ${e.message}")
+                                            }
+                                        }
+                                        val afterSeed = juegoDao.count()
+                                        Log.d("AppDatabase", "✅ onOpen: Background seeding completado, $afterSeed juegos activos")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("AppDatabase", "❌ Error en onOpen: ${e.message}", e)
+                                }
                             }
                         }
                     })

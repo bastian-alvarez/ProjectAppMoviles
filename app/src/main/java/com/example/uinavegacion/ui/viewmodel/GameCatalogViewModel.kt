@@ -29,7 +29,8 @@ data class CatalogGameUi(
     val imagenUrl: String,
     val categoriaNombre: String,
     val generoNombre: String,
-    val activo: Boolean
+    val activo: Boolean,
+    val descuento: Int = 0
 )
 
 class GameCatalogViewModel(
@@ -75,7 +76,8 @@ class GameCatalogViewModel(
                 imagenUrl = entity.imageUrl,
                 categoriaNombre = categoriesMap[entity.categoriaId] ?: "Categoría ${entity.categoriaId}",
                 generoNombre = genresMap[entity.generoId] ?: "Género ${entity.generoId}",
-                activo = entity.activo
+                activo = entity.activo,
+                descuento = entity.descuento
             )
         }
     }

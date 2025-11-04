@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,7 +24,9 @@ import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.navigation.Route
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 
 @Composable
@@ -40,27 +43,32 @@ fun AppDrawer(
         Column(modifier = Modifier.padding(16.dp)) {
             val context = LocalContext.current
             val db = remember { AppDatabase.getInstance(context) }
+            val lifecycleOwner = LocalLifecycleOwner.current
             
-            // Observar cambios en SessionManager para actualizar automáticamente
-            val currentUser by SessionManager.currentUser.observeAsState()
-            val currentAdmin by SessionManager.currentAdmin.observeAsState()
+            // Estado local para observar cambios en SessionManager
+            var currentUser by remember { mutableStateOf<com.example.uinavegacion.data.local.user.UserEntity?>(null) }
+            var currentAdmin by remember { mutableStateOf<com.example.uinavegacion.data.local.admin.AdminEntity?>(null) }
             
-            // Obtener datos actualizados del usuario o admin
-            val displayName = remember(currentUser, currentAdmin) {
-                currentUser?.name ?: currentAdmin?.name ?: "Usuario"
+            // Observar cambios en SessionManager usando LiveData
+            DisposableEffect(lifecycleOwner) {
+                val userObserver = androidx.lifecycle.Observer<com.example.uinavegacion.data.local.user.UserEntity?> { user ->
+                    currentUser = user
+                }
+                val adminObserver = androidx.lifecycle.Observer<com.example.uinavegacion.data.local.admin.AdminEntity?> { admin ->
+                    currentAdmin = admin
+                }
+                
+                SessionManager.currentUser.observe(lifecycleOwner, userObserver)
+                SessionManager.currentAdmin.observe(lifecycleOwner, adminObserver)
+                
+                onDispose {
+                    SessionManager.currentUser.removeObserver(userObserver)
+                    SessionManager.currentAdmin.removeObserver(adminObserver)
+                }
             }
             
-            val displayEmail = remember(currentUser, currentAdmin) {
-                currentUser?.email ?: currentAdmin?.email ?: ""
-            }
-            
-            val profilePhotoUri = remember(currentUser, currentAdmin) {
-                currentUser?.profilePhotoUri ?: currentAdmin?.profilePhotoUri
-            }
-            
-            // Recargar datos desde BD cuando cambia la ruta o cuando se actualiza el SessionManager
-            // Esto asegura que si se actualiza el perfil, se refleje inmediatamente
-            LaunchedEffect(currentRoute, currentUser, currentAdmin) {
+            // Recargar datos desde BD cuando cambia la ruta
+            LaunchedEffect(currentRoute) {
                 val email = SessionManager.getCurrentUserEmail()
                 if (email != null) {
                     // Si es admin, cargar desde tabla de admins
@@ -79,6 +87,19 @@ fun AppDrawer(
                         }
                     }
                 }
+            }
+            
+            // Obtener datos actualizados del usuario o admin
+            val displayName = remember(currentUser, currentAdmin) {
+                currentUser?.name ?: currentAdmin?.name ?: "Usuario"
+            }
+            
+            val displayEmail = remember(currentUser, currentAdmin) {
+                currentUser?.email ?: currentAdmin?.email ?: ""
+            }
+            
+            val profilePhotoUri = remember(currentUser, currentAdmin) {
+                currentUser?.profilePhotoUri ?: currentAdmin?.profilePhotoUri
             }
             
             Surface(

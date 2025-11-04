@@ -39,7 +39,9 @@ data class JuegoEntity(
     val categoriaId: Long = 1L,
     val generoId: Long = 1L,
     @ColumnInfo(defaultValue = "1")
-    val activo: Boolean = true
+    val activo: Boolean = true,
+    @ColumnInfo(defaultValue = "0")
+    val descuento: Int = 0
 ) {
     // Propiedad computada para compatibilidad
     val imageUrl: String
