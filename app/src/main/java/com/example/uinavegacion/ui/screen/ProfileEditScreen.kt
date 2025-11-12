@@ -101,12 +101,13 @@ fun ProfileEditScreen(nav: NavHostController) {
                     }
                     photoSavedMessage = "Foto tomada y guardada"
                 } else if (userId != null) {
-                    userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
-                    val updatedUser = db.userDao().getById(userId!!)
-                    if (updatedUser != null) {
-                        SessionManager.loginUser(updatedUser)
+                    val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
+                    if (result.isSuccess) {
+                        result.getOrNull()?.let { SessionManager.loginUser(it) }
+                        photoSavedMessage = "Foto tomada y guardada"
+                    } else {
+                        photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
                     }
-                    photoSavedMessage = "Foto tomada y guardada"
                 } else {
                     photoSavedMessage = "Error: Usuario/Admin no identificado"
                 }
@@ -129,12 +130,13 @@ fun ProfileEditScreen(nav: NavHostController) {
                     }
                     photoSavedMessage = "Foto de galería guardada"
                 } else if (userId != null) {
-                    userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
-                    val updatedUser = db.userDao().getById(userId!!)
-                    if (updatedUser != null) {
-                        SessionManager.loginUser(updatedUser)
+                    val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
+                    if (result.isSuccess) {
+                        result.getOrNull()?.let { SessionManager.loginUser(it) }
+                        photoSavedMessage = "Foto de galería guardada"
+                    } else {
+                        photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
                     }
-                    photoSavedMessage = "Foto de galería guardada"
                 } else {
                     photoSavedMessage = "Error: Usuario/Admin no identificado"
                 }
@@ -337,12 +339,13 @@ fun ProfileEditScreen(nav: NavHostController) {
                                         }
                                         photoSavedMessage = "Foto eliminada"
                                     } else if (userId != null) {
-                                        userRepository.updateProfilePhoto(userId!!, null)
-                                        val updatedUser = db.userDao().getById(userId!!)
-                                        if (updatedUser != null) {
-                                            SessionManager.loginUser(updatedUser)
+                                        val result = userRepository.updateProfilePhoto(userId!!, null)
+                                        if (result.isSuccess) {
+                                            result.getOrNull()?.let { SessionManager.loginUser(it) }
+                                            photoSavedMessage = "Foto eliminada"
+                                        } else {
+                                            photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo eliminar la foto"
                                         }
-                                        photoSavedMessage = "Foto eliminada"
                                     }
                                 }
                             }
@@ -553,25 +556,24 @@ fun ProfileEditScreen(nav: NavHostController) {
                                     }
                                 } else if (userId != null) {
                                     // Actualizar usuario
-                                    val currentUser = db.userDao().getById(userId!!)
-                                    if (currentUser != null) {
-                                        db.userDao().update(
-                                            id = userId!!,
-                                            name = name.trim(),
-                                            email = email.trim(),
-                                            phone = phone.trim(),
-                                            password = currentUser.password, // Mantener la contraseña actual
-                                            gender = gender.trim()
-                                        )
-                                        
-                                        val updatedUser = db.userDao().getById(userId!!)
-                                        if (updatedUser != null) {
+                                    val result = userRepository.updateProfile(
+                                        userId = userId!!,
+                                        name = name.trim(),
+                                        email = email.trim(),
+                                        phone = phone.trim(),
+                                        gender = gender.trim(),
+                                        photoUrl = profilePhotoUri
+                                    )
+
+                                    if (result.isSuccess) {
+                                        result.getOrNull()?.let { updatedUser ->
                                             SessionManager.loginUser(updatedUser)
+                                            userId = updatedUser.id
                                             showSuccessMessage = true
                                             photoSavedMessage = null
                                         }
                                     } else {
-                                        photoSavedMessage = "Error: Usuario no encontrado"
+                                        photoSavedMessage = result.exceptionOrNull()?.message ?: "Error al guardar los cambios"
                                     }
                                 }
                                 isLoading = false

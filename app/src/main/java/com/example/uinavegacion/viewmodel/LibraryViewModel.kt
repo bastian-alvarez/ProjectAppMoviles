@@ -54,6 +54,8 @@ class LibraryViewModel(
         val currentUser = SessionManager.currentUser.value
         return currentUser?.id
     }
+
+    private fun getCurrentUserRemoteId(): String? = SessionManager.currentUser.value?.remoteId
     
     init {
         loadUserLibrary()
@@ -105,6 +107,7 @@ class LibraryViewModel(
     // Agregar juegos comprados a la biblioteca en BD
     fun addPurchasedGames(cartItems: List<CartItem>) {
         val userId = getCurrentUserId()
+        val remoteUserId = getCurrentUserRemoteId()
         if (userId == null) {
             android.util.Log.e("LibraryViewModel", "❌ No hay usuario logueado para agregar compras")
             _error.value = "No hay usuario logueado"
@@ -124,7 +127,9 @@ class LibraryViewModel(
                     
                     val result = libraryRepository.addGameToLibrary(
                         userId = userId,
+                        remoteUserId = remoteUserId,
                         juegoId = item.id,
+                        remoteGameId = item.remoteId,
                         name = item.name,
                         price = item.price,
                         dateAdded = currentDate,
@@ -137,6 +142,7 @@ class LibraryViewModel(
                     } else {
                         val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
                         android.util.Log.w("LibraryViewModel", "⚠️ ${item.name}: $errorMsg")
+                        _error.value = errorMsg
                     }
                 }
                 

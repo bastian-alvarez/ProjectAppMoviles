@@ -5,9 +5,7 @@ import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import kotlinx.coroutines.runBlocking
 import com.example.uinavegacion.data.local.admin.AdminDao
 import com.example.uinavegacion.data.local.admin.AdminEntity
 import com.example.uinavegacion.data.local.categoria.CategoriaDao
@@ -30,9 +28,7 @@ import com.example.uinavegacion.data.local.rol.RolDao
 import com.example.uinavegacion.data.local.rol.RolEntity
 import com.example.uinavegacion.data.local.user.UserDao
 import com.example.uinavegacion.data.local.user.UserEntity
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 
@@ -52,7 +48,7 @@ import kotlinx.coroutines.runBlocking
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 22, // Forzar recreación de BD para asegurar seeding correcto
+    version = 23, // Forzar recreación de BD para asegurar seeding correcto
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -205,131 +201,6 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             )
         }
-        
-        // Migración de versión 5 a 6: Agregar columna isBlocked a users
-        private val MIGRATION_5_6 = object : Migration(5, 6) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                // Agregar columna isBlocked con valor por defecto FALSE
-                database.execSQL(
-                    "ALTER TABLE users ADD COLUMN isBlocked INTEGER NOT NULL DEFAULT 0"
-                )
-            }
-        }
-        
-        // Migración de versión 6 a 7: Actualizar formato de teléfonos a +56 9
-        private val MIGRATION_6_7 = object : Migration(6, 7) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "MIGRATION 6->7: Actualizando formato de teléfonos...")
-                // Actualizar teléfonos que no empiezan con +56
-                database.execSQL(
-                    """
-                    UPDATE users 
-                    SET phone = '+56 9 ' || phone 
-                    WHERE phone NOT LIKE '+56%' AND phone != ''
-                    """
-                )
-                database.execSQL(
-                    """
-                    UPDATE admins 
-                    SET phone = '+56 9 ' || phone 
-                    WHERE phone NOT LIKE '+56%' AND phone != ''
-                    """
-                )
-                Log.d("AppDatabase", "MIGRATION 6->7: Teléfonos actualizados correctamente")
-            }
-        }
-
-        // Migración de versión 16 a 17: Actualizar biblioteca para usuarios específicos
-        private val MIGRATION_16_17 = object : Migration(16, 17) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "MIGRATION 16->17: Actualizando tabla biblioteca para usuarios...")
-                
-                // Crear tabla temporal con nueva estructura
-                database.execSQL(
-                    """
-                    CREATE TABLE biblioteca_new (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        userId INTEGER NOT NULL,
-                        juegoId TEXT NOT NULL,
-                        name TEXT NOT NULL,
-                        price REAL NOT NULL,
-                        dateAdded TEXT NOT NULL,
-                        status TEXT NOT NULL DEFAULT 'Disponible',
-                        genre TEXT NOT NULL DEFAULT 'Acción',
-                        FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
-                    )
-                    """
-                )
-                
-                // Crear índice para userId
-                database.execSQL("CREATE INDEX index_biblioteca_userId ON biblioteca_new(userId)")
-                
-                // Eliminar tabla antigua y renombrar nueva
-                database.execSQL("DROP TABLE IF EXISTS biblioteca")
-                database.execSQL("ALTER TABLE biblioteca_new RENAME TO biblioteca")
-                
-                Log.d("AppDatabase", "MIGRATION 16->17: Biblioteca actualizada para usuarios específicos")
-            }
-        }
-        
-        // Migración de versión 17 a 18: Agregar columna gender a users
-        private val MIGRATION_17_18 = object : Migration(17, 18) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "MIGRATION 17->18: Agregando columna gender a users...")
-                // Agregar columna gender con valor por defecto vacío
-                database.execSQL(
-                    "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT ''"
-                )
-                Log.d("AppDatabase", "MIGRATION 17->18: Columna gender agregada correctamente")
-            }
-        }
-        
-        // Migración de versión 18 a 19: Agregar columna activo a juegos
-        private val MIGRATION_18_19 = object : Migration(18, 19) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "MIGRATION 18->19: Agregando columna activo a juegos...")
-                // Agregar columna activo con valor por defecto 1 (true)
-                database.execSQL(
-                    "ALTER TABLE juegos ADD COLUMN activo INTEGER NOT NULL DEFAULT 1"
-                )
-                Log.d("AppDatabase", "MIGRATION 18->19: Columna activo agregada correctamente")
-            }
-        }
-        
-        // Migración de versión 19 a 20: Agregar columna profilePhotoUri a admins
-        private val MIGRATION_19_20 = object : Migration(19, 20) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "MIGRATION 19->20: Agregando columna profilePhotoUri a admins...")
-                // Agregar columna profilePhotoUri (nullable)
-                database.execSQL(
-                    "ALTER TABLE admins ADD COLUMN profilePhotoUri TEXT"
-                )
-                Log.d("AppDatabase", "MIGRATION 19->20: Columna profilePhotoUri agregada correctamente")
-            }
-        }
-        
-        // Migración de versión 20 a 21: Agregar columna descuento a juegos
-        private val MIGRATION_20_21 = object : Migration(20, 21) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "MIGRATION 20->21: Agregando columna descuento a juegos...")
-                // Agregar columna descuento con valor por defecto 0
-                database.execSQL(
-                    "ALTER TABLE juegos ADD COLUMN descuento INTEGER NOT NULL DEFAULT 0"
-                )
-                Log.d("AppDatabase", "MIGRATION 20->21: Columna descuento agregada correctamente")
-            }
-        }
-        
-        // Migración de versión 21 a 22: Forzar recreación de juegos con descuentos
-        private val MIGRATION_21_22 = object : Migration(21, 22) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                Log.d("AppDatabase", "MIGRATION 21->22: Forzando recreación de juegos...")
-                // Eliminar todos los juegos existentes para forzar re-seeding
-                database.execSQL("DELETE FROM juegos")
-                Log.d("AppDatabase", "MIGRATION 21->22: Juegos eliminados, se insertarán en onCreate")
-            }
-        }
-
         @Volatile
         private var seedingContext: Context? = null
         
@@ -341,8 +212,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
-                    .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
+                    .fallbackToDestructiveMigration() // Simplificamos: si cambia el esquema, se recrea la BD
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -356,14 +226,14 @@ abstract class AppDatabase : RoomDatabase() {
 
                                 // Precargamos usuarios con más datos de prueba
                                 val userSeed = listOf(
-                                    UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "+56 9 1234 5678", password = "Password123!", gender = "Masculino"),
-                                    UserEntity(name = "Usuario Test", email = "test@test.com", phone = "+56 9 8765 4321", password = "Password123!", gender = "Femenino"),
-                                    UserEntity(name = "María González", email = "maria.gonzalez@email.com", phone = "+56 9 1111 2222", password = "Password123!", gender = "Femenino"),
-                                    UserEntity(name = "Carlos Ramírez", email = "carlos.ramirez@email.com", phone = "+56 9 3333 4444", password = "Password123!", gender = "Masculino"),
-                                    UserEntity(name = "Ana Martínez", email = "ana.martinez@email.com", phone = "+56 9 5555 6666", password = "Password123!", gender = "Femenino"),
-                                    UserEntity(name = "Luis Fernández", email = "luis.fernandez@email.com", phone = "+56 9 7777 8888", password = "Password123!", gender = "Masculino"),
-                                    UserEntity(name = "Sofía López", email = "sofia.lopez@email.com", phone = "+56 9 9999 0000", password = "Password123!", gender = "Femenino"),
-                                    UserEntity(name = "Diego Torres", email = "diego.torres@email.com", phone = "+56 9 2222 3333", password = "Password123!", gender = "Masculino")
+                                    UserEntity(name = "Usuario Demo", email = "user1@demo.com", phone = "+56 9 1234 5678", password = "Password123!", gender = "Masculino", roleId = "USER", statusId = "ACTIVO"),
+                                    UserEntity(name = "Usuario Test", email = "test@test.com", phone = "+56 9 8765 4321", password = "Password123!", gender = "Femenino", roleId = "USER", statusId = "ACTIVO"),
+                                    UserEntity(name = "María González", email = "maria.gonzalez@email.com", phone = "+56 9 1111 2222", password = "Password123!", gender = "Femenino", roleId = "USER", statusId = "ACTIVO"),
+                                    UserEntity(name = "Carlos Ramírez", email = "carlos.ramirez@email.com", phone = "+56 9 3333 4444", password = "Password123!", gender = "Masculino", roleId = "USER", statusId = "ACTIVO"),
+                                    UserEntity(name = "Ana Martínez", email = "ana.martinez@email.com", phone = "+56 9 5555 6666", password = "Password123!", gender = "Femenino", roleId = "USER", statusId = "ACTIVO"),
+                                    UserEntity(name = "Luis Fernández", email = "luis.fernandez@email.com", phone = "+56 9 7777 8888", password = "Password123!", gender = "Masculino", roleId = "USER", statusId = "ACTIVO"),
+                                    UserEntity(name = "Sofía López", email = "sofia.lopez@email.com", phone = "+56 9 9999 0000", password = "Password123!", gender = "Femenino", roleId = "USER", statusId = "ACTIVO"),
+                                    UserEntity(name = "Diego Torres", email = "diego.torres@email.com", phone = "+56 9 2222 3333", password = "Password123!", gender = "Masculino", roleId = "USER", statusId = "ACTIVO")
                                 )
 
 
@@ -513,39 +383,6 @@ abstract class AppDatabase : RoomDatabase() {
                             }
                         }
                         
-                        override fun onOpen(db: SupportSQLiteDatabase) {
-                            super.onOpen(db)
-                            Log.d("AppDatabase", "onOpen CALLED. Verificación rápida...")
-                            // Verificación rápida y asíncrona (sin bloquear)
-                            CoroutineScope(Dispatchers.IO).launch {
-                                try {
-                                    val dbInstance = INSTANCE ?: return@launch
-                                    val juegoDao = dbInstance.juegoDao()
-                                    val activeCount = juegoDao.count()
-                                    
-                                    // Solo si faltan juegos, insertarlos en background (no bloquea el login)
-                                    if (activeCount < 10) {
-                                        Log.w("AppDatabase", "⚠️ onOpen: Solo $activeCount juegos activos, insertando en background...")
-                                        val currentCountAll = juegoDao.countAll()
-                                        if (currentCountAll > 0 && currentCountAll < 10) {
-                                            juegoDao.deleteAll()
-                                        }
-                                        val juegosSeed = getJuegosSeed()
-                                        juegosSeed.forEach { juego ->
-                                            try {
-                                                juegoDao.insert(juego)
-                                            } catch (e: Exception) {
-                                                Log.e("AppDatabase", "Error insertando ${juego.nombre}: ${e.message}")
-                                            }
-                                        }
-                                        val afterSeed = juegoDao.count()
-                                        Log.d("AppDatabase", "✅ onOpen: Background seeding completado, $afterSeed juegos activos")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("AppDatabase", "❌ Error en onOpen: ${e.message}", e)
-                                }
-                            }
-                        }
                     })
                     .build()
                 INSTANCE = instance

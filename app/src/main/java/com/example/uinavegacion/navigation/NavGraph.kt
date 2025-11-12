@@ -28,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import android.app.Application
 import kotlinx.coroutines.launch
+import com.example.uinavegacion.data.remote.post.LibraryPostRepository
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -41,7 +42,7 @@ fun AppNavGraph(navController: NavHostController) {
     // Contexto y base de datos para LibraryViewModel
     val context = LocalContext.current
     val db = remember { AppDatabase.getInstance(context) }
-    val libraryRepository = remember { LibraryRepository(db.libraryDao()) }
+    val libraryRepository = remember { LibraryRepository(db.libraryDao(), LibraryPostRepository.create()) }
 
     // ViewModel compartidos
     val cartViewModel: CartViewModel = viewModel()

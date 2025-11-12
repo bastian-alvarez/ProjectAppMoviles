@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uinavegacion.data.local.juego.JuegoEntity
 import com.example.uinavegacion.data.repository.GameRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel para la gestión de juegos en el panel de administrador
@@ -205,7 +207,16 @@ class GameManagementViewModel(
                 android.util.Log.d("GameManagementVM", "🔄 REFRESH - Recargando juegos desde BD")
                 _isLoading.value = true
                 _error.value = null
-                val gamesList = gameRepository.getAllGames(includeInactive = true) // Incluir inactivos para admin
+                val syncResult = withContext(Dispatchers.IO) {
+                    gameRepository.syncWithRemote(includeInactive = true)
+                }
+                syncResult.onFailure { throwable ->
+                    android.util.Log.e("GameManagementVM", "⚠️ No se pudo sincronizar con catálogo remoto", throwable)
+                    _error.value = "No se pudo sincronizar con el catálogo remoto: ${throwable.message}"
+                }
+                val gamesList = withContext(Dispatchers.IO) {
+                    gameRepository.getAllGames(includeInactive = true)
+                } // Incluir inactivos para admin
                 android.util.Log.d("GameManagementVM", "🎮 Juegos obtenidos: ${'$'}{gamesList.size}")
                 _games.value = gamesList
             } catch (e: Exception) {

@@ -23,6 +23,9 @@ interface LibraryDao {
     @Query("SELECT COUNT(*) FROM biblioteca WHERE userId = :userId AND juegoId = :juegoId")
     suspend fun userOwnsGame(userId: Long, juegoId: String): Int
 
+    @Query("SELECT * FROM biblioteca WHERE userId = :userId AND juegoId = :juegoId LIMIT 1")
+    suspend fun findEntry(userId: Long, juegoId: String): LibraryEntity?
+
     @Query("SELECT COUNT(*) FROM biblioteca WHERE id = :id")
     suspend fun exists(id: Long): Int
 

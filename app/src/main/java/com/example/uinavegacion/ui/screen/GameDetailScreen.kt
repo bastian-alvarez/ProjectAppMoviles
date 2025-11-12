@@ -248,6 +248,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                         if (canAddMore) {
                             cartViewModel.addGame(
                                 id = game.id,
+                                remoteId = game.remoteId,
                                 name = game.name,
                                 price = game.discountedPrice,
                                 imageUrl = game.imageUrl,

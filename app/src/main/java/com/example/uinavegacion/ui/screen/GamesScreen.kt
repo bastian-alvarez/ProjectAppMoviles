@@ -70,6 +70,10 @@ fun GamesScreen(
     val catalogGames by catalogViewModel.games.collectAsState()
     val isLoadingCatalog by catalogViewModel.isLoading.collectAsState()
     val catalogCategories by catalogViewModel.categories.collectAsState()
+
+    LaunchedEffect(Unit) {
+        catalogViewModel.refresh()
+    }
     
     // Mostrar Snackbar cuando hay error
     LaunchedEffect(errorMessage) {
@@ -576,6 +580,7 @@ private fun GameListItem(
                     if (canAddMore) {
                         cartViewModel.addGame(
                             id = game.id,
+                            remoteId = game.remoteId,
                             name = game.name,
                             price = game.discountedPrice,
                             imageUrl = game.imageUrl,

@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -59,6 +60,10 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     val catalogGames by catalogViewModel.games.collectAsState()
     val isLoading by catalogViewModel.isLoading.collectAsState()
     val catalogCategories by catalogViewModel.categories.collectAsState()
+
+    LaunchedEffect(Unit) {
+        catalogViewModel.refresh()
+    }
 
     val featuredGames = catalogGames.take(6).map { it.toGame() }
     val categories = if (catalogCategories.isNotEmpty()) catalogCategories else listOf("General")

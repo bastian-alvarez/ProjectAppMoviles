@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 
 data class CartItem(
     val id: String,
+    val remoteId: String? = null,
     val name: String,
     val price: Double,
     val quantity: Int,
@@ -40,6 +41,7 @@ class CartViewModel : ViewModel() {
 
     fun addGame(
         id: String,
+        remoteId: String? = null,
         name: String,
         price: Double,
         imageUrl: String = "",
@@ -85,6 +87,7 @@ class CartViewModel : ViewModel() {
             currentItems.add(
                 CartItem(
                     id = id,
+                    remoteId = remoteId,
                     name = name,
                     price = price,
                     quantity = 1,
