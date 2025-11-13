@@ -2,13 +2,17 @@ package com.example.uinavegacion.data.repository
 
 import com.example.uinavegacion.data.local.juego.JuegoDao
 import com.example.uinavegacion.data.local.juego.JuegoEntity
+import com.example.uinavegacion.data.remote.catalogo.CatalogoGameResponse
+import com.example.uinavegacion.data.remote.catalogo.CatalogoRemoteRepository
 import kotlinx.coroutines.flow.Flow
+import kotlin.math.absoluteValue
 
 /**
  * Repositorio para gestión de juegos
  */
 class GameRepository(
-    private val juegoDao: JuegoDao
+    private val juegoDao: JuegoDao,
+    private val remoteRepository: CatalogoRemoteRepository = CatalogoRemoteRepository()
 ) {
     
     /**
@@ -17,6 +21,15 @@ class GameRepository(
     suspend fun getAllGames(includeInactive: Boolean = false): List<JuegoEntity> {
         return if (includeInactive) juegoDao.getAllIncludingInactive() else juegoDao.getAll()
     }
+
+    suspend fun syncWithRemote(includeInactive: Boolean = false): Result<Unit> =
+        remoteRepository.fetchGames(includeInactive = includeInactive)
+            .mapCatching { response ->
+                juegoDao.deleteAll()
+                response
+                    .map { it.toEntity() }
+                    .forEach { juegoDao.insert(it) }
+            }
 
     fun observeAllGames(includeInactive: Boolean = false): Flow<List<JuegoEntity>> {
         return if (includeInactive) juegoDao.observeAll() else juegoDao.observeActive()
@@ -175,3 +188,29 @@ class GameRepository(
         }
     }
 }
+
+private fun CatalogoGameResponse.toEntity(): JuegoEntity {
+    val descripcionFallback = "Información provista por catálogo remoto"
+    val fecha = fechaLanzamiento ?: "N/D"
+    val categoria = categoriaId?.toLongOrNull() ?: 1L
+    val genero = generoId?.toLongOrNull() ?: 1L
+
+    return JuegoEntity(
+        id = remoteIdToLong(id),
+        nombre = nombreJuego,
+        descripcion = descripcionFallback,
+        precio = precio,
+        stock = 20,
+        imagenUrl = fotoJuego,
+        desarrollador = "Catálogo Remoto",
+        fechaLanzamiento = fecha,
+        categoriaId = categoria,
+        generoId = genero,
+        activo = estadoId?.equals("ACTIVO", ignoreCase = true) ?: true,
+        descuento = 0,
+        remoteId = id
+    )
+}
+
+private fun remoteIdToLong(remoteId: String): Long =
+    remoteId.hashCode().toLong().absoluteValue + 1_000_000_000L

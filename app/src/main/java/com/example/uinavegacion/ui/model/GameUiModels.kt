@@ -4,6 +4,7 @@ import com.example.uinavegacion.ui.viewmodel.CatalogGameUi
 
 data class Game(
     val id: String,
+    val remoteId: String?,
     val name: String,
     val price: Double,
     val category: String,
@@ -23,6 +24,7 @@ data class Game(
 fun CatalogGameUi.toGame(): Game {
     return Game(
         id = id.toString(),
+        remoteId = remoteId,
         name = nombre,
         price = precio,
         category = categoriaNombre,

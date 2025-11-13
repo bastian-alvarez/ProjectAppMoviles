@@ -27,5 +27,10 @@ data class LibraryEntity(
     val price: Double,          // Precio pagado
     val dateAdded: String,      // Fecha de compra
     val status: String = "Disponible",  // Estado del juego
-    val genre: String = "Acción"        // Género del juego
+    val genre: String = "Acción",       // Género del juego
+    val remoteGameId: String? = null,
+    val licenseId: String? = null,
+    val licenseKey: String? = null,
+    val licenseExpiresAt: String? = null,
+    val licenseAssignedAt: String? = null
 )

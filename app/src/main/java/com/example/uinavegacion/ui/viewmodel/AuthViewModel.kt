@@ -204,14 +204,14 @@ class AuthViewModel(
                     Log.d("AuthViewModel", "👤 Validando usuario normal...")
                     userRepository.login(email, pass)
                 } else null
-                
-                var ok = isAdmin || (userResult != null && userResult.isSuccess)
-                var errorMessage: String? = null
+
+                var ok = isAdmin || (userResult?.isSuccess == true)
+                var errorMessage: String? = userResult?.exceptionOrNull()?.message
                 Log.d("AuthViewModel", "🎯 Login exitoso: $ok")
 
                 // Verificar si el usuario está bloqueado (solo para usuarios normales)
                 if (ok && !isAdmin) {
-                    val user = userRepository.getUserByEmail(email)
+                    val user = userResult?.getOrNull() ?: userRepository.getUserByEmail(email)
                     if (user != null && user.isBlocked) {
                         ok = false
                         errorMessage = "Tu cuenta ha sido bloqueada. Contacta al administrador."
@@ -227,7 +227,7 @@ class AuthViewModel(
 
                 // Si no es válido y no hay mensaje de bloqueo, mostrar mensaje genérico
                 if (!ok && errorMessage == null) {
-                    errorMessage = "Credenciales inválidas"
+                    errorMessage = userResult?.exceptionOrNull()?.message ?: "Credenciales inválidas"
                     Log.w("AuthViewModel", "❌ Credenciales inválidas para: $email")
                 }
 
@@ -360,7 +360,9 @@ class AuthViewModel(
                 name = s.name.trim(),
                 email = s.email.trim(),
                 phone = s.phone.trim(),
-                password = s.pass
+                password = s.pass,
+                gender = "",
+                photoUrl = null
             )
 
             if (result.isSuccess) {

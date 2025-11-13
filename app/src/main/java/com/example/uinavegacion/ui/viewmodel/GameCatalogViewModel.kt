@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.uinavegacion.data.local.categoria.CategoriaDao
 import com.example.uinavegacion.data.local.genero.GeneroDao
 import com.example.uinavegacion.data.repository.GameRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Representación de un juego preparado para las pantallas de catálogo.
@@ -30,7 +32,8 @@ data class CatalogGameUi(
     val categoriaNombre: String,
     val generoNombre: String,
     val activo: Boolean,
-    val descuento: Int = 0
+    val descuento: Int = 0,
+    val remoteId: String? = null
 )
 
 class GameCatalogViewModel(
@@ -77,7 +80,8 @@ class GameCatalogViewModel(
                 categoriaNombre = categoriesMap[entity.categoriaId] ?: "Categoría ${entity.categoriaId}",
                 generoNombre = genresMap[entity.generoId] ?: "Género ${entity.generoId}",
                 activo = entity.activo,
-                descuento = entity.descuento
+                descuento = entity.descuento,
+                remoteId = entity.remoteId
             )
         }
     }
@@ -111,7 +115,12 @@ class GameCatalogViewModel(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                gameRepository.getAllGames()
+                val result = withContext(Dispatchers.IO) {
+                    gameRepository.syncWithRemote()
+                }
+                result.onFailure { throwable ->
+                    _error.value = "Error al sincronizar con catálogo remoto: ${throwable.message}"
+                }
             } catch (e: Exception) {
                 _error.value = "Error al refrescar juegos: ${e.message}"
             } finally {

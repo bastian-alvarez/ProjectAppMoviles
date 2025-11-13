@@ -41,7 +41,9 @@ data class JuegoEntity(
     @ColumnInfo(defaultValue = "1")
     val activo: Boolean = true,
     @ColumnInfo(defaultValue = "0")
-    val descuento: Int = 0
+    val descuento: Int = 0,
+    @ColumnInfo(name = "remoteId")
+    val remoteId: String? = null
 ) {
     // Propiedad computada para compatibilidad
     val imageUrl: String

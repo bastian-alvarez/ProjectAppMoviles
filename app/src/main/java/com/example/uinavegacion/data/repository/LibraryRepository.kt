@@ -3,13 +3,17 @@ package com.example.uinavegacion.data.repository
 import android.util.Log
 import com.example.uinavegacion.data.local.library.LibraryDao
 import com.example.uinavegacion.data.local.library.LibraryEntity
+import com.example.uinavegacion.data.remote.post.LicenciaRemoteDto
+import com.example.uinavegacion.data.remote.post.LibraryEntryRemoteDto
+import com.example.uinavegacion.data.remote.post.LibraryPostRepository
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Repositorio para gestión de biblioteca de juegos del usuario
  */
 class LibraryRepository(
-    private val libraryDao: LibraryDao
+    private val libraryDao: LibraryDao,
+    private val remoteRepository: LibraryPostRepository = LibraryPostRepository.create()
 ) {
     
     /**
@@ -31,7 +35,9 @@ class LibraryRepository(
      */
     suspend fun addGameToLibrary(
         userId: Long,
+        remoteUserId: String? = null,
         juegoId: String,
+        remoteGameId: String? = null,
         name: String,
         price: Double,
         dateAdded: String,
@@ -39,14 +45,19 @@ class LibraryRepository(
         genre: String = "Acción"
     ): Result<Long> {
         return try {
-            // Verificar si el usuario ya tiene este juego
             val alreadyOwns = libraryDao.userOwnsGame(userId, juegoId) > 0
             if (alreadyOwns) {
                 Log.d("LibraryRepository", "Usuario ya tiene el juego $juegoId")
                 return Result.failure(Exception("Ya tienes este juego en tu biblioteca"))
             }
-            
-            // Insertar el juego en la biblioteca
+
+            val assignedLicense = if (!remoteUserId.isNullOrBlank() && !remoteGameId.isNullOrBlank()) {
+                assignRemoteLicense(remoteGameId, remoteUserId)
+            } else {
+                Log.w("LibraryRepository", "No se proporcionó información remota suficiente para asignar licencia. Guardando solo en local.")
+                null
+            }
+
             val entity = LibraryEntity(
                 userId = userId,
                 juegoId = juegoId,
@@ -54,11 +65,16 @@ class LibraryRepository(
                 price = price,
                 dateAdded = dateAdded,
                 status = status,
-                genre = genre
+                genre = genre,
+                remoteGameId = remoteGameId,
+                licenseId = assignedLicense?.id,
+                licenseKey = assignedLicense?.clave,
+                licenseExpiresAt = assignedLicense?.fechaVencimiento,
+                licenseAssignedAt = assignedLicense?.asignadaEn
             )
             libraryDao.insert(entity)
             Log.d("LibraryRepository", "Juego $juegoId agregado a biblioteca del usuario $userId")
-            Result.success(0L) // El ID se genera automáticamente
+            Result.success(0L)
         } catch (e: Exception) {
             Log.e("LibraryRepository", "Error agregando juego a biblioteca", e)
             Result.failure(e)
@@ -70,33 +86,28 @@ class LibraryRepository(
      */
     suspend fun addPurchasedGames(
         userId: Long,
-        games: List<Pair<String, String>> // Lista de (juegoId, nombre)
+        remoteUserId: String?,
+        games: List<LibraryEntryRemoteDto>,
+        dateAdded: String
     ): Result<Int> {
         return try {
-            val currentDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
             var addedCount = 0
-            var skippedCount = 0
-            
-            games.forEach { (juegoId, name) ->
-                val alreadyOwns = libraryDao.userOwnsGame(userId, juegoId) > 0
-                if (!alreadyOwns) {
-                    val entity = LibraryEntity(
-                        userId = userId,
-                        juegoId = juegoId,
-                        name = name,
-                        price = 0.0, // Se puede obtener del juego si es necesario
-                        dateAdded = currentDate,
-                        status = "Disponible",
-                        genre = "Acción"
-                    )
-                    libraryDao.insert(entity)
+            games.forEach { entry ->
+                val result = addGameToLibrary(
+                    userId = userId,
+                    remoteUserId = remoteUserId,
+                    juegoId = entry.gameId,
+                    remoteGameId = entry.gameId,
+                    name = entry.name,
+                    price = entry.price,
+                    dateAdded = dateAdded,
+                    status = entry.status,
+                    genre = entry.genre
+                )
+                if (result.isSuccess) {
                     addedCount++
-                } else {
-                    skippedCount++
                 }
             }
-            
-            Log.d("LibraryRepository", "Compra procesada: $addedCount agregados, $skippedCount ya existían")
             Result.success(addedCount)
         } catch (e: Exception) {
             Log.e("LibraryRepository", "Error procesando compra", e)
@@ -109,6 +120,12 @@ class LibraryRepository(
      */
     suspend fun removeGameFromLibrary(userId: Long, juegoId: String): Result<Unit> {
         return try {
+            val entry = libraryDao.findEntry(userId, juegoId)
+            entry?.licenseId?.let { licenseId ->
+                remoteRepository.releaseLicense(licenseId).onFailure {
+                    Log.w("LibraryRepository", "No se pudo liberar la licencia $licenseId: ${it.message}")
+                }
+            }
             libraryDao.removeGameFromUser(userId, juegoId)
             Result.success(Unit)
         } catch (e: Exception) {
@@ -135,6 +152,17 @@ class LibraryRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private suspend fun assignRemoteLicense(gameRemoteId: String, remoteUserId: String): LicenciaRemoteDto {
+        Log.d("LibraryRepository", "Solicitando licencias disponibles para juego remoto $gameRemoteId")
+        val availableLicenses = remoteRepository.fetchAvailableLicenses(gameRemoteId, limit = 1)
+            .getOrElse { throw it }
+        val license = availableLicenses.firstOrNull()
+            ?: throw IllegalStateException("No hay licencias disponibles para este juego")
+        Log.d("LibraryRepository", "Asignando licencia ${license.id} al usuario remoto $remoteUserId")
+        return remoteRepository.assignLicense(license.id, remoteUserId)
+            .getOrElse { throw it }
     }
 }
 
