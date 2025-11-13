@@ -60,7 +60,11 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     val isLoading by catalogViewModel.isLoading.collectAsState()
     val catalogCategories by catalogViewModel.categories.collectAsState()
 
-    val featuredGames = catalogGames.take(6).map { it.toGame() }
+    // Filtrar solo juegos con descuento (oferta) para la sección destacada
+    val featuredGames = catalogGames
+        .filter { it.descuento > 0 } // Solo juegos con descuento
+        .take(6)
+        .map { it.toGame() }
     val categories = if (catalogCategories.isNotEmpty()) catalogCategories else listOf("General")
 
     when (windowInfo.deviceType) {

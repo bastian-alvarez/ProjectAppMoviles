@@ -19,6 +19,7 @@ import com.example.uinavegacion.navigation.Route
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.AdminStatsRepository
 import com.example.uinavegacion.data.repository.GameRepository
+import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModel
 import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModelFactory
 import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
@@ -210,6 +211,16 @@ fun AdminDashboardScreen(navController: NavHostController) {
                     icon = Icons.Default.People,
                     onClick = { navController.navigate(Route.AdminUsers.path) }
                 )
+                
+                // Moderación de reseñas (solo para moderadores)
+                if (SessionManager.isModerator()) {
+                    ActionCard(
+                        title = "Moderar Reseñas",
+                        subtitle = "Revisar y eliminar reseñas",
+                        icon = Icons.Default.Edit,
+                        onClick = { navController.navigate(Route.Moderation.path) }
+                    )
+                }
             }
         }
     }

@@ -30,7 +30,8 @@ data class LoginUiState(
     val canSubmit: Boolean = false, //visibilidad del botón
     val success: Boolean = false, //resultado ok del formulario
     val errorMsg: String? = null, // error general (credenciales son incorrectas)
-    val isAdmin: Boolean = false // indica si el usuario logueado es administrador
+    val isAdmin: Boolean = false, // indica si el usuario logueado es administrador
+    val adminRole: String? = null // rol del administrador (MODERATOR, SUPER_ADMIN, etc.)
 )
 
 data class RegisterUiState(
@@ -117,36 +118,86 @@ class AuthViewModel(
                 val pass = s.pass.trim()
                 Log.d("AuthViewModel", "Attempting login with email: [$email], pass length: [${pass.length}]")
 
-                // Verificar que la BD esté inicializada
-                val adminCount = adminRepository.getAllAdmins().size
+                // Verificar que la BD esté inicializada y crear admins faltantes
+                val allAdmins = adminRepository.getAllAdmins()
+                val adminCount = allAdmins.size
                 Log.d("AuthViewModel", "🔍 Total admins in DB: $adminCount")
                 
-                // Si no hay admins, crear el admin por defecto de emergencia
-                if (adminCount == 0) {
-                    Log.w("AuthViewModel", "⚠️ No hay admins en la BD, creando admin de emergencia...")
-                    try {
-                        val emergencyResult = adminRepository.registerAdmin(
-                            name = "Administrador Principal",
-                            email = "admin@steamish.com",
-                            phone = "+56 9 8877 6655",
-                            password = "Admin123!",
-                            role = "SUPER_ADMIN"
-                        )
-                        if (emergencyResult.isSuccess) {
-                            Log.d("AuthViewModel", "✅ Admin de emergencia creado exitosamente")
-                        } else {
-                            Log.e("AuthViewModel", "❌ Error creando admin de emergencia: ${emergencyResult.exceptionOrNull()?.message}")
+                // Lista de admins que deben existir
+                val requiredAdmins = listOf(
+                    Triple("admin@steamish.com", "Admin123!", "SUPER_ADMIN"),
+                    Triple("moderador@steamish.com", "Moderador123!", "MODERATOR"),
+                    Triple("manager@steamish.com", "Manager456@", "GAME_MANAGER"),
+                    Triple("support@steamish.com", "Support789#", "SUPPORT")
+                )
+                
+                // Verificar y crear admins faltantes
+                var adminsCreated = false
+                requiredAdmins.forEach { (adminEmail, adminPassword, role) ->
+                    val exists = allAdmins.any { it.email == adminEmail }
+                    if (!exists) {
+                        Log.w("AuthViewModel", "⚠️ Admin $adminEmail no existe, creando...")
+                        adminsCreated = true
+                        try {
+                            val name = when (role) {
+                                "SUPER_ADMIN" -> "Administrador Principal"
+                                "MODERATOR" -> "Moderador"
+                                "GAME_MANAGER" -> "Gerente de Juegos"
+                                "SUPPORT" -> "Soporte Técnico"
+                                else -> "Administrador"
+                            }
+                            val phone = when (role) {
+                                "SUPER_ADMIN" -> "+56 9 8877 6655"
+                                "MODERATOR" -> "+56 9 5544 3322"
+                                "GAME_MANAGER" -> "+56 9 7766 5544"
+                                "SUPPORT" -> "+56 9 6655 4433"
+                                else -> "+56 9 0000 0000"
+                            }
+                            val result = adminRepository.registerAdmin(
+                                name = name,
+                                email = adminEmail,
+                                phone = phone,
+                                password = adminPassword,
+                                role = role
+                            )
+                            if (result.isSuccess) {
+                                Log.d("AuthViewModel", "✅ Admin $adminEmail creado exitosamente")
+                            } else {
+                                Log.e("AuthViewModel", "❌ Error creando admin $adminEmail: ${result.exceptionOrNull()?.message}")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AuthViewModel", "💥 Excepción creando admin $adminEmail", e)
                         }
-                    } catch (e: Exception) {
-                        Log.e("AuthViewModel", "💥 Excepción creando admin de emergencia", e)
                     }
+                }
+                
+                // Si se crearon admins, recargar la lista
+                val finalAdmins = if (adminsCreated) {
+                    Log.d("AuthViewModel", "🔄 Recargando lista de admins después de crear nuevos...")
+                    adminRepository.getAllAdmins()
+                } else {
+                    allAdmins
                 }
 
                 // Validar credenciales de admin primero
                 Log.d("AuthViewModel", "🔐 Validando credenciales de admin...")
+                Log.d("AuthViewModel", "📧 Email ingresado: '$email'")
+                Log.d("AuthViewModel", "🔑 Password ingresado: '${pass.take(3)}***' (longitud: ${pass.length})")
+                
+                // Listar todos los admins para debug
+                Log.d("AuthViewModel", "📋 Total admins en BD: ${finalAdmins.size}")
+                finalAdmins.forEach { a ->
+                    Log.d("AuthViewModel", "  - Admin: ${a.email}, Rol: ${a.role}, Password: '${a.password.take(3)}***' (longitud: ${a.password.length})")
+                }
+                
                 val admin = adminRepository.validateAdmin(email, pass)
                 val isAdmin = admin != null
                 Log.d("AuthViewModel", "🔍 ¿Es admin? $isAdmin")
+                if (admin != null) {
+                    Log.d("AuthViewModel", "✅ Admin encontrado: ${admin.email}, Rol: ${admin.role}")
+                } else {
+                    Log.w("AuthViewModel", "❌ Admin NO encontrado con esas credenciales")
+                }
                 
                 // Si no es admin, validar usuario normal
                 val userResult = if (!isAdmin) {
@@ -171,7 +222,7 @@ class AuthViewModel(
                     }
                 } else if (ok && isAdmin && admin != null) {
                     SessionManager.loginAdmin(admin)
-                    Log.d("AuthViewModel", "👨‍💼 Admin logueado en sesión")
+                    Log.d("AuthViewModel", "👨‍💼 Admin logueado en sesión: ${admin.email}, Rol: ${admin.role}")
                 }
 
                 // Si no es válido y no hay mensaje de bloqueo, mostrar mensaje genérico
@@ -180,13 +231,14 @@ class AuthViewModel(
                     Log.w("AuthViewModel", "❌ Credenciales inválidas para: $email")
                 }
 
-                Log.d("AuthViewModel", "🏁 Finalizando login - Success: $ok, IsAdmin: $isAdmin")
+                Log.d("AuthViewModel", "🏁 Finalizando login - Success: $ok, IsAdmin: $isAdmin, Rol: ${admin?.role}")
                 _login.update {                                 // Actualizamos con el resultado
                     it.copy(
                         isSubmitting = false,                   // Fin carga
                         success = ok,                           // true si credenciales correctas
                         errorMsg = errorMessage,                // Mensaje si falla
-                        isAdmin = isAdmin                       // Guardamos si es admin
+                        isAdmin = isAdmin,                      // Guardamos si es admin
+                        adminRole = admin?.role                 // Guardamos el rol del admin
                     )
                 }
                 Log.d("AuthViewModel", "=== FIN LOGIN ===")
@@ -197,7 +249,8 @@ class AuthViewModel(
                         isSubmitting = false,
                         success = false,
                         errorMsg = "Error interno: ${e.message}",
-                        isAdmin = false
+                        isAdmin = false,
+                        adminRole = null
                     )
                 }
             }
@@ -205,7 +258,7 @@ class AuthViewModel(
     }
 
     fun clearLoginResult() {                                // Limpia banderas tras navegar
-        _login.update { it.copy(success = false, errorMsg = null, isAdmin = false) }
+        _login.update { it.copy(success = false, errorMsg = null, isAdmin = false, adminRole = null) }
     }
 
     fun logout() {                                          // Función para cerrar sesión

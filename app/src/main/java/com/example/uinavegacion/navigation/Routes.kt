@@ -45,6 +45,7 @@ sealed class Route(val path: String) {
     data object AdminDashboard : Route("admin/dashboard")
     data object AdminGames : Route("admin/games")
     data object AdminUsers : Route("admin/users")
+    data object Moderation : Route("admin/moderation")
 
     // Estados / Errores
     data object NoConnection : Route("no_connection")

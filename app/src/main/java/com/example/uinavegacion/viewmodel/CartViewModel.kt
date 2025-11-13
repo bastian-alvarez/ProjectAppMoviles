@@ -34,10 +34,6 @@ class CartViewModel : ViewModel() {
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage
 
-    companion object {
-        const val MAX_LICENSES_PER_PURCHASE = 3
-    }
-
     fun addGame(
         id: String,
         name: String,
@@ -49,7 +45,6 @@ class CartViewModel : ViewModel() {
     ): Boolean {
         val currentItems = _items.value.toMutableList()
         val existingIndex = currentItems.indexOfFirst { it.id == id }
-        val currentTotalLicenses = currentItems.sumOf { it.quantity }
 
         if (existingIndex >= 0) {
             val existingItem = currentItems[existingIndex]
@@ -61,23 +56,11 @@ class CartViewModel : ViewModel() {
                 return false
             }
 
-            if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
-                _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
-                _successMessage.value = null
-                return false
-            }
-
             currentItems[existingIndex] = existingItem.copy(quantity = newQuantity)
             _successMessage.value = "✓ Cantidad actualizada en el carrito"
         } else {
             if (maxStock <= 0) {
-                _errorMessage.value = "Este juego no tiene stock disponible"
-                _successMessage.value = null
-                return false
-            }
-
-            if (currentTotalLicenses >= MAX_LICENSES_PER_PURCHASE) {
-                _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
+                _errorMessage.value = "Este producto está agotado"
                 _successMessage.value = null
                 return false
             }
@@ -121,15 +104,9 @@ class CartViewModel : ViewModel() {
         }
 
         val item = _items.value.find { it.id == id } ?: return false
-        val currentTotalLicenses = _items.value.filter { it.id != id }.sumOf { it.quantity }
 
         if (newQuantity > item.maxStock) {
             _errorMessage.value = "Solo hay ${item.maxStock} unidades disponibles"
-            return false
-        }
-
-        if (currentTotalLicenses + newQuantity > MAX_LICENSES_PER_PURCHASE) {
-            _errorMessage.value = "No puedes comprar más de $MAX_LICENSES_PER_PURCHASE licencias en una sola compra"
             return false
         }
 

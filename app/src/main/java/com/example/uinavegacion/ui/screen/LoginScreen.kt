@@ -50,9 +50,18 @@ fun LoginScreenVm(
     val state by vm.login.collectAsStateWithLifecycle()
 
     if (state.success) {
-        Log.d("LoginScreen", "🎯 Login exitoso detectado! isAdmin=${state.isAdmin}")
+        Log.d("LoginScreen", "🎯 Login exitoso detectado! isAdmin=${state.isAdmin}, adminRole=${state.adminRole}")
+        
+        // Verificar si es moderador desde el estado (más confiable que SessionManager)
+        val isModerator = state.adminRole == "MODERATOR"
+        Log.d("LoginScreen", "👮 ¿Es moderador? $isModerator (rol: ${state.adminRole})")
+        
         val welcomeMessage = if (state.isAdmin) {
-            if (state.email.isBlank()) "Bienvenido administrador" else "Bienvenido administrador ${state.email}"
+            if (isModerator) {
+                if (state.email.isBlank()) "Bienvenido moderador" else "Bienvenido moderador ${state.email}"
+            } else {
+                if (state.email.isBlank()) "Bienvenido administrador" else "Bienvenido administrador ${state.email}"
+            }
         } else {
             if (state.email.isBlank()) "Bienvenido" else "Bienvenido ${state.email}"
         }
@@ -61,11 +70,20 @@ fun LoginScreenVm(
 
         // Navegar según el tipo de usuario resuelto en el ViewModel
         if (state.isAdmin) {
-            Log.d("LoginScreen", "🔑 Navegando a AdminDashboard")
-            navController.navigate(Route.AdminDashboard.path) {
-                // Limpiar el historial de navegación para que el admin no pueda volver al login
-                popUpTo(Route.Login.path) { inclusive = true }
-                launchSingleTop = true
+            if (isModerator) {
+                Log.d("LoginScreen", "👮 Navegando a ModerationScreen")
+                navController.navigate(Route.Moderation.path) {
+                    // Limpiar el historial de navegación para que el moderador no pueda volver al login
+                    popUpTo(Route.Login.path) { inclusive = true }
+                    launchSingleTop = true
+                }
+            } else {
+                Log.d("LoginScreen", "🔑 Navegando a AdminDashboard")
+                navController.navigate(Route.AdminDashboard.path) {
+                    // Limpiar el historial de navegación para que el admin no pueda volver al login
+                    popUpTo(Route.Login.path) { inclusive = true }
+                    launchSingleTop = true
+                }
             }
         } else {
             Log.d("LoginScreen", "🏠 Navegando a Home")

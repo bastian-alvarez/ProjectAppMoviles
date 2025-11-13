@@ -51,5 +51,21 @@ object SessionManager {
     fun getCurrentUserPhotoUri(): String? {
         return _currentUser.value?.profilePhotoUri ?: _currentAdmin.value?.profilePhotoUri
     }
+    
+    fun getCurrentUserId(): Long? {
+        return _currentUser.value?.id
+    }
+    
+    fun getCurrentUser(): UserEntity? {
+        return _currentUser.value
+    }
+    
+    fun getCurrentAdmin(): AdminEntity? {
+        return _currentAdmin.value
+    }
+    
+    fun isModerator(): Boolean {
+        return _currentAdmin.value?.role == "MODERATOR"
+    }
 }
 

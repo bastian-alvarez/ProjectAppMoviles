@@ -33,68 +33,16 @@ class UserManagementViewModel(
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
     
     init {
-        android.util.Log.d("UserManagementVM", "🚀 INIT - Carga instantánea de usuarios")
-        loadUsersInstant()
-    }
-    
-    /**
-     * Carga usuarios reales desde la BD
-     */
-    private fun loadUsersInstant() {
-        android.util.Log.d("UserManagementVM", "⚡ CARGANDO USUARIOS REALES DESDE BD")
-        
-        // APLICAR LOADING INMEDIATAMENTE
-        _isLoading.value = true
-        _error.value = null
-        
-        // Los usuarios reales que están en BD (según AppDatabase.kt)
-        val realUsers = listOf(
-            UserEntity(
-                id = 1L,
-                name = "Usuario Demo",
-                email = "user1@demo.com",
-                phone = "+56 9 1234 5678",
-                password = "Password123!",
-                isBlocked = false,
-                gender = ""
-            ),
-            UserEntity(
-                id = 2L,
-                name = "Usuario Test",
-                email = "test@test.com",
-                phone = "+56 9 8765 4321",
-                password = "Password123!",
-                isBlocked = false,
-                gender = ""
-            )
-        )
-        
-        // APLICAR INMEDIATAMENTE (pero luego sincronizar con BD)
-        _users.value = realUsers
-        _isLoading.value = false
-        
-        android.util.Log.d("UserManagementVM", "✅ ${realUsers.size} usuarios REALES mostrados")
-        
-        // Sincronizar con BD en background para obtener estado real de bloqueo
-        viewModelScope.launch {
-            try {
-                val usersFromDB = userRepository.getAllUsers()
-                if (usersFromDB.isNotEmpty()) {
-                    _users.value = usersFromDB
-                    android.util.Log.d("UserManagementVM", "🔄 Usuarios actualizados desde BD: ${usersFromDB.size}")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("UserManagementVM", "❌ Error cargando desde BD: ${e.message}")
-            }
-        }
+        android.util.Log.d("UserManagementVM", "🚀 INIT - Cargando usuarios desde BD")
+        loadUsers()
     }
     
     /**
      * Función para recargar cuando se regresa a la pantalla
      */
     fun onScreenResumed() {
-        android.util.Log.d("UserManagementVM", "👁️ PANTALLA RESUMIDA - Recarga instantánea")
-        loadUsersInstant()
+        android.util.Log.d("UserManagementVM", "👁️ PANTALLA RESUMIDA - Recargando usuarios")
+        loadUsers()
     }
     
     /**

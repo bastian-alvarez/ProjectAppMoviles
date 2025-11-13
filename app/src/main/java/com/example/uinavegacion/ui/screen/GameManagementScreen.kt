@@ -50,56 +50,60 @@ fun GameManagementScreen(navController: NavHostController) {
         try {
             android.util.Log.d("GameManagementScreen", "🔄 FORZANDO RECREACIÓN COMPLETA DE BASE DE DATOS")
             
-            // Primero, asegurar que existan categorías y géneros
+            // Primero, asegurar que existan todas las categorías y géneros necesarios
             try {
-                android.util.Log.d("GameManagementScreen", "🏷️ Verificando categorías y géneros...")
+                android.util.Log.d("GameManagementScreen", "🏷️ Verificando y creando categorías y géneros...")
                 
-                // Verificar si categoría ID 1 existe, si no, crear una
-                val categoriaExiste = try {
-                    db.categoriaDao().getById(1L) != null
-                } catch (e: Exception) {
-                    false
-                }
+                // Crear las 5 categorías necesarias
+                val categoriasSeed = listOf(
+                    CategoriaEntity(nombre = "Acción", descripcion = "Juegos de alta intensidad y combate"),
+                    CategoriaEntity(nombre = "Aventura", descripcion = "Exploración y narrativa inmersiva"),
+                    CategoriaEntity(nombre = "RPG", descripcion = "Juegos de rol y desarrollo de personajes"),
+                    CategoriaEntity(nombre = "Deportes", descripcion = "Simulaciones deportivas"),
+                    CategoriaEntity(nombre = "Estrategia", descripcion = "Planificación y táctica")
+                )
                 
-                if (!categoriaExiste) {
-                    val categoria = CategoriaEntity(
-                        nombre = "Videojuegos",
-                        descripcion = "Categoría general para videojuegos"
-                    )
+                categoriasSeed.forEachIndexed { index, categoria ->
                     try {
-                        val catId = db.categoriaDao().insert(categoria)
-                        android.util.Log.d("GameManagementScreen", "✅ Categoría creada con ID: $catId")
+                        val existing = db.categoriaDao().getById((index + 1).toLong())
+                        if (existing == null) {
+                            val catId = db.categoriaDao().insert(categoria)
+                            android.util.Log.d("GameManagementScreen", "✅ Categoría ${categoria.nombre} creada con ID: $catId")
+                        } else {
+                            android.util.Log.d("GameManagementScreen", "ℹ️ Categoría ${categoria.nombre} ya existe (ID: ${existing.id})")
+                        }
                     } catch (e: Exception) {
-                        android.util.Log.e("GameManagementScreen", "❌ Error creando categoría: ${e.message}")
+                        android.util.Log.e("GameManagementScreen", "❌ Error con categoría ${categoria.nombre}: ${e.message}")
                     }
-                } else {
-                    android.util.Log.d("GameManagementScreen", "ℹ️ Categoría ya existe")
                 }
                 
-                // Verificar si género ID 1 existe, si no, crear uno
-                val generoExiste = try {
-                    db.generoDao().getById(1L) != null
-                } catch (e: Exception) {
-                    false
-                }
+                // Crear los 5 géneros necesarios
+                val generosSeed = listOf(
+                    GeneroEntity(nombre = "Plataformas", descripcion = "Juegos de salto y plataformas"),
+                    GeneroEntity(nombre = "Shooter", descripcion = "Juegos de disparos"),
+                    GeneroEntity(nombre = "Racing", descripcion = "Carreras y velocidad"),
+                    GeneroEntity(nombre = "Puzzle", descripcion = "Rompecabezas y lógica"),
+                    GeneroEntity(nombre = "MMORPG", descripcion = "Juegos masivos en línea")
+                )
                 
-                if (!generoExiste) {
-                    val genero = GeneroEntity(
-                        nombre = "Acción",
-                        descripcion = "Juegos de acción y aventura"
-                    )
+                generosSeed.forEachIndexed { index, genero ->
                     try {
-                        val genId = db.generoDao().insert(genero)
-                        android.util.Log.d("GameManagementScreen", "✅ Género creado con ID: $genId")
+                        val existing = db.generoDao().getById((index + 1).toLong())
+                        if (existing == null) {
+                            val genId = db.generoDao().insert(genero)
+                            android.util.Log.d("GameManagementScreen", "✅ Género ${genero.nombre} creado con ID: $genId")
+                        } else {
+                            android.util.Log.d("GameManagementScreen", "ℹ️ Género ${genero.nombre} ya existe (ID: ${existing.id})")
+                        }
                     } catch (e: Exception) {
-                        android.util.Log.e("GameManagementScreen", "❌ Error creando género: ${e.message}")
+                        android.util.Log.e("GameManagementScreen", "❌ Error con género ${genero.nombre}: ${e.message}")
                     }
-                } else {
-                    android.util.Log.d("GameManagementScreen", "ℹ️ Género ya existe")
                 }
+                
+                android.util.Log.d("GameManagementScreen", "✅ Categorías y géneros verificados/creados")
                 
             } catch (e: Exception) {
-                android.util.Log.e("GameManagementScreen", "❌ Error creando categorías/géneros: ${e.message}")
+                android.util.Log.e("GameManagementScreen", "❌ Error creando categorías/géneros: ${e.message}", e)
             }
             
             // Eliminar juegos existentes si los hay
@@ -110,27 +114,72 @@ fun GameManagementScreen(navController: NavHostController) {
                 android.util.Log.e("GameManagementScreen", "❌ Error eliminando juegos previos: ${e.message}")
             }
             
-            android.util.Log.d("GameManagementScreen", "💾 INSERTANDO CATÁLOGO COMPLETO...")
+            android.util.Log.d("GameManagementScreen", "💾 INSERTANDO CATÁLOGO COMPLETO DE JUEGOS PARA PC...")
             
+            // Obtener IDs reales de categorías por nombre
+            val categoriaAccion = db.categoriaDao().getByNombre("Acción")
+            val categoriaAventura = db.categoriaDao().getByNombre("Aventura")
+            val categoriaRPG = db.categoriaDao().getByNombre("RPG")
+            val categoriaDeportes = db.categoriaDao().getByNombre("Deportes")
+            val categoriaEstrategia = db.categoriaDao().getByNombre("Estrategia")
+            
+            val categoriasMap = mapOf(
+                1L to (categoriaAccion?.id ?: 1L),
+                2L to (categoriaAventura?.id ?: 2L),
+                3L to (categoriaRPG?.id ?: 3L),
+                4L to (categoriaDeportes?.id ?: 4L),
+                5L to (categoriaEstrategia?.id ?: 5L)
+            )
+            
+            android.util.Log.d("GameManagementScreen", "📁 IDs de categorías:")
+            categoriasMap.forEach { (expected, real) ->
+                val nombre = when(expected) {
+                    1L -> "Acción"
+                    2L -> "Aventura"
+                    3L -> "RPG"
+                    4L -> "Deportes"
+                    5L -> "Estrategia"
+                    else -> "Desconocida"
+                }
+                android.util.Log.d("GameManagementScreen", "  $nombre: ID=$real")
+            }
+            
+            // Juegos para PC: 2 por cada una de las 5 categorías (10 juegos totales)
             val juegosSeed = listOf(
-                JuegoEntity(id = 0, nombre = "Super Mario Bros", precio = 29.99, imagenUrl = null, descripcion = "El clásico juego de plataformas de Nintendo", stock = 15, desarrollador = "Nintendo", fechaLanzamiento = "1985", categoriaId = 1, generoId = 1),
-                JuegoEntity(id = 0, nombre = "The Legend of Zelda", precio = 39.99, imagenUrl = null, descripcion = "Épica aventura en el reino de Hyrule", stock = 8, desarrollador = "Nintendo", fechaLanzamiento = "1986", categoriaId = 1, generoId = 1),
-                JuegoEntity(id = 0, nombre = "Minecraft", precio = 26.99, imagenUrl = null, descripcion = "Construye y explora mundos infinitos", stock = 25, desarrollador = "Mojang", fechaLanzamiento = "2011", categoriaId = 1, generoId = 1),
-                JuegoEntity(id = 0, nombre = "Call of Duty", precio = 59.99, imagenUrl = null, descripcion = "Acción militar intensa", stock = 12, desarrollador = "Activision", fechaLanzamiento = "2019", categoriaId = 1, generoId = 1),
-                JuegoEntity(id = 0, nombre = "FIFA 24", precio = 69.99, imagenUrl = null, descripcion = "El mejor simulador de fútbol", stock = 18, desarrollador = "EA Sports", fechaLanzamiento = "2023", categoriaId = 1, generoId = 1),
-                JuegoEntity(id = 0, nombre = "Pokémon Red", precio = 24.99, imagenUrl = null, descripcion = "Conviértete en maestro Pokémon", stock = 20, desarrollador = "Game Freak", fechaLanzamiento = "1996", categoriaId = 1, generoId = 1),
-                JuegoEntity(id = 0, nombre = "The Witcher 3", precio = 39.99, imagenUrl = null, descripcion = "Aventura épica de Geralt de Rivia", stock = 6, desarrollador = "CD Projekt RED", fechaLanzamiento = "2015", categoriaId = 1, generoId = 1),
-                JuegoEntity(id = 0, nombre = "Grand Theft Auto V", precio = 29.99, imagenUrl = null, descripcion = "Mundo abierto criminal", stock = 22, desarrollador = "Rockstar Games", fechaLanzamiento = "2013", categoriaId = 1, generoId = 1)
+                // Categoría 1: Acción (2 juegos para PC)
+                JuegoEntity(id = 0, nombre = "Doom Eternal", precio = 59.99, imagenUrl = null, descripcion = "Plataforma: PC. El infierno ha invadido la Tierra. Conviértete en el Slayer y destruye demonios con un arsenal devastador. Combate rápido y brutal, gráficos impresionantes y una banda sonora épica. La experiencia definitiva de acción en primera persona para PC.", stock = 12, desarrollador = "id Software", fechaLanzamiento = "2020", categoriaId = 1, generoId = 2, activo = true, descuento = 20),
+                JuegoEntity(id = 0, nombre = "Counter-Strike 2 - Prime", precio = 14.99, imagenUrl = null, descripcion = "Plataforma: PC. Licencia Prime de Counter-Strike 2. El shooter táctico más competitivo del mundo con acceso a servidores Prime, matchmaking mejorado, drops de cajas exclusivas y protección contra cheaters. Combate 5v5 por rondas con mecánicas de precisión milimétrica. Gráficos mejorados con Source 2 y servidores de 128-tick.", stock = 50, desarrollador = "Valve", fechaLanzamiento = "2023", categoriaId = 1, generoId = 2, activo = true, descuento = 0),
+                // Categoría 2: Aventura (2 juegos para PC)
+                JuegoEntity(id = 0, nombre = "The Witcher 3: Wild Hunt", precio = 39.99, imagenUrl = null, descripcion = "Plataforma: PC. Acompaña a Geralt de Rivia en una aventura épica de mundo abierto. Explora un continente masivo, toma decisiones que moldean el destino y lucha contra monstruos en combate dinámico. La experiencia definitiva de RPG de acción para PC con mods y gráficos mejorados.", stock = 15, desarrollador = "CD Projekt RED", fechaLanzamiento = "2015", categoriaId = 2, generoId = 2, activo = true, descuento = 30),
+                JuegoEntity(id = 0, nombre = "Cyberpunk 2077", precio = 49.99, imagenUrl = null, descripcion = "Plataforma: PC. Sumérgete en Night City, una metrópolis futurista llena de peligro y oportunidades. Personaliza tu personaje, elige tu estilo de juego y vive una historia cinematográfica con decisiones que importan. Optimizado para PC con ray tracing y gráficos de última generación.", stock = 10, desarrollador = "CD Projekt RED", fechaLanzamiento = "2020", categoriaId = 2, generoId = 2, activo = true, descuento = 25),
+                // Categoría 3: RPG (2 juegos para PC)
+                JuegoEntity(id = 0, nombre = "Baldur's Gate 3", precio = 59.99, imagenUrl = null, descripcion = "Plataforma: PC. El RPG definitivo con combate por turnos basado en D&D 5ª edición. Explora un mundo rico, forma tu propio grupo de aventureros y toma decisiones que cambian el curso de la historia. Múltiples finales, romances y más de 174 horas de contenido. Experiencia completa para PC.", stock = 8, desarrollador = "Larian Studios", fechaLanzamiento = "2023", categoriaId = 3, generoId = 3, activo = true, descuento = 0),
+                JuegoEntity(id = 0, nombre = "Divinity: Original Sin 2", precio = 44.99, imagenUrl = null, descripcion = "Plataforma: PC. Un RPG táctico de mundo abierto con combate estratégico por turnos. Crea tu propio héroe, forma un grupo de hasta 4 personajes y explora Rivellon. Sistema de combate innovador, narrativa profunda y mods de la comunidad. La experiencia RPG definitiva para PC.", stock = 11, desarrollador = "Larian Studios", fechaLanzamiento = "2017", categoriaId = 3, generoId = 3, activo = true, descuento = 15),
+                // Categoría 4: Deportes (2 juegos para PC)
+                JuegoEntity(id = 0, nombre = "FIFA 26 - Gold Edition", precio = 89.99, imagenUrl = null, descripcion = "Plataforma: PC. Edición Gold de FIFA 26. La experiencia de fútbol más completa y realista. Incluye el juego base, Ultimate Team con 4600 FIFA Points, acceso anticipado de 3 días, y contenido exclusivo. Juega con los mejores equipos y jugadores del mundo, incluyendo la UEFA Champions League y la Liga Femenina. Modo Carrera mejorado y gráficos de última generación.", stock = 18, desarrollador = "EA Sports", fechaLanzamiento = "2025", categoriaId = 4, generoId = 4, activo = true, descuento = 15),
+                JuegoEntity(id = 0, nombre = "Football Manager 2024", precio = 54.99, imagenUrl = null, descripcion = "Plataforma: PC. La simulación de gestión futbolística más profunda y realista. Toma el control de cualquier club, gestiona tácticas, transferencias y desarrollo de jugadores. Base de datos con más de 800,000 jugadores y personal real. La experiencia definitiva de gestión para PC.", stock = 14, desarrollador = "Sports Interactive", fechaLanzamiento = "2023", categoriaId = 4, generoId = 4, activo = true, descuento = 10),
+                // Categoría 5: Estrategia (2 juegos para PC)
+                JuegoEntity(id = 0, nombre = "Total War: Warhammer III", precio = 59.99, imagenUrl = null, descripcion = "Plataforma: PC. Combina la estrategia épica de Total War con el mundo de Warhammer. Comanda ejércitos masivos en batallas tácticas, gestiona imperios y conquista el mundo. Múltiples facciones, campañas épicas y combate espectacular. La experiencia de estrategia definitiva para PC.", stock = 9, desarrollador = "Creative Assembly", fechaLanzamiento = "2022", categoriaId = 5, generoId = 5, activo = true, descuento = 0),
+                JuegoEntity(id = 0, nombre = "Crusader Kings III", precio = 49.99, imagenUrl = null, descripcion = "Plataforma: PC. Gestiona tu dinastía medieval a través de generaciones. Toma decisiones políticas, militares y diplomáticas que moldean la historia. Sistema de personajes complejo, intrigas cortesanas y expansión territorial. El juego de estrategia y simulación más profundo para PC.", stock = 7, desarrollador = "Paradox Development Studio", fechaLanzamiento = "2020", categoriaId = 5, generoId = 5, activo = true, descuento = 20)
             )
             
             var insertedCount = 0
             juegosSeed.forEach { juego ->
                 try {
-                    val id = db.juegoDao().insert(juego)
+                    // Obtener el ID real de la categoría
+                    val categoriaIdReal = categoriasMap[juego.categoriaId] ?: juego.categoriaId
+                    
+                    // Crear juego con el ID real de categoría y activo
+                    val juegoConCategoriaCorrecta = juego.copy(
+                        categoriaId = categoriaIdReal,
+                        activo = true
+                    )
+                    
+                    val id = db.juegoDao().insert(juegoConCategoriaCorrecta)
                     insertedCount++
-                    android.util.Log.d("GameManagementScreen", "✅ [$insertedCount] ${juego.nombre} insertado con ID: $id")
+                    android.util.Log.d("GameManagementScreen", "✅ [$insertedCount] ${juego.nombre} insertado con ID: $id, categoriaId: $categoriaIdReal")
                 } catch (e: Exception) {
-                    android.util.Log.e("GameManagementScreen", "❌ Error insertando ${juego.nombre}: ${e.message}")
+                    android.util.Log.e("GameManagementScreen", "❌ Error insertando ${juego.nombre}: ${e.message}", e)
                 }
             }
             

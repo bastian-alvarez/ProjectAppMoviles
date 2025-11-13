@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.uinavegacion.navigation.*
@@ -45,6 +46,7 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     val windowInfo = rememberWindowInfo()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val errorMessage by cartViewModel.errorMessage.collectAsState()
     val successMessage by cartViewModel.successMessage.collectAsState()
     
@@ -116,18 +118,35 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                     windowInfo = windowInfo,
                     onNavigateToGames = { nav.navigate(Route.Games.build()) },
                     onCompletePurchase = { 
-                        // Añadir juegos comprados a la biblioteca
-                        libraryViewModel.addPurchasedGames(cartItems)
-                        // Limpiar el carrito
-                        cartViewModel.clearCart()
-                        
-                        // Usar un pequeño delay antes de navegar para asegurar que la BD se actualice
-                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                            kotlinx.coroutines.delay(200) // 200ms para que se complete la inserción en BD
-                            // Forzar actualización inmediata de la biblioteca
-                            libraryViewModel.forceRefresh()
-                            kotlinx.coroutines.delay(100) // 100ms adicionales para la recarga
-                            nav.navigate(Route.Library.path) // Navegar a la biblioteca
+                        // PRIMERO: Actualizar el stock de los juegos comprados
+                        cartViewModel.checkout(context) { success, message ->
+                            if (success) {
+                                // Si el checkout fue exitoso, agregar a la biblioteca
+                                libraryViewModel.addPurchasedGames(cartItems)
+                                
+                                // Mostrar mensaje de éxito
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message ?: "Compra realizada exitosamente",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                                
+                                // Navegar a la biblioteca después de un pequeño delay
+                                scope.launch {
+                                    delay(500)
+                                    libraryViewModel.forceRefresh()
+                                    nav.navigate(Route.Library.path)
+                                }
+                            } else {
+                                // Mostrar error si el checkout falló
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message ?: "Error al procesar la compra",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                }
+                            }
                         }
                     },
                     modifier = Modifier
@@ -150,18 +169,35 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                         windowInfo = windowInfo,
                         onNavigateToGames = { nav.navigate(Route.Games.build()) },
                         onCompletePurchase = { 
-                            // Añadir juegos comprados a la biblioteca
-                            libraryViewModel.addPurchasedGames(cartItems)
-                            // Limpiar el carrito
-                            cartViewModel.clearCart()
-                            
-                            // Usar un pequeño delay antes de navegar para asegurar que la BD se actualice
-                            CoroutineScope(Dispatchers.Main).launch {
-                                delay(200) // 200ms para que se complete la inserción en BD
-                                // Forzar actualización inmediata de la biblioteca
-                                libraryViewModel.forceRefresh()
-                                delay(100) // 100ms adicionales para la recarga
-                                nav.navigate(Route.Library.path) // Navegar a la biblioteca
+                            // PRIMERO: Actualizar el stock de los juegos comprados
+                            cartViewModel.checkout(context) { success, message ->
+                                if (success) {
+                                    // Si el checkout fue exitoso, agregar a la biblioteca
+                                    libraryViewModel.addPurchasedGames(cartItems)
+                                    
+                                    // Mostrar mensaje de éxito
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message ?: "Compra realizada exitosamente",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                    
+                                    // Navegar a la biblioteca después de un pequeño delay
+                                    scope.launch {
+                                        delay(500)
+                                        libraryViewModel.forceRefresh()
+                                        nav.navigate(Route.Library.path)
+                                    }
+                                } else {
+                                    // Mostrar error si el checkout falló
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message ?: "Error al procesar la compra",
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                }
                             }
                         },
                         modifier = Modifier
@@ -560,42 +596,58 @@ private fun TabletCartItem(
 
             Spacer(Modifier.width(20.dp))
 
-            // Controles de cantidad más grandes
+            // Controles de cantidad mejorados
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Controles de cantidad
+                // Controles de cantidad con mejor diseño
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(16.dp)
+                        )
+                        .padding(6.dp)
                 ) {
-                    AnimatedIconButton(
+                    // Botón menos
+                    IconButton(
                         onClick = { 
                             if (item.quantity > 1) {
                                 cartViewModel.updateQuantity(item.id, item.quantity - 1)
                             }
                         },
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(48.dp)
                             .background(
-                                MaterialTheme.colorScheme.secondaryContainer,
+                                if (item.quantity > 1) 
+                                    MaterialTheme.colorScheme.primaryContainer 
+                                else 
+                                    MaterialTheme.colorScheme.surfaceVariant,
                                 RoundedCornerShape(12.dp)
-                            )
+                            ),
+                        enabled = item.quantity > 1
                     ) {
                         Icon(
                             Icons.Default.Remove,
                             contentDescription = "Disminuir cantidad",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(24.dp)
+                            tint = if (item.quantity > 1) 
+                                MaterialTheme.colorScheme.onPrimaryContainer 
+                            else 
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                     
+                    // Cantidad
                     Card(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(56.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -603,27 +655,31 @@ private fun TabletCartItem(
                         ) {
                             Text(
                                 text = "${item.quantity}",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
                     
-                    AnimatedIconButton(
-                        onClick = { cartViewModel.updateQuantity(item.id, item.quantity + 1) },
+                    // Botón más
+                    IconButton(
+                        onClick = { 
+                            cartViewModel.updateQuantity(item.id, item.quantity + 1) 
+                        },
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(48.dp)
                             .background(
-                                MaterialTheme.colorScheme.secondaryContainer,
+                                MaterialTheme.colorScheme.primaryContainer,
                                 RoundedCornerShape(12.dp)
-                            )
+                            ),
+                        enabled = item.quantity < item.maxStock
                     ) {
                         Icon(
                             Icons.Default.Add,
                             contentDescription = "Aumentar cantidad",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(24.dp)
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
@@ -744,81 +800,98 @@ private fun MobileCartItem(
                         MaterialTheme.colorScheme.primary
                 )
                 
-                // Controles de cantidad y eliminar
+                // Controles de cantidad mejorados
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Controles de cantidad
+                    // Controles de cantidad con mejor diseño
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(4.dp)
                     ) {
-                        // Botón menos
-                        FilledIconButton(
+                        // Botón menos - mejorado
+                        IconButton(
                             onClick = { 
                                 if (item.quantity > 1) {
                                     cartViewModel.updateQuantity(item.id, item.quantity - 1)
                                 }
                             },
-                            modifier = Modifier.size(32.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            )
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    if (item.quantity > 1) 
+                                        MaterialTheme.colorScheme.primaryContainer 
+                                    else 
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(8.dp)
+                                ),
+                            enabled = item.quantity > 1
                         ) {
                             Icon(
                                 Icons.Default.Remove,
                                 contentDescription = "Disminuir",
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(20.dp),
+                                tint = if (item.quantity > 1) 
+                                    MaterialTheme.colorScheme.onPrimaryContainer 
+                                else 
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         }
                         
-                        // Cantidad
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "${item.quantity}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                            )
-                        }
+                        // Cantidad - mejorada
+                        Text(
+                            text = "${item.quantity}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
                         
-                        // Botón más
-                        FilledIconButton(
+                        // Botón más - mejorado
+                        IconButton(
                             onClick = { 
                                 cartViewModel.updateQuantity(item.id, item.quantity + 1) 
                             },
-                            modifier = Modifier.size(32.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            )
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                    RoundedCornerShape(8.dp)
+                                ),
+                            enabled = item.quantity < item.maxStock
                         ) {
                             Icon(
                                 Icons.Default.Add,
                                 contentDescription = "Aumentar",
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
                     
-                    // Botón eliminar
-                    FilledIconButton(
+                    // Botón eliminar mejorado
+                    IconButton(
                         onClick = { cartViewModel.removeGame(item.id) },
-                        modifier = Modifier.size(36.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                MaterialTheme.colorScheme.errorContainer,
+                                RoundedCornerShape(10.dp)
+                            )
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Eliminar",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }

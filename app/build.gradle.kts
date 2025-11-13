@@ -79,4 +79,12 @@ dependencies {
     
     // Activity Compose para window info
     implementation("androidx.activity:activity-compose:1.9.3")
+    
+    // Retrofit para consumo de APIs REST
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    
+    // OkHttp para HTTP y logging
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

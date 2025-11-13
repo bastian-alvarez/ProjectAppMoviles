@@ -342,6 +342,7 @@ private fun AdaptiveScaffold(
                 composable(Route.AdminDashboard.path) { AdminDashboardScreen(navController) }
                 composable(Route.AdminGames.path) { GameManagementScreen(navController) }
                 composable(Route.AdminUsers.path) { UserManagementScreen(navController) }
+                composable(Route.Moderation.path) { ModerationScreen(navController) }
 
                 // ===== Estados / Errores =====
                 composable(Route.NoConnection.path) { NoConnectionScreen(navController) }

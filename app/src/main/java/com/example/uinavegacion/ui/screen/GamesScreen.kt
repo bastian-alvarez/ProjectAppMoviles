@@ -3,6 +3,7 @@ package com.example.uinavegacion.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -97,7 +98,12 @@ fun GamesScreen(
     val allGames = catalogGames.map { it.toGame() }
     val query by searchViewModel.query.collectAsState()
     
-    val availableCategories = catalogCategories.ifEmpty { listOf("General") }
+    // Filtrar categorías para eliminar duplicados y valores no deseados
+    val availableCategories = catalogCategories
+        .filter { it.isNotBlank() && it != "General" && it != "Videojuegos" }
+        .distinct()
+        .sorted()
+    
     val categories = listOf("Todos") + availableCategories
     var selectedCategory by remember { mutableStateOf(initialCategory ?: "Todos") }
 
@@ -432,7 +438,19 @@ private fun GameListItem(
     val cartItems by cartViewModel.items.collectAsState()
     val currentQuantity = cartItems.find { it.id == game.id }?.quantity ?: 0
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) { 
+                android.util.Log.d("GamesScreen", "🔄 Navegando a detalle desde CARD: ${game.id}")
+                try {
+                    nav.navigate(Route.GameDetail.build(game.id))
+                } catch (e: Exception) {
+                    android.util.Log.e("GamesScreen", "❌ Error navegando: ${e.message}", e)
+                }
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -441,8 +459,7 @@ private fun GameListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(if (windowInfo.isTablet) 20.dp else 12.dp)
-                .clickable { nav.navigate(Route.GameDetail.build(game.id)) },
+                .padding(if (windowInfo.isTablet) 20.dp else 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen del juego con AsyncImage
@@ -570,10 +587,11 @@ private fun GameListItem(
                 }
             }
 
-            // Botón de acción optimizado
-            val canAddMore = game.stock > currentQuantity && cartViewModel.getTotalItems() < com.example.uinavegacion.viewmodel.CartViewModel.MAX_LICENSES_PER_PURCHASE
+            // Botón de acción optimizado - con stopPropagation
+            val canAddMore = game.stock > currentQuantity
             Button(
                 onClick = {
+                    // Este onClick detiene la propagación automáticamente
                     if (canAddMore) {
                         cartViewModel.addGame(
                             id = game.id,
@@ -586,10 +604,10 @@ private fun GameListItem(
                         )
                     }
                 },
-                enabled = canAddMore,
                 modifier = Modifier
                     .height(if (windowInfo.isTablet) 56.dp else 40.dp)
                     .widthIn(min = if (windowInfo.isTablet) 200.dp else 100.dp),
+                enabled = canAddMore,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (cartViewModel.isInCart(game.id)) 
                         MaterialTheme.colorScheme.secondary 
@@ -613,6 +631,7 @@ private fun GameListItem(
                         Spacer(Modifier.height(4.dp))
                         Text(
                             when {
+                                game.stock <= 0 -> "Agotado"
                                 game.stock <= currentQuantity -> "Sin stock"
                                 currentQuantity > 0 -> "Agregar"
                                 else -> "Agregar"
@@ -648,16 +667,25 @@ private fun GameGridItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(0.75f), // Proporción 3:4 para las cards
+            .aspectRatio(0.75f) // Proporción 3:4 para las cards
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) { 
+                android.util.Log.d("GamesScreen", "🔄 Navegando a detalle desde GRID CARD: ${game.id}")
+                try {
+                    nav.navigate(Route.GameDetail.build(game.id))
+                } catch (e: Exception) {
+                    android.util.Log.e("GamesScreen", "❌ Error navegando: ${e.message}", e)
+                }
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable { nav.navigate(Route.GameDetail.build(game.id)) }
+            modifier = Modifier.fillMaxSize()
         ) {
             // Imagen del juego con AsyncImage
             Box(
@@ -740,7 +768,7 @@ private fun GameGridItem(
                 }
                 
                 // Botón de acción compacto con icono
-                val canAddMore = game.stock > currentQuantity && cartViewModel.getTotalItems() < com.example.uinavegacion.viewmodel.CartViewModel.MAX_LICENSES_PER_PURCHASE
+                val canAddMore = game.stock > currentQuantity
                 Button(
                     onClick = {
                         if (canAddMore) {
