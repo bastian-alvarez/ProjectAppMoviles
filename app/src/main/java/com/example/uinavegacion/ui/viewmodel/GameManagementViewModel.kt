@@ -8,6 +8,8 @@ import com.example.uinavegacion.data.repository.GameRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 /**
@@ -35,7 +37,7 @@ class GameManagementViewModel(
     
     init {
         android.util.Log.d("GameManagementVM", "🚀 INIT - Cargando juegos desde la base de datos")
-        refreshGames()
+        observeGames()
     }
     
     
@@ -67,16 +69,19 @@ class GameManagementViewModel(
 
                 if (nombre.isBlank()) {
                     _error.value = "El nombre del juego es obligatorio"
+                    _isLoading.value = false
                     return@launch
                 }
 
                 if (precio <= 0) {
                     _error.value = "El precio debe ser mayor a 0"
+                    _isLoading.value = false
                     return@launch
                 }
 
-                if (stock < 0) {
-                    _error.value = "El stock no puede ser negativo"
+                if (stock <= 0) {
+                    _error.value = "El stock debe ser mayor a 0"
+                    _isLoading.value = false
                     return@launch
                 }
 
@@ -98,7 +103,6 @@ class GameManagementViewModel(
                     val newId = result.getOrNull() ?: 0L
                     Log.d("GameManagementVM", "✅ Juego agregado exitosamente con ID: $newId")
                     _successMessage.value = "✅ Juego '$nombre' agregado correctamente"
-                    _games.value = gameRepository.getAllGames(includeInactive = true)
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
                     Log.e("GameManagementVM", "❌ Error al agregar juego: $errorMsg")
@@ -123,11 +127,16 @@ class GameManagementViewModel(
                 _isLoading.value = true
                 _error.value = null
 
+                if (game.stock <= 0) {
+                    _error.value = "El stock debe ser mayor a 0"
+                    _isLoading.value = false
+                    return@launch
+                }
+
                 val result = gameRepository.updateGame(game)
                 if (result.isSuccess) {
                     Log.d("GameManagementVM", "✅ Juego actualizado en BD: ${game.nombre}")
                     _successMessage.value = "✅ Juego '${game.nombre}' actualizado correctamente"
-                    _games.value = gameRepository.getAllGames(includeInactive = true)
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
                     Log.e("GameManagementVM", "❌ Error actualizando juego: $errorMsg")
@@ -156,7 +165,6 @@ class GameManagementViewModel(
                 if (result.isSuccess) {
                     Log.d("GameManagementVM", "✅ Juego eliminado de BD: $gameName")
                     _successMessage.value = "🗑️ Juego '$gameName' eliminado correctamente"
-                    _games.value = gameRepository.getAllGames(includeInactive = true)
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: "Error desconocido"
                     Log.e("GameManagementVM", "❌ Error eliminando juego: $errorMsg")
@@ -203,10 +211,9 @@ class GameManagementViewModel(
         viewModelScope.launch {
             try {
                 android.util.Log.d("GameManagementVM", "🔄 REFRESH - Recargando juegos desde BD")
-                _isLoading.value = true
                 _error.value = null
-                val gamesList = gameRepository.getAllGames(includeInactive = true) // Incluir inactivos para admin
-                android.util.Log.d("GameManagementVM", "🎮 Juegos obtenidos: ${'$'}{gamesList.size}")
+                val gamesList = gameRepository.getAllGames(includeInactive = true)
+                android.util.Log.d("GameManagementVM", "🎮 Juegos obtenidos: ${gamesList.size}")
                 _games.value = gamesList
             } catch (e: Exception) {
                 android.util.Log.e("GameManagementVM", "❌ Error al cargar juegos", e)
@@ -219,7 +226,6 @@ class GameManagementViewModel(
     }
     
     
-
     /**
      * Limpiar mensajes
      */
@@ -257,6 +263,24 @@ class GameManagementViewModel(
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    private fun observeGames() {
+        viewModelScope.launch {
+            gameRepository.observeAllGames(includeInactive = true)
+                .onStart { _isLoading.value = true }
+                .catch { e ->
+                    Log.e("GameManagementVM", "💥 Error observando juegos", e)
+                    _error.value = "Error al observar juegos: ${e.message}"
+                    _games.value = emptyList()
+                    _isLoading.value = false
+                }
+                .collect { gamesList ->
+                    android.util.Log.d("GameManagementVM", "📡 Observación de juegos → ${gamesList.size} registros")
+                    _games.value = gamesList
+                    _isLoading.value = false
+                }
         }
     }
 }

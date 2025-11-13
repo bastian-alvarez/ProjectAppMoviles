@@ -1,6 +1,7 @@
 package com.example.uinavegacion.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
@@ -435,13 +436,13 @@ private fun GameListItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        ),
-        onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(if (windowInfo.isTablet) 20.dp else 12.dp),
+                .padding(if (windowInfo.isTablet) 20.dp else 12.dp)
+                .clickable { nav.navigate(Route.GameDetail.build(game.id)) },
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen del juego con AsyncImage
@@ -651,11 +652,12 @@ private fun GameGridItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        ),
-        onClick = { nav.navigate(Route.GameDetail.build(game.id)) }
+        )
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable { nav.navigate(Route.GameDetail.build(game.id)) }
         ) {
             // Imagen del juego con AsyncImage
             Box(

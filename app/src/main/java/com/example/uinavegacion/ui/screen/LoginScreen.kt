@@ -62,7 +62,11 @@ fun LoginScreenVm(
         // Navegar según el tipo de usuario resuelto en el ViewModel
         if (state.isAdmin) {
             Log.d("LoginScreen", "🔑 Navegando a AdminDashboard")
-            navController.navigate(Route.AdminDashboard.path)
+            navController.navigate(Route.AdminDashboard.path) {
+                // Limpiar el historial de navegación para que el admin no pueda volver al login
+                popUpTo(Route.Login.path) { inclusive = true }
+                launchSingleTop = true
+            }
         } else {
             Log.d("LoginScreen", "🏠 Navegando a Home")
             onLoginOkNavigateHome()

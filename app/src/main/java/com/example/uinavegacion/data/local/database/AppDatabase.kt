@@ -1,6 +1,7 @@
 package com.example.uinavegacion.data.local.database
 
 import android.content.Context
+import android.database.sqlite.SQLiteException
 import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
@@ -52,7 +53,7 @@ import kotlinx.coroutines.runBlocking
         ,
         com.example.uinavegacion.data.local.library.LibraryEntity::class
     ],
-    version = 22, // Forzar recreación de BD para asegurar seeding correcto
+    version = 23, // Corregir esquema de juegos
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -300,11 +301,21 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_19_20 = object : Migration(19, 20) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 Log.d("AppDatabase", "MIGRATION 19->20: Agregando columna profilePhotoUri a admins...")
-                // Agregar columna profilePhotoUri (nullable)
-                database.execSQL(
-                    "ALTER TABLE admins ADD COLUMN profilePhotoUri TEXT"
-                )
-                Log.d("AppDatabase", "MIGRATION 19->20: Columna profilePhotoUri agregada correctamente")
+                try {
+                    // Agregar columna profilePhotoUri (nullable)
+                    database.execSQL(
+                        "ALTER TABLE admins ADD COLUMN profilePhotoUri TEXT"
+                    )
+                    Log.d("AppDatabase", "MIGRATION 19->20: Columna profilePhotoUri agregada correctamente")
+                } catch (e: SQLiteException) {
+                    // Si la columna ya existe, ignorar el error
+                    if (e.message?.contains("duplicate column name") == true) {
+                        Log.d("AppDatabase", "MIGRATION 19->20: La columna profilePhotoUri ya existe, omitiendo...")
+                    } else {
+                        // Si es otro error, relanzarlo
+                        throw e
+                    }
+                }
             }
         }
         
@@ -329,6 +340,116 @@ abstract class AppDatabase : RoomDatabase() {
                 Log.d("AppDatabase", "MIGRATION 21->22: Juegos eliminados, se insertarán en onCreate")
             }
         }
+        
+        // Migración de versión 22 a 23: Corregir esquema de tabla juegos
+        private val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                Log.d("AppDatabase", "MIGRATION 22->23: Corrigiendo esquema de tabla juegos...")
+                try {
+                    // Verificar si la tabla existe
+                    val cursor = database.query(
+                        "SELECT name FROM sqlite_master WHERE type='table' AND name='juegos'"
+                    )
+                    val tableExists = cursor.count > 0
+                    cursor.close()
+                    
+                    if (tableExists) {
+                        // Crear tabla temporal con el esquema correcto
+                        database.execSQL(
+                            """
+                            CREATE TABLE juegos_new (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                nombre TEXT NOT NULL,
+                                descripcion TEXT NOT NULL,
+                                precio REAL NOT NULL,
+                                stock INTEGER NOT NULL,
+                                imagenUrl TEXT,
+                                desarrollador TEXT NOT NULL DEFAULT 'Desarrollador',
+                                fechaLanzamiento TEXT NOT NULL DEFAULT '2024',
+                                categoriaId INTEGER NOT NULL DEFAULT 1,
+                                generoId INTEGER NOT NULL DEFAULT 1,
+                                activo INTEGER NOT NULL DEFAULT 1,
+                                descuento INTEGER NOT NULL DEFAULT 0,
+                                FOREIGN KEY(categoriaId) REFERENCES categorias(id) ON DELETE CASCADE,
+                                FOREIGN KEY(generoId) REFERENCES generos(id) ON DELETE CASCADE
+                            )
+                            """
+                        )
+                        
+                        // Intentar copiar datos existentes
+                        try {
+                            database.execSQL(
+                                """
+                                INSERT INTO juegos_new (id, nombre, descripcion, precio, stock, imagenUrl, desarrollador, fechaLanzamiento, categoriaId, generoId, activo, descuento)
+                                SELECT 
+                                    id,
+                                    nombre,
+                                    COALESCE(descripcion, '') as descripcion,
+                                    precio,
+                                    COALESCE(stock, 0) as stock,
+                                    imagenUrl,
+                                    COALESCE(desarrollador, 'Desarrollador') as desarrollador,
+                                    COALESCE(fechaLanzamiento, '2024') as fechaLanzamiento,
+                                    COALESCE(categoriaId, 1) as categoriaId,
+                                    COALESCE(generoId, 1) as generoId,
+                                    COALESCE(activo, 1) as activo,
+                                    COALESCE(descuento, 0) as descuento
+                                FROM juegos
+                                """
+                            )
+                            Log.d("AppDatabase", "MIGRATION 22->23: Datos copiados correctamente")
+                        } catch (e: SQLiteException) {
+                            Log.w("AppDatabase", "MIGRATION 22->23: No se pudieron copiar datos (esquema incompatible), continuando sin datos: ${e.message}")
+                        }
+                        
+                        // Eliminar tabla antigua
+                        database.execSQL("DROP TABLE juegos")
+                        
+                        // Renombrar tabla nueva
+                        database.execSQL("ALTER TABLE juegos_new RENAME TO juegos")
+                    } else {
+                        // Si la tabla no existe, crearla directamente
+                        database.execSQL(
+                            """
+                            CREATE TABLE juegos (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                nombre TEXT NOT NULL,
+                                descripcion TEXT NOT NULL,
+                                precio REAL NOT NULL,
+                                stock INTEGER NOT NULL,
+                                imagenUrl TEXT,
+                                desarrollador TEXT NOT NULL DEFAULT 'Desarrollador',
+                                fechaLanzamiento TEXT NOT NULL DEFAULT '2024',
+                                categoriaId INTEGER NOT NULL DEFAULT 1,
+                                generoId INTEGER NOT NULL DEFAULT 1,
+                                activo INTEGER NOT NULL DEFAULT 1,
+                                descuento INTEGER NOT NULL DEFAULT 0,
+                                FOREIGN KEY(categoriaId) REFERENCES categorias(id) ON DELETE CASCADE,
+                                FOREIGN KEY(generoId) REFERENCES generos(id) ON DELETE CASCADE
+                            )
+                            """
+                        )
+                        Log.d("AppDatabase", "MIGRATION 22->23: Tabla juegos creada (no existía previamente)")
+                    }
+                    
+                    // Recrear índices
+                    database.execSQL("CREATE INDEX IF NOT EXISTS index_juegos_categoriaId ON juegos(categoriaId)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS index_juegos_generoId ON juegos(generoId)")
+                    
+                    Log.d("AppDatabase", "MIGRATION 22->23: Esquema de juegos corregido correctamente")
+                } catch (e: SQLiteException) {
+                    Log.e("AppDatabase", "MIGRATION 22->23: Error corrigiendo esquema: ${e.message}", e)
+                    // Si falla, intentar solo eliminar y recrear (se perderán datos pero se reinsertarán en onCreate)
+                    try {
+                        database.execSQL("DROP TABLE IF EXISTS juegos")
+                        Log.d("AppDatabase", "MIGRATION 22->23: Tabla juegos eliminada, se recreará en onCreate")
+                    } catch (e2: SQLiteException) {
+                        Log.e("AppDatabase", "MIGRATION 22->23: Error eliminando tabla: ${e2.message}", e2)
+                        throw e2
+                    }
+                }
+            }
+        }
 
         @Volatile
         private var seedingContext: Context? = null
@@ -341,7 +462,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
                     .fallbackToDestructiveMigration() // Permite recrear la BD si hay problemas de migración
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

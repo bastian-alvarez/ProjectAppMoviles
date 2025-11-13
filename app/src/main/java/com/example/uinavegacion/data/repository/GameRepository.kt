@@ -104,9 +104,36 @@ class GameRepository(
     }
 
     suspend fun updateStock(id: Long, newStock: Int): Result<Unit> {
+        if (newStock < 0) {
+            return Result.failure(IllegalArgumentException("El stock no puede ser negativo"))
+        }
         return try {
             juegoDao.updateStock(id, newStock)
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun decreaseStock(id: Long, quantity: Int): Result<Int> {
+        if (quantity <= 0) {
+            return Result.failure(IllegalArgumentException("La cantidad a descontar debe ser mayor a 0"))
+        }
+        return try {
+            val game = juegoDao.getById(id)
+                ?: return Result.failure(IllegalStateException("Juego con id=$id no encontrado"))
+
+            if (!game.activo) {
+                return Result.failure(IllegalStateException("El juego ${game.nombre} ya no está disponible"))
+            }
+
+            if (game.stock < quantity) {
+                return Result.failure(IllegalStateException("Stock insuficiente para ${game.nombre}"))
+            }
+
+            val newStock = game.stock - quantity
+            juegoDao.updateStock(id, newStock)
+            Result.success(newStock)
         } catch (e: Exception) {
             Result.failure(e)
         }

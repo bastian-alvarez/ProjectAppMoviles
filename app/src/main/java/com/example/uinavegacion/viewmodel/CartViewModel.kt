@@ -172,30 +172,34 @@ class CartViewModel : ViewModel() {
                 val db = AppDatabase.getInstance(context.applicationContext)
                 val repository = GameRepository(db.juegoDao())
 
+                val updatedStocks = mutableListOf<Pair<String, Int>>()
+
                 currentItems.forEach { item ->
                     val gameId = item.id.toLongOrNull()
                         ?: throw IllegalArgumentException("ID de juego inválido")
-                    val game = repository.getGameById(gameId)
-                        ?: throw IllegalStateException("Juego no encontrado")
-
-                    if (!game.activo) {
-                        throw IllegalStateException("El juego ${game.nombre} ya no está disponible")
+                    val decreaseResult = repository.decreaseStock(gameId, item.quantity)
+                    if (decreaseResult.isFailure) {
+                        throw decreaseResult.exceptionOrNull()
+                            ?: IllegalStateException("No se pudo actualizar el stock del juego con id $gameId")
                     }
-
-                    if (game.stock < item.quantity) {
-                        throw IllegalStateException("Stock insuficiente para ${game.nombre}")
-                    }
-
-                    val updateResult = repository.updateStock(gameId, game.stock - item.quantity)
-                    if (updateResult.isFailure) {
-                        throw updateResult.exceptionOrNull()
-                            ?: IllegalStateException("No se pudo actualizar el stock de ${game.nombre}")
-                    }
+                    updatedStocks += item.name to (decreaseResult.getOrNull() ?: 0)
                 }
 
                 launch(Dispatchers.Main) {
                     clearCart()
-                    onResult(true, "Compra confirmada")
+                    onResult(
+                        true,
+                        if (updatedStocks.isEmpty()) {
+                            "Compra confirmada"
+                        } else {
+                            buildString {
+                                append("Compra confirmada. Stock actualizado:")
+                                updatedStocks.forEach { (name, stockRestante) ->
+                                    append("\n• $name → $stockRestante unidades restantes")
+                                }
+                            }
+                        }
+                    )
                 }
             } catch (e: Exception) {
                 launch(Dispatchers.Main) {

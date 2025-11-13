@@ -515,8 +515,9 @@ private fun AddEditGameDialog(
     
     // Validaciones en tiempo real
     val isNombreValid = nombre.isNotBlank()
+    val stockInt = stock.toIntOrNull()
     val isPrecioValid = precio.toDoubleOrNull()?.let { it > 0 } ?: false
-    val isStockValid = stock.toIntOrNull()?.let { it >= 0 } ?: false
+    val isStockValid = stockInt?.let { if (game == null) it > 0 else it >= 0 } ?: false
     val isFormValid = isNombreValid && isPrecioValid && isStockValid
     
     AlertDialog(
@@ -612,9 +613,19 @@ private fun AddEditGameDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     isError = !isStockValid && stock.isNotEmpty(),
-                    supportingText = if (!isStockValid && stock.isNotEmpty()) {
-                        { Text("El stock debe ser 0 o mayor", color = MaterialTheme.colorScheme.error) }
-                    } else null,
+                    supportingText = when {
+                        stock.isEmpty() -> null
+                        stockInt == null -> {
+                            { Text("Ingresa un número válido", color = MaterialTheme.colorScheme.error) }
+                        }
+                        game == null && stockInt <= 0 -> {
+                            { Text("El stock inicial debe ser mayor a 0", color = MaterialTheme.colorScheme.error) }
+                        }
+                        stockInt < 0 -> {
+                            { Text("El stock no puede ser negativo", color = MaterialTheme.colorScheme.error) }
+                        }
+                        else -> null
+                    },
                     leadingIcon = {
                         Icon(Icons.Default.Inventory, contentDescription = null)
                     },
