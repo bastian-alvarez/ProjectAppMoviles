@@ -3,9 +3,11 @@ package com.example.uinavegacion.data.repository
 import android.util.Log
 import com.example.uinavegacion.data.local.library.LibraryDao
 import com.example.uinavegacion.data.local.library.LibraryEntity
+import com.example.uinavegacion.data.remote.dto.AddToLibraryRequest
 import com.example.uinavegacion.data.remote.post.LicenciaRemoteDto
 import com.example.uinavegacion.data.remote.post.LibraryEntryRemoteDto
 import com.example.uinavegacion.data.remote.post.LibraryPostRepository
+import com.example.uinavegacion.data.remote.repository.LibraryRemoteRepository
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -13,7 +15,8 @@ import kotlinx.coroutines.flow.Flow
  */
 class LibraryRepository(
     private val libraryDao: LibraryDao,
-    private val remoteRepository: LibraryPostRepository = LibraryPostRepository.create()
+    private val remoteRepository: LibraryPostRepository = LibraryPostRepository.create(),
+    private val libraryRemoteRepository: LibraryRemoteRepository = LibraryRemoteRepository()
 ) {
     
     /**
@@ -73,17 +76,47 @@ class LibraryRepository(
                 licenseAssignedAt = assignedLicense?.asignadaEn
             )
             
-            Log.d("LibraryRepository", "Insertando juego en biblioteca: userId=$userId, juegoId=$juegoId, name=$name")
+            // 1. Guardar en base de datos LOCAL
+            Log.d("LibraryRepository", "Insertando juego en biblioteca LOCAL: userId=$userId, juegoId=$juegoId, name=$name")
             val insertedId = libraryDao.insert(entity)
-            Log.d("LibraryRepository", "✓ Juego $name (ID: $juegoId) agregado a biblioteca del usuario $userId con ID local $insertedId")
+            Log.d("LibraryRepository", "✓ Juego $name (ID: $juegoId) agregado a biblioteca LOCAL del usuario $userId con ID $insertedId")
             
-            // Verificar que se insertó correctamente
+            // Verificar que se insertó correctamente en LOCAL
             val verification = libraryDao.userOwnsGame(userId, juegoId)
             if (verification > 0) {
-                Log.d("LibraryRepository", "✓ Verificación exitosa: Usuario $userId ahora posee el juego $juegoId")
+                Log.d("LibraryRepository", "✓ Verificación LOCAL exitosa: Usuario $userId ahora posee el juego $juegoId")
             } else {
-                Log.e("LibraryRepository", "✗ ERROR: La verificación falló. El juego NO se guardó en la BD")
-                return Result.failure(Exception("Error al verificar la inserción del juego"))
+                Log.e("LibraryRepository", "✗ ERROR: La verificación LOCAL falló. El juego NO se guardó en la BD local")
+                return Result.failure(Exception("Error al verificar la inserción del juego en BD local"))
+            }
+            
+            // 2. Guardar en microservicio REMOTO (si hay información remota)
+            if (!remoteUserId.isNullOrBlank() && !remoteGameId.isNullOrBlank()) {
+                try {
+                    Log.d("LibraryRepository", "Agregando juego a biblioteca REMOTA: userId=$remoteUserId, gameId=$remoteGameId")
+                    val remoteRequest = AddToLibraryRequest(
+                        userId = remoteUserId,
+                        gameId = remoteGameId,
+                        name = name,
+                        price = price,
+                        dateAdded = dateAdded,
+                        status = status,
+                        genre = genre
+                    )
+                    val remoteResult = libraryRemoteRepository.addToLibrary(remoteRequest)
+                    
+                    if (remoteResult.isSuccess) {
+                        Log.d("LibraryRepository", "✓ Juego agregado exitosamente a biblioteca REMOTA")
+                    } else {
+                        Log.w("LibraryRepository", "⚠️ No se pudo agregar a biblioteca REMOTA: ${remoteResult.exceptionOrNull()?.message}")
+                        Log.w("LibraryRepository", "El juego se guardó en LOCAL pero no en REMOTO")
+                    }
+                } catch (e: Exception) {
+                    Log.w("LibraryRepository", "⚠️ Error al agregar a biblioteca REMOTA: ${e.message}", e)
+                    Log.w("LibraryRepository", "El juego se guardó en LOCAL pero no en REMOTO")
+                }
+            } else {
+                Log.w("LibraryRepository", "⚠️ No se proporcionó información remota. Solo se guardó en LOCAL")
             }
             
             Result.success(insertedId)

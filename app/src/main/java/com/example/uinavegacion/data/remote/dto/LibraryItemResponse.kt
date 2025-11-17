@@ -12,11 +12,12 @@ data class LibraryItemResponse(
 )
 
 data class AddToLibraryRequest(
-    val userId: Long,
-    val juegoId: String,
+    val userId: String,  // Cambiado a String para soportar IDs remotos
+    val gameId: String,  // Nombre consistente con el backend
     val name: String,
     val price: Double,
+    val dateAdded: String,  // Agregado para registrar fecha de compra
     val status: String = "Disponible",
-    val genre: String = "Acción"
+    val genre: String = "General"
 )
 
