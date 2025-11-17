@@ -111,5 +111,9 @@ interface UserDao{
     //obtener estado de bloqueo del usuario
     @Query("SELECT isBlocked FROM users WHERE id = :id")
     suspend fun isUserBlocked(id: Long): Boolean?
+    
+    //actualizar remoteId
+    @Query("UPDATE users SET remoteId = :remoteId WHERE id = :id")
+    suspend fun updateRemoteId(id: Long, remoteId: String)
 
 }

@@ -18,6 +18,9 @@ object SessionManager {
     private val _isLoggedIn = MutableLiveData<Boolean>()
     val isLoggedIn: LiveData<Boolean> = _isLoggedIn
     
+    // Token de autenticación
+    private var authToken: String? = null
+    
     fun loginUser(user: UserEntity) {
         _currentUser.value = user
         _currentAdmin.value = null
@@ -34,6 +37,20 @@ object SessionManager {
         _currentUser.value = null
         _currentAdmin.value = null
         _isLoggedIn.value = false
+        authToken = null
+    }
+    
+    // Métodos para manejar el token
+    fun saveToken(token: String) {
+        authToken = token
+    }
+    
+    fun getToken(): String? {
+        return authToken
+    }
+    
+    fun hasToken(): Boolean {
+        return !authToken.isNullOrBlank()
     }
     
     fun isAdmin(): Boolean {

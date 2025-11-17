@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -55,6 +56,7 @@ fun UserManagementScreen(navController: NavHostController) {
     // Estado para los diálogos de confirmación
     var showBlockDialog by remember { mutableStateOf(false) }
     var showUnblockDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     var selectedUser by remember { mutableStateOf<UserEntity?>(null) }
     
     Scaffold(
@@ -216,6 +218,10 @@ fun UserManagementScreen(navController: NavHostController) {
                                     } else {
                                         showBlockDialog = true
                                     }
+                                },
+                                onDelete = {
+                                    selectedUser = user
+                                    showDeleteDialog = true
                                 }
                             )
                         }
@@ -357,6 +363,65 @@ fun UserManagementScreen(navController: NavHostController) {
                 }
             )
         }
+        
+        // Diálogo de confirmación de ELIMINACIÓN
+        if (showDeleteDialog && selectedUser != null) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showDeleteDialog = false
+                    selectedUser = null
+                },
+                icon = {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(48.dp)
+                    )
+                },
+                title = { 
+                    Text(
+                        "Eliminar Usuario",
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
+                text = {
+                    Text(
+                        "¿Estás seguro de que deseas eliminar a ${selectedUser!!.name}?\n\n" +
+                        "⚠️ Esta acción es PERMANENTE y no se puede deshacer. " +
+                        "Se eliminarán todos los datos asociados al usuario."
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteUser(
+                                selectedUser!!.id,
+                                selectedUser!!.name
+                            )
+                            showDeleteDialog = false
+                            selectedUser = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Eliminar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { 
+                        showDeleteDialog = false
+                        selectedUser = null
+                    }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -398,7 +463,8 @@ private fun StatCard(
 @Composable
 private fun CompactUserItem(
     user: UserEntity,
-    onToggleBlock: () -> Unit
+    onToggleBlock: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -510,31 +576,57 @@ private fun CompactUserItem(
             
             Spacer(modifier = Modifier.width(8.dp))
             
-            // Botón de Bloquear/Desbloquear
-            Button(
-                onClick = onToggleBlock,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (user.isBlocked) 
-                        MaterialTheme.colorScheme.primary
-                    else 
-                        MaterialTheme.colorScheme.error,
-                    contentColor = if (user.isBlocked) 
-                        MaterialTheme.colorScheme.onPrimary
-                    else 
-                        MaterialTheme.colorScheme.onError
-                ),
-                modifier = Modifier.height(36.dp)
+            // Botones de acción
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(
-                    if (user.isBlocked) Icons.Default.CheckCircle else Icons.Default.Block,
-                    contentDescription = if (user.isBlocked) "Desbloquear" else "Bloquear",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    if (user.isBlocked) "Desbloquear" else "Bloquear",
-                    style = MaterialTheme.typography.labelMedium
-                )
+                // Botón de Bloquear/Desbloquear
+                Button(
+                    onClick = onToggleBlock,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (user.isBlocked) 
+                            MaterialTheme.colorScheme.primary
+                        else 
+                            MaterialTheme.colorScheme.error,
+                        contentColor = if (user.isBlocked) 
+                            MaterialTheme.colorScheme.onPrimary
+                        else 
+                            MaterialTheme.colorScheme.onError
+                    ),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Icon(
+                        if (user.isBlocked) Icons.Default.CheckCircle else Icons.Default.Block,
+                        contentDescription = if (user.isBlocked) "Desbloquear" else "Bloquear",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        if (user.isBlocked) "Desbloquear" else "Bloquear",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+                
+                // Botón de Eliminar
+                OutlinedButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Eliminar",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "Eliminar",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }

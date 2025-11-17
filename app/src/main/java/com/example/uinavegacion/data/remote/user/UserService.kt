@@ -1,6 +1,7 @@
 package com.example.uinavegacion.data.remote.user
 
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -41,6 +42,9 @@ interface UserService {
         @Path("id") id: String,
         @Query("bloquear") bloquear: Boolean
     ): UserResponse
+    
+    @DELETE("api/usuarios/{id}")
+    suspend fun deleteUser(@Path("id") id: String)
 }
 
 data class UserLoginRequest(

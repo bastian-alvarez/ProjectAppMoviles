@@ -1,6 +1,7 @@
 package com.example.uinavegacion.data.local.juego
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -95,4 +96,7 @@ interface JuegoDao {
     // Eliminar todos los juegos
     @Query("DELETE FROM juegos")
     suspend fun deleteAll()
+    
+    @Delete
+    suspend fun delete(juego: JuegoEntity)
 }

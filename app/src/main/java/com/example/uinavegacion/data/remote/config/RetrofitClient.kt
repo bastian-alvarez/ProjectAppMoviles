@@ -1,5 +1,6 @@
 package com.example.uinavegacion.data.remote.config
 
+import com.example.uinavegacion.data.remote.interceptor.AuthInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -11,7 +12,10 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
     
+    private val authInterceptor = AuthInterceptor()
+    
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(authInterceptor) // Agregar primero el interceptor de auth
         .addInterceptor(loggingInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)

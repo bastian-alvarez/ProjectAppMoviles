@@ -1,6 +1,7 @@
 package com.example.uinavegacion.data.repository
 
 import android.util.Log
+import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.data.local.user.UserDao
 import com.example.uinavegacion.data.local.user.UserEntity
 import com.example.uinavegacion.data.remote.repository.AuthRemoteRepository
@@ -25,6 +26,10 @@ class UserRepository(
                 val authResponse = remoteResult.getOrNull()!!
                 Log.d("UserRepository", "Login successful via microservice")
                 
+                // Guardar el token en SessionManager
+                SessionManager.saveToken(authResponse.token)
+                Log.d("UserRepository", "✓ Token guardado en SessionManager")
+                
                 // Sincronizar con la BD local
                 val userEntity = UserEntity(
                     id = authResponse.user.id,
@@ -34,7 +39,8 @@ class UserRepository(
                     password = password, // Guardamos el password localmente para cache
                     profilePhotoUri = authResponse.user.profilePhotoUri,
                     gender = authResponse.user.gender,
-                    isBlocked = authResponse.user.isBlocked
+                    isBlocked = authResponse.user.isBlocked,
+                    remoteId = authResponse.user.id.toString() // Guardar el remoteId
                 )
                 
                 // Guardar/actualizar en BD local
@@ -79,6 +85,10 @@ class UserRepository(
                 val authResponse = remoteResult.getOrNull()!!
                 Log.d("UserRepository", "Register successful via microservice")
                 
+                // Guardar el token en SessionManager
+                SessionManager.saveToken(authResponse.token)
+                Log.d("UserRepository", "✓ Token guardado en SessionManager")
+                
                 // Sincronizar con la BD local
                 val userEntity = UserEntity(
                     id = authResponse.user.id,
@@ -88,7 +98,8 @@ class UserRepository(
                     password = password,
                     profilePhotoUri = authResponse.user.profilePhotoUri,
                     gender = authResponse.user.gender,
-                    isBlocked = authResponse.user.isBlocked
+                    isBlocked = authResponse.user.isBlocked,
+                    remoteId = authResponse.user.id.toString() // Guardar el remoteId
                 )
                 
                 userDao.insert(userEntity)
@@ -223,18 +234,27 @@ class UserRepository(
                 return Result.failure(Exception("Usuario no encontrado"))
             }
             
-            // 1. Actualizar en microservicio si tiene remoteId
-            if (!user.remoteId.isNullOrBlank()) {
-                Log.d("UserRepository", "Bloqueando/desbloqueando usuario en microservicio: ${user.email}")
-                val remoteResult = userRemoteRepository.toggleBlock(user.remoteId, isBlocked)
+            // 1. Actualizar en microservicio
+            // Usar remoteId si existe, sino usar el ID local
+            val idToUse = if (!user.remoteId.isNullOrBlank()) {
+                user.remoteId
+            } else {
+                user.id.toString()
+            }
+            
+            Log.d("UserRepository", "Bloqueando/desbloqueando usuario en microservicio: ${user.email} (ID: $idToUse)")
+            val remoteResult = userRemoteRepository.toggleBlock(idToUse, isBlocked)
+            
+            if (remoteResult.isSuccess) {
+                Log.d("UserRepository", "✓ Usuario ${if (isBlocked) "bloqueado" else "desbloqueado"} en microservicio")
                 
-                if (remoteResult.isSuccess) {
-                    Log.d("UserRepository", "✓ Usuario ${if (isBlocked) "bloqueado" else "desbloqueado"} en microservicio")
-                } else {
-                    Log.w("UserRepository", "⚠️ No se pudo actualizar en microservicio: ${remoteResult.exceptionOrNull()?.message}")
+                // Si no tenía remoteId, guardarlo ahora
+                if (user.remoteId.isNullOrBlank()) {
+                    userDao.updateRemoteId(userId, idToUse)
+                    Log.d("UserRepository", "✓ RemoteId actualizado: $idToUse")
                 }
             } else {
-                Log.w("UserRepository", "⚠️ Usuario sin remoteId, solo se actualizará en BD local")
+                Log.w("UserRepository", "⚠️ No se pudo actualizar en microservicio: ${remoteResult.exceptionOrNull()?.message}")
             }
             
             // 2. Actualizar en BD local
@@ -251,6 +271,45 @@ class UserRepository(
     //verificar si un usuario está bloqueado
     suspend fun isUserBlocked(userId: Long): Boolean {
         return userDao.isUserBlocked(userId) ?: false
+    }
+    
+    /**
+     * Elimina un usuario del microservicio y BD local
+     */
+    suspend fun deleteUser(userId: Long): Result<Unit> {
+        return try {
+            val user = userDao.getById(userId)
+            if (user == null) {
+                return Result.failure(Exception("Usuario no encontrado"))
+            }
+            
+            // 1. Eliminar del microservicio
+            // Usar remoteId si existe, sino usar el ID local
+            val idToUse = if (!user.remoteId.isNullOrBlank()) {
+                user.remoteId
+            } else {
+                user.id.toString()
+            }
+            
+            Log.d("UserRepository", "Eliminando usuario del microservicio: ${user.email} (ID: $idToUse)")
+            val remoteResult = userRemoteRepository.deleteUser(idToUse)
+            
+            if (remoteResult.isSuccess) {
+                Log.d("UserRepository", "✓ Usuario eliminado del microservicio")
+            } else {
+                Log.w("UserRepository", "⚠️ No se pudo eliminar del microservicio: ${remoteResult.exceptionOrNull()?.message}")
+                // Continuar con eliminación local de todos modos
+            }
+            
+            // 2. Eliminar de BD local
+            userDao.delete(user.id)
+            Log.d("UserRepository", "✓ Usuario eliminado de BD local")
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error al eliminar usuario: ${e.message}", e)
+            Result.failure(e)
+        }
     }
     
     /**

@@ -68,6 +68,9 @@ class UserRemoteRepository(
 
     suspend fun toggleBlock(remoteId: String, bloquear: Boolean): Result<UserResponse> =
         runCatching { service.toggleBlock(remoteId, bloquear) }
+    
+    suspend fun deleteUser(remoteId: String): Result<Unit> =
+        runCatching { service.deleteUser(remoteId) }
 }
 
 

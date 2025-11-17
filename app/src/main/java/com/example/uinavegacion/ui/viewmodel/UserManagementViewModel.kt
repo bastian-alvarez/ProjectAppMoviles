@@ -134,4 +134,29 @@ class UserManagementViewModel(
             }
         }
     }
+    
+    /**
+     * Eliminar un usuario
+     */
+    fun deleteUser(userId: Long, userName: String) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("UserManagementVM", "🗑️ Eliminando usuario: $userName (ID: $userId)")
+                val result = userRepository.deleteUser(userId)
+                
+                if (result.isSuccess) {
+                    _successMessage.value = "Usuario '$userName' eliminado exitosamente"
+                    android.util.Log.d("UserManagementVM", "✅ Usuario eliminado exitosamente")
+                    // Recargar la lista de usuarios
+                    loadUsers()
+                } else {
+                    _error.value = "Error al eliminar usuario: ${result.exceptionOrNull()?.message}"
+                    android.util.Log.e("UserManagementVM", "❌ Error al eliminar usuario")
+                }
+            } catch (e: Exception) {
+                _error.value = "Error: ${e.message}"
+                android.util.Log.e("UserManagementVM", "💥 Excepción al eliminar usuario", e)
+            }
+        }
+    }
 }

@@ -36,6 +36,9 @@ interface GameCatalogApi {
         @Path("id") id: Long,
         @Body request: Map<String, Int>
     ): Response<GameResponse>
+    
+    @DELETE("games/{id}")
+    suspend fun deleteGame(@Path("id") id: Long): Response<Unit>
 }
 
 data class CreateGameRequest(

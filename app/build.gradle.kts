@@ -24,13 +24,14 @@ android {
 
         testInstrumentationRunner = "de.mannodermaus.junit5.AndroidJUnit5Runner"
 
-        buildConfigField("String", "CATALOGO_BASE_URL", "\"http://10.0.2.2:8086\"")
-        buildConfigField("String", "USUARIO_BASE_URL", "\"http://10.0.2.2:8081\"")
-        buildConfigField("String", "JUEGOS_BASE_URL", "\"http://10.0.2.2:8082\"")
-        buildConfigField("String", "LICENCIA_BASE_URL", "\"http://10.0.2.2:8083\"")
-        buildConfigField("String", "ORDEN_BASE_URL", "\"http://10.0.2.2:8084\"")
-        buildConfigField("String", "RESENA_BASE_URL", "\"http://10.0.2.2:8085\"")
-        buildConfigField("String", "ADMIN_BASE_URL", "\"http://10.0.2.2:8087\"")
+        // URLs de microservicios en Laragon
+        buildConfigField("String", "CATALOGO_BASE_URL", "\"http://10.0.2.2:3002\"")
+        buildConfigField("String", "USUARIO_BASE_URL", "\"http://10.0.2.2:3001\"")
+        buildConfigField("String", "JUEGOS_BASE_URL", "\"http://10.0.2.2:3002\"")
+        buildConfigField("String", "LICENCIA_BASE_URL", "\"http://10.0.2.2:3004\"")
+        buildConfigField("String", "ORDEN_BASE_URL", "\"http://10.0.2.2:3003\"")
+        buildConfigField("String", "RESENA_BASE_URL", "\"http://10.0.2.2:3003\"")
+        buildConfigField("String", "ADMIN_BASE_URL", "\"http://10.0.2.2:3001\"")
     }
 
     buildTypes {

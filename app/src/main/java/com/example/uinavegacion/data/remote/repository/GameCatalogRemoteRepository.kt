@@ -77,5 +77,18 @@ class GameCatalogRemoteRepository {
             Result.failure(e)
         }
     }
+    
+    suspend fun deleteGame(id: Long): Result<Unit> {
+        return try {
+            val response = api.deleteGame(id)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Error al eliminar juego: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 
