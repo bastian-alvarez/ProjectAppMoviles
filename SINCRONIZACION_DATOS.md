@@ -2,15 +2,23 @@
 
 ## 📋 Descripción
 
-Esta funcionalidad permite exportar todos los juegos de la base de datos local SQLite hacia el microservicio de Game Catalog en Laragon, asegurando que ambas bases de datos tengan la misma información.
+Esta funcionalidad exporta **automáticamente** todos los juegos de la base de datos local SQLite hacia el microservicio de Game Catalog en Laragon la primera vez que se ejecuta la aplicación, asegurando que ambas bases de datos tengan la misma información.
 
 ## 🎯 Propósito
 
-Cuando inicias la aplicación por primera vez, los juegos están almacenados localmente en SQLite. Para que los microservicios puedan acceder a estos datos, necesitas sincronizarlos con la base de datos remota de Laragon.
+Cuando inicias la aplicación por primera vez, los juegos están almacenados localmente en SQLite. La app detecta automáticamente que es la primera ejecución y sincroniza todos los juegos con la base de datos remota de Laragon sin intervención del usuario.
 
-## 🚀 Cómo Usar
+## 🚀 Cómo Funciona
 
-### Desde la Aplicación Móvil (Recomendado)
+### Sincronización Automática (Primera Ejecución) ✨
+
+1. **Abres la aplicación por primera vez**
+2. **Aparece una pantalla de "Sincronizando Datos"** con un indicador de progreso
+3. **La app exporta automáticamente todos los juegos** al microservicio
+4. **La sincronización se completa** (toma unos segundos)
+5. **La app continúa normalmente** y nunca vuelve a sincronizar automáticamente
+
+### Sincronización Manual (Opcional)
 
 1. **Inicia sesión como administrador** en la aplicación
 2. **Navega al Panel de Administración** (Admin Dashboard)
@@ -51,12 +59,15 @@ Para cada juego se envía:
 - `descuento`: Porcentaje de descuento (0-100)
 - `activo`: Estado del juego (true/false)
 
-### Archivos Modificados
+### Archivos Creados/Modificados
 
-1. **GameCatalogApi.kt** - Agregado endpoint `createGame()`
-2. **GameCatalogRemoteRepository.kt** - Agregado método `createGame()`
-3. **GameRepository.kt** - Agregado método `exportLocalGamesToRemote()`
-4. **AdminDashboardScreen.kt** - Agregada UI para sincronización
+1. **SyncPreferences.kt** - Gestiona el estado de sincronización (SharedPreferences)
+2. **SyncSplashScreen.kt** - Pantalla de carga durante la sincronización
+3. **GameCatalogApi.kt** - Agregado endpoint `createGame()` y `updateGame()`
+4. **GameCatalogRemoteRepository.kt** - Agregado método `createGame()` y `updateGame()`
+5. **GameRepository.kt** - Agregado método `exportLocalGamesToRemote()`
+6. **MainActivity.kt** - Integrada sincronización automática en el inicio
+7. **AdminDashboardScreen.kt** - Agregada UI para sincronización manual
 
 ## ⚠️ Consideraciones Importantes
 
@@ -135,13 +146,26 @@ I/GameRepository: 📤 Exportación completada:
                   ❌ Fallidos: 0
 ```
 
-## 🎓 Próximos Pasos
+## 🔧 Cómo Resetear la Sincronización (Para Testing)
 
-Para mejorar esta funcionalidad, considera:
+Si necesitas volver a sincronizar (por ejemplo, después de limpiar la BD remota):
 
-1. **Sincronización automática** al iniciar la app por primera vez
-2. **Detección de duplicados** antes de crear juegos
-3. **Actualización incremental** (solo juegos nuevos o modificados)
-4. **Sincronización de categorías y géneros** también
-5. **Sincronización bidireccional completa** con resolución de conflictos
+1. **Opción 1 - Desde código**: Llama a `SyncPreferences.resetSyncState(context)`
+2. **Opción 2 - Desde Android**: Ve a Configuración → Apps → UINavegacion → Borrar datos
+3. **Opción 3 - Reinstalar**: Desinstala y reinstala la aplicación
+
+## 🎓 Mejoras Implementadas
+
+✅ **Sincronización automática** al iniciar la app por primera vez  
+✅ **Indicador visual** con splash screen durante la sincronización  
+✅ **Sincronización manual** disponible desde el Panel de Admin  
+✅ **Persistencia del estado** para no volver a sincronizar  
+
+### Próximas Mejoras Posibles
+
+1. **Detección de duplicados** antes de crear juegos
+2. **Actualización incremental** (solo juegos nuevos o modificados)
+3. **Sincronización de categorías y géneros** también
+4. **Sincronización bidireccional completa** con resolución de conflictos
+5. **Notificación de éxito/error** después de la sincronización automática
 
