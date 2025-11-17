@@ -3,6 +3,7 @@ package com.example.uinavegacion.data.repository
 import android.util.Log
 import com.example.uinavegacion.data.local.juego.JuegoDao
 import com.example.uinavegacion.data.local.juego.JuegoEntity
+import com.example.uinavegacion.data.remote.api.CreateGameRequest
 import com.example.uinavegacion.data.remote.catalogo.CatalogoGameResponse
 import com.example.uinavegacion.data.remote.catalogo.CatalogoRemoteRepository
 import com.example.uinavegacion.data.remote.repository.GameCatalogRemoteRepository
@@ -182,6 +183,76 @@ class GameRepository(
 
     suspend fun reactivateGame(id: Long) {
         juegoDao.reactivate(id)
+    }
+    
+    /**
+     * Exporta todos los juegos locales al microservicio remoto
+     * Útil para sincronizar la BD local con Laragon
+     */
+    suspend fun exportLocalGamesToRemote(): Result<String> {
+        return try {
+            val localGames = juegoDao.getAllIncludingInactive()
+            Log.d("GameRepository", "Iniciando exportación de ${localGames.size} juegos al microservicio")
+            
+            var successCount = 0
+            var failCount = 0
+            val errors = mutableListOf<String>()
+            
+            localGames.forEach { game ->
+                try {
+                    val request = CreateGameRequest(
+                        nombre = game.nombre,
+                        descripcion = game.descripcion,
+                        precio = game.precio,
+                        stock = game.stock,
+                        imagenUrl = game.imagenUrl,
+                        desarrollador = game.desarrollador,
+                        fechaLanzamiento = game.fechaLanzamiento,
+                        categoriaId = game.categoriaId,
+                        generoId = game.generoId,
+                        descuento = game.descuento,
+                        activo = game.activo
+                    )
+                    
+                    val result = gameCatalogRepository.createGame(request)
+                    if (result.isSuccess) {
+                        successCount++
+                        Log.d("GameRepository", "✓ Juego exportado: ${game.nombre}")
+                    } else {
+                        failCount++
+                        val error = "✗ ${game.nombre}: ${result.exceptionOrNull()?.message}"
+                        errors.add(error)
+                        Log.w("GameRepository", error)
+                    }
+                } catch (e: Exception) {
+                    failCount++
+                    val error = "✗ ${game.nombre}: ${e.message}"
+                    errors.add(error)
+                    Log.e("GameRepository", error, e)
+                }
+            }
+            
+            val summary = buildString {
+                append("📤 Exportación completada:\n")
+                append("✅ Exitosos: $successCount\n")
+                append("❌ Fallidos: $failCount\n")
+                if (errors.isNotEmpty() && errors.size <= 5) {
+                    append("\nErrores:\n")
+                    errors.forEach { append("  $it\n") }
+                } else if (errors.size > 5) {
+                    append("\nPrimeros 5 errores:\n")
+                    errors.take(5).forEach { append("  $it\n") }
+                    append("  ... y ${errors.size - 5} más\n")
+                }
+            }
+            
+            Log.i("GameRepository", summary)
+            Result.success(summary)
+        } catch (e: Exception) {
+            val errorMsg = "Error general en exportación: ${e.message}"
+            Log.e("GameRepository", errorMsg, e)
+            Result.failure(Exception(errorMsg))
+        }
     }
     
     /**

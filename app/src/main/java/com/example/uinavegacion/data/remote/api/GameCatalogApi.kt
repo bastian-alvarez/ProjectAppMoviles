@@ -16,6 +16,15 @@ interface GameCatalogApi {
     @GET("games/{id}")
     suspend fun getGameById(@Path("id") id: Long): Response<GameResponse>
     
+    @POST("games")
+    suspend fun createGame(@Body request: CreateGameRequest): Response<GameResponse>
+    
+    @PUT("games/{id}")
+    suspend fun updateGame(
+        @Path("id") id: Long,
+        @Body request: CreateGameRequest
+    ): Response<GameResponse>
+    
     @PUT("games/{id}/stock")
     suspend fun updateStock(
         @Path("id") id: Long,
@@ -28,4 +37,18 @@ interface GameCatalogApi {
         @Body request: Map<String, Int>
     ): Response<GameResponse>
 }
+
+data class CreateGameRequest(
+    val nombre: String,
+    val descripcion: String,
+    val precio: Double,
+    val stock: Int,
+    val imagenUrl: String?,
+    val desarrollador: String,
+    val fechaLanzamiento: String,
+    val categoriaId: Long,
+    val generoId: Long,
+    val descuento: Int = 0,
+    val activo: Boolean = true
+)
 

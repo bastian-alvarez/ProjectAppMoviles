@@ -1,5 +1,6 @@
 package com.example.uinavegacion.data.remote.repository
 
+import com.example.uinavegacion.data.remote.api.CreateGameRequest
 import com.example.uinavegacion.data.remote.api.GameCatalogApi
 import com.example.uinavegacion.data.remote.config.RetrofitClient
 import com.example.uinavegacion.data.remote.dto.GameResponse
@@ -45,6 +46,32 @@ class GameCatalogRemoteRepository {
                 Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Error al actualizar stock: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun createGame(request: CreateGameRequest): Result<GameResponse> {
+        return try {
+            val response = api.createGame(request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error al crear juego: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun updateGame(id: Long, request: CreateGameRequest): Result<GameResponse> {
+        return try {
+            val response = api.updateGame(id, request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error al actualizar juego: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

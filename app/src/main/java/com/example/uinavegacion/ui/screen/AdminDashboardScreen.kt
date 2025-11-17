@@ -6,6 +6,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -219,6 +223,66 @@ fun AdminDashboardScreen(navController: NavHostController) {
                         subtitle = "Revisar y eliminar reseñas",
                         icon = Icons.Default.Edit,
                         onClick = { navController.navigate(Route.Moderation.path) }
+                    )
+                }
+                
+                // Sincronización de datos con microservicios
+                var showSyncDialog by remember { mutableStateOf(false) }
+                var syncMessage by remember { mutableStateOf("") }
+                var isSyncing by remember { mutableStateOf(false) }
+                
+                ActionCard(
+                    title = "Sincronizar Datos",
+                    subtitle = "Exportar juegos locales a Laragon",
+                    icon = Icons.Default.Sync,
+                    onClick = { showSyncDialog = true }
+                )
+                
+                if (showSyncDialog) {
+                    AlertDialog(
+                        onDismissRequest = { if (!isSyncing) showSyncDialog = false },
+                        title = { Text("Sincronizar Juegos") },
+                        text = {
+                            Column {
+                                if (isSyncing) {
+                                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("Exportando juegos al microservicio...")
+                                } else if (syncMessage.isNotEmpty()) {
+                                    Text(syncMessage)
+                                } else {
+                                    Text("¿Deseas exportar todos los juegos locales al microservicio de Laragon?\n\nEsto creará los juegos en la base de datos remota.")
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            if (!isSyncing && syncMessage.isEmpty()) {
+                                Button(
+                                    onClick = {
+                                        isSyncing = true
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            val result = gameRepository.exportLocalGamesToRemote()
+                                            withContext(Dispatchers.Main) {
+                                                isSyncing = false
+                                                syncMessage = result.getOrElse { "Error: ${it.message}" }
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Text("Exportar")
+                                }
+                            }
+                        },
+                        dismissButton = {
+                            if (!isSyncing) {
+                                TextButton(onClick = { 
+                                    showSyncDialog = false
+                                    syncMessage = ""
+                                }) {
+                                    Text(if (syncMessage.isEmpty()) "Cancelar" else "Cerrar")
+                                }
+                            }
+                        }
                     )
                 }
             }
