@@ -231,9 +231,12 @@ fun AdminDashboardScreen(navController: NavHostController) {
                 var syncMessage by remember { mutableStateOf("") }
                 var isSyncing by remember { mutableStateOf(false) }
                 
+                // Verificar si ya está sincronizado
+                val alreadySynced = remember { com.example.uinavegacion.data.SyncPreferences.areGamesSynced(context) }
+                
                 ActionCard(
-                    title = "Sincronizar Datos",
-                    subtitle = "Exportar juegos locales a Laragon",
+                    title = if (alreadySynced) "Re-sincronizar Datos" else "Sincronizar Datos",
+                    subtitle = if (alreadySynced) "Volver a exportar juegos" else "Exportar juegos locales a Laragon",
                     icon = Icons.Default.Sync,
                     onClick = { showSyncDialog = true }
                 )
@@ -241,7 +244,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
                 if (showSyncDialog) {
                     AlertDialog(
                         onDismissRequest = { if (!isSyncing) showSyncDialog = false },
-                        title = { Text("Sincronizar Juegos") },
+                        title = { Text(if (alreadySynced) "Re-sincronizar Juegos" else "Sincronizar Juegos") },
                         text = {
                             Column {
                                 if (isSyncing) {
@@ -251,7 +254,11 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                 } else if (syncMessage.isNotEmpty()) {
                                     Text(syncMessage)
                                 } else {
-                                    Text("¿Deseas exportar todos los juegos locales al microservicio de Laragon?\n\nEsto creará los juegos en la base de datos remota.")
+                                    if (alreadySynced) {
+                                        Text("Los juegos ya fueron sincronizados anteriormente.\n\n¿Deseas volver a exportarlos? Esto puede crear duplicados si no limpiaste la base de datos remota.")
+                                    } else {
+                                        Text("¿Deseas exportar todos los juegos locales al microservicio de Laragon?\n\nEsto creará los juegos en la base de datos remota.")
+                                    }
                                 }
                             }
                         },
@@ -260,16 +267,24 @@ fun AdminDashboardScreen(navController: NavHostController) {
                                 Button(
                                     onClick = {
                                         isSyncing = true
+                                        // Resetear el estado de sincronización si ya estaba sincronizado
+                                        if (alreadySynced) {
+                                            com.example.uinavegacion.data.SyncPreferences.resetSyncState(context)
+                                        }
                                         CoroutineScope(Dispatchers.IO).launch {
                                             val result = gameRepository.exportLocalGamesToRemote()
                                             withContext(Dispatchers.Main) {
                                                 isSyncing = false
                                                 syncMessage = result.getOrElse { "Error: ${it.message}" }
+                                                // Marcar como sincronizado después de éxito
+                                                if (result.isSuccess) {
+                                                    com.example.uinavegacion.data.SyncPreferences.markGamesSynced(context)
+                                                }
                                             }
                                         }
                                     }
                                 ) {
-                                    Text("Exportar")
+                                    Text(if (alreadySynced) "Re-exportar" else "Exportar")
                                 }
                             }
                         },
