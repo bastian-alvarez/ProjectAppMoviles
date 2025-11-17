@@ -360,9 +360,7 @@ class AuthViewModel(
                 name = s.name.trim(),
                 email = s.email.trim(),
                 phone = s.phone.trim(),
-                password = s.pass,
-                gender = "",
-                photoUrl = null
+                password = s.pass
             )
 
             if (result.isSuccess) {

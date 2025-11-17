@@ -103,7 +103,10 @@ fun ProfileEditScreen(nav: NavHostController) {
                 } else if (userId != null) {
                     val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
                     if (result.isSuccess) {
-                        result.getOrNull()?.let { SessionManager.loginUser(it) }
+                        val updatedUser = result.getOrNull()
+                        if (updatedUser != null) {
+                            SessionManager.loginUser(updatedUser)
+                        }
                         photoSavedMessage = "Foto tomada y guardada"
                     } else {
                         photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
@@ -132,7 +135,10 @@ fun ProfileEditScreen(nav: NavHostController) {
                 } else if (userId != null) {
                     val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
                     if (result.isSuccess) {
-                        result.getOrNull()?.let { SessionManager.loginUser(it) }
+                        val updatedUser = result.getOrNull()
+                        if (updatedUser != null) {
+                            SessionManager.loginUser(updatedUser)
+                        }
                         photoSavedMessage = "Foto de galería guardada"
                     } else {
                         photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
@@ -341,7 +347,10 @@ fun ProfileEditScreen(nav: NavHostController) {
                                     } else if (userId != null) {
                                         val result = userRepository.updateProfilePhoto(userId!!, null)
                                         if (result.isSuccess) {
-                                            result.getOrNull()?.let { SessionManager.loginUser(it) }
+                                            val updatedUser = result.getOrNull()
+                                            if (updatedUser != null) {
+                                                SessionManager.loginUser(updatedUser)
+                                            }
                                             photoSavedMessage = "Foto eliminada"
                                         } else {
                                             photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo eliminar la foto"
@@ -566,7 +575,8 @@ fun ProfileEditScreen(nav: NavHostController) {
                                     )
 
                                     if (result.isSuccess) {
-                                        result.getOrNull()?.let { updatedUser ->
+                                        val updatedUser = result.getOrNull()
+                                        if (updatedUser != null) {
                                             SessionManager.loginUser(updatedUser)
                                             userId = updatedUser.id
                                             showSuccessMessage = true

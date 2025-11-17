@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import com.example.uinavegacion.data.SessionManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,8 +58,24 @@ fun CheckoutScreen(nav: NavHostController, cartViewModel: CartViewModel = viewMo
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = {
+                    val userId = SessionManager.getCurrentUserId()
+                    val remoteUserId = SessionManager.getCurrentUserRemoteId()
+                    
+                    if (userId == null) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Debes iniciar sesión para realizar una compra")
+                        }
+                        return@Button
+                    }
+                    
                     isProcessing = true
-                    cartViewModel.checkout(context) { successResult, message ->
+                    cartViewModel.checkout(
+                        context = context,
+                        userId = userId,
+                        remoteUserId = remoteUserId,
+                        metodoPago = "Tarjeta",
+                        direccionEnvio = null
+                    ) { successResult, message ->
                         isProcessing = false
                         if (message != null) {
                             scope.launch { snackbarHostState.showSnackbar(message) }

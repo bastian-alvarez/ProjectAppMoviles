@@ -1,18 +1,21 @@
 package com.example.uinavegacion.data.repository
 
+import android.util.Log
 import com.example.uinavegacion.data.local.juego.JuegoDao
 import com.example.uinavegacion.data.local.juego.JuegoEntity
 import com.example.uinavegacion.data.remote.catalogo.CatalogoGameResponse
 import com.example.uinavegacion.data.remote.catalogo.CatalogoRemoteRepository
+import com.example.uinavegacion.data.remote.repository.GameCatalogRemoteRepository
 import kotlinx.coroutines.flow.Flow
 import kotlin.math.absoluteValue
 
 /**
- * Repositorio para gestión de juegos
+ * Repositorio para gestión de juegos con integración de microservicios
  */
 class GameRepository(
     private val juegoDao: JuegoDao,
-    private val remoteRepository: CatalogoRemoteRepository = CatalogoRemoteRepository()
+    private val catalogoRepository: CatalogoRemoteRepository = CatalogoRemoteRepository(),
+    private val gameCatalogRepository: GameCatalogRemoteRepository = GameCatalogRemoteRepository()
 ) {
     
     /**
@@ -22,14 +25,22 @@ class GameRepository(
         return if (includeInactive) juegoDao.getAllIncludingInactive() else juegoDao.getAll()
     }
 
-    suspend fun syncWithRemote(includeInactive: Boolean = false): Result<Unit> =
-        remoteRepository.fetchGames(includeInactive = includeInactive)
+    suspend fun syncWithRemote(includeInactive: Boolean = false): Result<Unit> {
+        Log.d("GameRepository", "Sincronizando catálogo con microservicio remoto")
+        return catalogoRepository.fetchGames(includeInactive = includeInactive)
             .mapCatching { response ->
+                Log.d("GameRepository", "Recibidos ${response.size} juegos del catálogo remoto")
                 juegoDao.deleteAll()
                 response
                     .map { it.toEntity() }
                     .forEach { juegoDao.insert(it) }
+                Log.d("GameRepository", "Sincronización completada exitosamente")
+                Unit
             }
+            .onFailure { error ->
+                Log.e("GameRepository", "Error en sincronización: ${error.message}", error)
+            }
+    }
 
     fun observeAllGames(includeInactive: Boolean = false): Flow<List<JuegoEntity>> {
         return if (includeInactive) juegoDao.observeAll() else juegoDao.observeActive()
@@ -145,7 +156,24 @@ class GameRepository(
             }
 
             val newStock = game.stock - quantity
+            
+            // Intentar actualizar en el microservicio si tiene remoteId
+            if (game.remoteId != null) {
+                try {
+                    val remoteResult = gameCatalogRepository.decreaseStock(id, quantity)
+                    if (remoteResult.isSuccess) {
+                        Log.d("GameRepository", "Stock actualizado en microservicio para juego $id")
+                    } else {
+                        Log.w("GameRepository", "No se pudo actualizar stock en microservicio: ${remoteResult.exceptionOrNull()?.message}")
+                    }
+                } catch (e: Exception) {
+                    Log.w("GameRepository", "Error al actualizar stock remoto (continuando con local): ${e.message}")
+                }
+            }
+            
+            // Actualizar en BD local
             juegoDao.updateStock(id, newStock)
+            Log.d("GameRepository", "Stock local actualizado para juego $id: $newStock unidades")
             Result.success(newStock)
         } catch (e: Exception) {
             Result.failure(e)

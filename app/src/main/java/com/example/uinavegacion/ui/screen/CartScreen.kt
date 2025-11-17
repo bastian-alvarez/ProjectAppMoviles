@@ -36,6 +36,7 @@ import com.example.uinavegacion.ui.components.AnimatedOutlinedButton
 import com.example.uinavegacion.ui.components.AnimatedIconButton
 import com.example.uinavegacion.ui.components.AnimatedTextButton
 import com.example.uinavegacion.ui.components.AnimatedFloatingActionButton
+import com.example.uinavegacion.data.SessionManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,10 +119,21 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                     windowInfo = windowInfo,
                     onNavigateToGames = { nav.navigate(Route.Games.build()) },
                     onCompletePurchase = { 
-                        // PRIMERO: Actualizar el stock de los juegos comprados
-                        cartViewModel.checkout(context) { success, message ->
+                        // Obtener datos del usuario actual
+                        val userId = SessionManager.getCurrentUserId()
+                        val remoteUserId = SessionManager.getCurrentUserRemoteId()
+                        
+                        if (userId != null) {
+                            // Procesar compra con microservicio de órdenes
+                            cartViewModel.checkout(
+                                context = context,
+                                userId = userId,
+                                remoteUserId = remoteUserId,
+                                metodoPago = "Tarjeta",
+                                direccionEnvio = null
+                            ) { success, message ->
                             if (success) {
-                                // Si el checkout fue exitoso, agregar a la biblioteca
+                                // Agregar a biblioteca (ya se hace en checkout)
                                 libraryViewModel.addPurchasedGames(cartItems)
                                 
                                 // Mostrar mensaje de éxito
@@ -148,6 +160,14 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                                 }
                             }
                         }
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    "Debes iniciar sesión para realizar una compra",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxSize()
@@ -169,10 +189,21 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                         windowInfo = windowInfo,
                         onNavigateToGames = { nav.navigate(Route.Games.build()) },
                         onCompletePurchase = { 
-                            // PRIMERO: Actualizar el stock de los juegos comprados
-                            cartViewModel.checkout(context) { success, message ->
+                            // Obtener datos del usuario actual
+                            val userId = SessionManager.getCurrentUserId()
+                            val remoteUserId = SessionManager.getCurrentUserRemoteId()
+                            
+                            if (userId != null) {
+                                // Procesar compra con microservicio de órdenes
+                                cartViewModel.checkout(
+                                    context = context,
+                                    userId = userId,
+                                    remoteUserId = remoteUserId,
+                                    metodoPago = "Tarjeta",
+                                    direccionEnvio = null
+                                ) { success, message ->
                                 if (success) {
-                                    // Si el checkout fue exitoso, agregar a la biblioteca
+                                    // Agregar a biblioteca (ya se hace en checkout)
                                     libraryViewModel.addPurchasedGames(cartItems)
                                     
                                     // Mostrar mensaje de éxito
@@ -197,6 +228,14 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
                                             duration = SnackbarDuration.Long
                                         )
                                     }
+                                }
+                            }
+                            } else {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        "Debes iniciar sesión para realizar una compra",
+                                        duration = SnackbarDuration.Short
+                                    )
                                 }
                             }
                         },

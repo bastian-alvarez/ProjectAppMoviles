@@ -3,54 +3,143 @@ package com.example.uinavegacion.data.repository
 import android.util.Log
 import com.example.uinavegacion.data.local.user.UserDao
 import com.example.uinavegacion.data.local.user.UserEntity
+import com.example.uinavegacion.data.remote.repository.AuthRemoteRepository
+import com.example.uinavegacion.data.remote.dto.LoginRequest
+import com.example.uinavegacion.data.remote.dto.RegisterRequest
 
 //orquesta todas las reglas de negocio para el login/ registro sobre el DAO comun
 class UserRepository(
-    private val userDao: UserDao //inyectando el DAO
-
+    private val userDao: UserDao, //inyectando el DAO
+    private val authRemoteRepository: AuthRemoteRepository = AuthRemoteRepository()
 ){
-    //manipular login (email y pass coincidan)
+    //manipular login (email y pass coincidan) - ahora usa microservicio
     suspend fun login(email: String, password: String): Result<UserEntity>{
-        Log.d("UserRepository", "Attempting login for email: [$email]")
-        val user = userDao.getByEmail(email)
-        if (user != null) {
-            Log.d("UserRepository", "User found in DB. Stored pass: [${user.password}], Provided pass: [$password]")
-            if (user.password == password) {
-                Log.d("UserRepository", "Password matches. Login success.")
-                return Result.success(user)
+        Log.d("UserRepository", "Attempting login via microservice for email: [$email]")
+        
+        return try {
+            // Intentar login con el microservicio
+            val remoteResult = authRemoteRepository.login(LoginRequest(email, password))
+            
+            if (remoteResult.isSuccess) {
+                val authResponse = remoteResult.getOrNull()!!
+                Log.d("UserRepository", "Login successful via microservice")
+                
+                // Sincronizar con la BD local
+                val userEntity = UserEntity(
+                    id = authResponse.user.id,
+                    name = authResponse.user.name,
+                    email = authResponse.user.email,
+                    phone = authResponse.user.phone,
+                    password = password, // Guardamos el password localmente para cache
+                    profilePhotoUri = authResponse.user.profilePhotoUri,
+                    gender = authResponse.user.gender,
+                    isBlocked = authResponse.user.isBlocked
+                )
+                
+                // Guardar/actualizar en BD local
+                userDao.insert(userEntity)
+                
+                Result.success(userEntity)
             } else {
-                Log.d("UserRepository", "Password does NOT match. Login failed.")
-                return Result.failure(Exception("credenciales invalidas"))
+                Log.d("UserRepository", "Login failed via microservice: ${remoteResult.exceptionOrNull()?.message}")
+                Result.failure(remoteResult.exceptionOrNull() ?: Exception("credenciales invalidas"))
             }
-        } else {
-            Log.d("UserRepository", "User with email [$email] not found in DB.")
-            return Result.failure(Exception("credenciales invalidas"))
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error connecting to microservice, trying local DB", e)
+            
+            // Fallback a BD local si falla el microservicio
+            val user = userDao.getByEmail(email)
+            if (user != null && user.password == password) {
+                Log.d("UserRepository", "Login success via local DB (fallback)")
+                Result.success(user)
+            } else {
+                Result.failure(Exception("credenciales invalidas"))
+            }
         }
-
     }
-    //manipular registro (email duplicado)
+    
+    //manipular registro (email duplicado) - ahora usa microservicio
     suspend fun register(name: String, email: String, phone: String, password: String): Result<Long>{
-        val exists = userDao.getByEmail(email) != null
-        if(exists){
-            return Result.failure(Exception("el correo ya esta registrado"))
-
-        }else{
-            val id = userDao.insert(
-                UserEntity
-                    (name = name,
+        Log.d("UserRepository", "Attempting register via microservice for email: [$email]")
+        
+        return try {
+            // Intentar registro con el microservicio
+            val remoteResult = authRemoteRepository.register(
+                RegisterRequest(
+                    name = name,
                     email = email,
                     phone = phone,
-                    password = password))
-            return Result.success(id)
+                    password = password,
+                    gender = ""
+                )
+            )
+            
+            if (remoteResult.isSuccess) {
+                val authResponse = remoteResult.getOrNull()!!
+                Log.d("UserRepository", "Register successful via microservice")
+                
+                // Sincronizar con la BD local
+                val userEntity = UserEntity(
+                    id = authResponse.user.id,
+                    name = authResponse.user.name,
+                    email = authResponse.user.email,
+                    phone = authResponse.user.phone,
+                    password = password,
+                    profilePhotoUri = authResponse.user.profilePhotoUri,
+                    gender = authResponse.user.gender,
+                    isBlocked = authResponse.user.isBlocked
+                )
+                
+                userDao.insert(userEntity)
+                
+                Result.success(authResponse.user.id)
+            } else {
+                Log.d("UserRepository", "Register failed via microservice: ${remoteResult.exceptionOrNull()?.message}")
+                Result.failure(remoteResult.exceptionOrNull() ?: Exception("Error en el registro"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error connecting to microservice for register", e)
+            Result.failure(Exception("No se pudo conectar con el servidor: ${e.message}"))
+        }
+    }
 
+    //actualizar perfil completo
+    suspend fun updateProfile(
+        userId: Long,
+        name: String,
+        email: String,
+        phone: String,
+        gender: String,
+        photoUrl: String?
+    ): Result<UserEntity> {
+        return try {
+            val existingUser = userDao.getById(userId)
+                ?: return Result.failure(Exception("Usuario no encontrado"))
+            
+            val updatedUser = existingUser.copy(
+                name = name,
+                email = email,
+                phone = phone,
+                gender = gender,
+                profilePhotoUri = photoUrl
+            )
+            userDao.insert(updatedUser)
+            
+            val savedUser = userDao.getById(userId)
+                ?: return Result.failure(Exception("Error al guardar usuario"))
+            Result.success(savedUser)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
     //actualizar foto de perfil
-    suspend fun updateProfilePhoto(userId: Long, photoUri: String?): Result<Unit> {
+    suspend fun updateProfilePhoto(userId: Long, photoUri: String?): Result<UserEntity> {
         return try {
             userDao.updateProfilePhoto(userId, photoUri)
-            Result.success(Unit)
+            val updatedUser = userDao.getById(userId)
+                ?: return Result.failure(Exception("Usuario no encontrado después de actualizar"))
+            Result.success(updatedUser)
         } catch (e: Exception) {
             Result.failure(e)
         }

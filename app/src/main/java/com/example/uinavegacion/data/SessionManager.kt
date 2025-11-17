@@ -56,6 +56,10 @@ object SessionManager {
         return _currentUser.value?.id
     }
     
+    fun getCurrentUserRemoteId(): String? {
+        return _currentUser.value?.remoteId
+    }
+    
     fun getCurrentUser(): UserEntity? {
         return _currentUser.value
     }
