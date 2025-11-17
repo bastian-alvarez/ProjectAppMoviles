@@ -89,6 +89,9 @@ interface JuegoDao {
     @Query("UPDATE juegos SET activo = 1 WHERE id = :id")
     suspend fun reactivate(id: Long)
     
+    @Query("UPDATE juegos SET remoteId = :remoteId WHERE id = :id")
+    suspend fun updateRemoteId(id: Long, remoteId: String)
+    
     // Eliminar todos los juegos
     @Query("DELETE FROM juegos")
     suspend fun deleteAll()

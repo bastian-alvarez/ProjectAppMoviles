@@ -57,20 +57,64 @@ class GameRepository(
     /**
      * Agrega un nuevo juego
      */
+    /**
+     * Agrega un juego en BD local y microservicio
+     */
     suspend fun addGame(game: JuegoEntity): Result<Long> {
         return try {
-            val id = juegoDao.insert(game.copy(activo = true))
-            Result.success(id)
+            // 1. Insertar en BD local primero
+            Log.d("GameRepository", "Agregando juego en BD LOCAL: ${game.nombre}")
+            val localId = juegoDao.insert(game.copy(activo = true))
+            Log.d("GameRepository", "✓ Juego agregado en BD local con ID: $localId")
+            
+            // 2. Intentar crear en microservicio
+            try {
+                Log.d("GameRepository", "Creando juego en microservicio: ${game.nombre}")
+                val request = com.example.uinavegacion.data.remote.api.CreateGameRequest(
+                    nombre = game.nombre,
+                    descripcion = game.descripcion,
+                    precio = game.precio,
+                    stock = game.stock,
+                    imagenUrl = game.imagenUrl,
+                    desarrollador = game.desarrollador,
+                    fechaLanzamiento = game.fechaLanzamiento,
+                    categoriaId = game.categoriaId,
+                    generoId = game.generoId,
+                    descuento = game.descuento,
+                    activo = true
+                )
+                
+                val remoteResult = gameCatalogRepository.createGame(request)
+                if (remoteResult.isSuccess) {
+                    val remoteGame = remoteResult.getOrNull()
+                    Log.d("GameRepository", "✓ Juego creado en microservicio con ID: ${remoteGame?.id}")
+                    
+                    // Actualizar el juego local con el remoteId
+                    if (remoteGame != null) {
+                        juegoDao.updateRemoteId(localId, remoteGame.id.toString())
+                        Log.d("GameRepository", "✓ RemoteId actualizado en BD local")
+                    }
+                } else {
+                    Log.w("GameRepository", "⚠️ No se pudo crear en microservicio: ${remoteResult.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                Log.w("GameRepository", "⚠️ Error al crear en microservicio: ${e.message}", e)
+            }
+            
+            Result.success(localId)
         } catch (e: Exception) {
+            Log.e("GameRepository", "Error al agregar juego: ${e.message}", e)
             Result.failure(e)
         }
     }
     
     /**
-     * Actualiza un juego existente
+     * Actualiza un juego en BD local y microservicio
      */
     suspend fun updateGame(game: JuegoEntity): Result<Unit> {
         return try {
+            // 1. Actualizar en BD local
+            Log.d("GameRepository", "Actualizando juego en BD LOCAL: ${game.nombre}")
             juegoDao.updateFull(
                 id = game.id,
                 nombre = game.nombre,
@@ -84,8 +128,42 @@ class GameRepository(
                 generoId = game.generoId,
                 activo = game.activo
             )
+            Log.d("GameRepository", "✓ Juego actualizado en BD local")
+            
+            // 2. Actualizar en microservicio si tiene remoteId
+            if (!game.remoteId.isNullOrBlank()) {
+                try {
+                    Log.d("GameRepository", "Actualizando juego en microservicio: ${game.nombre}")
+                    val request = com.example.uinavegacion.data.remote.api.CreateGameRequest(
+                        nombre = game.nombre,
+                        descripcion = game.descripcion,
+                        precio = game.precio,
+                        stock = game.stock,
+                        imagenUrl = game.imagenUrl,
+                        desarrollador = game.desarrollador,
+                        fechaLanzamiento = game.fechaLanzamiento,
+                        categoriaId = game.categoriaId,
+                        generoId = game.generoId,
+                        descuento = game.descuento,
+                        activo = game.activo
+                    )
+                    
+                    val remoteResult = gameCatalogRepository.updateGame(game.remoteId.toLong(), request)
+                    if (remoteResult.isSuccess) {
+                        Log.d("GameRepository", "✓ Juego actualizado en microservicio")
+                    } else {
+                        Log.w("GameRepository", "⚠️ No se pudo actualizar en microservicio: ${remoteResult.exceptionOrNull()?.message}")
+                    }
+                } catch (e: Exception) {
+                    Log.w("GameRepository", "⚠️ Error al actualizar en microservicio: ${e.message}", e)
+                }
+            } else {
+                Log.w("GameRepository", "⚠️ Juego sin remoteId, solo se actualizó en BD local")
+            }
+            
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("GameRepository", "Error al actualizar juego: ${e.message}", e)
             Result.failure(e)
         }
     }
