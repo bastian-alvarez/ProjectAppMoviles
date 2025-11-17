@@ -72,9 +72,21 @@ class LibraryRepository(
                 licenseExpiresAt = assignedLicense?.fechaVencimiento,
                 licenseAssignedAt = assignedLicense?.asignadaEn
             )
-            libraryDao.insert(entity)
-            Log.d("LibraryRepository", "Juego $juegoId agregado a biblioteca del usuario $userId")
-            Result.success(0L)
+            
+            Log.d("LibraryRepository", "Insertando juego en biblioteca: userId=$userId, juegoId=$juegoId, name=$name")
+            val insertedId = libraryDao.insert(entity)
+            Log.d("LibraryRepository", "✓ Juego $name (ID: $juegoId) agregado a biblioteca del usuario $userId con ID local $insertedId")
+            
+            // Verificar que se insertó correctamente
+            val verification = libraryDao.userOwnsGame(userId, juegoId)
+            if (verification > 0) {
+                Log.d("LibraryRepository", "✓ Verificación exitosa: Usuario $userId ahora posee el juego $juegoId")
+            } else {
+                Log.e("LibraryRepository", "✗ ERROR: La verificación falló. El juego NO se guardó en la BD")
+                return Result.failure(Exception("Error al verificar la inserción del juego"))
+            }
+            
+            Result.success(insertedId)
         } catch (e: Exception) {
             Log.e("LibraryRepository", "Error agregando juego a biblioteca", e)
             Result.failure(e)

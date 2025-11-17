@@ -17,8 +17,8 @@ interface LibraryDao {
     @Query("SELECT * FROM biblioteca")
     fun getAll(): Flow<List<LibraryEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(entity: LibraryEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(entity: LibraryEntity): Long
 
     @Query("SELECT COUNT(*) FROM biblioteca WHERE userId = :userId AND juegoId = :juegoId")
     suspend fun userOwnsGame(userId: Long, juegoId: String): Int
