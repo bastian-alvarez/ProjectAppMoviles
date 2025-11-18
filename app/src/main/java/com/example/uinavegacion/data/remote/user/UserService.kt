@@ -49,15 +49,17 @@ interface UserService {
     /**
      * Obtener perfil del usuario autenticado
      * Usa el token JWT del header Authorization
+     * Nota: La URL base ya incluye /api
      */
-    @GET("api/users/me")
+    @GET("users/me")
     suspend fun getMyProfile(): UserResponse
     
     /**
      * Actualizar foto de perfil del usuario autenticado
      * Usa el token JWT del header Authorization
+     * Nota: La URL base ya incluye /api
      */
-    @PUT("api/users/me/photo")
+    @PUT("users/me/photo")
     suspend fun updateMyPhoto(@Body request: UpdatePhotoRequest): UserResponse
 }
 
