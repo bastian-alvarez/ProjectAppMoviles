@@ -171,28 +171,43 @@ class UserRepository(
             
             if (remoteResult.isSuccess) {
                 val remoteUsers = remoteResult.getOrNull() ?: emptyList()
-                Log.d("UserRepository", "✓ Obtenidos ${remoteUsers.size} usuarios del microservicio")
+                Log.d("UserRepository", "✅ Obtenidos ${remoteUsers.size} usuarios del microservicio")
                 
                 // 2. Sincronizar con BD local
+                var syncedCount = 0
+                var errorCount = 0
                 remoteUsers.forEach { remote ->
                     try {
                         upsertRemoteUser(remote)
+                        syncedCount++
+                        Log.d("UserRepository", "  ✓ Sincronizado: ${remote.email} (remoteId: ${remote.id})")
                     } catch (e: Exception) {
-                        Log.w("UserRepository", "No se pudo sincronizar usuario ${remote.email}: ${e.message}")
+                        errorCount++
+                        Log.e("UserRepository", "  ❌ Error sincronizando ${remote.email}: ${e.message}", e)
                     }
                 }
                 
+                Log.d("UserRepository", "📊 Sincronización completada: $syncedCount exitosos, $errorCount errores")
+                
                 // 3. Retornar usuarios de BD local (ya sincronizados)
-                userDao.getAll()
+                val localUsers = userDao.getAll()
+                Log.d("UserRepository", "📦 Total usuarios en BD local: ${localUsers.size}")
+                localUsers
             } else {
                 // Fallback a BD local si falla el microservicio
-                Log.w("UserRepository", "⚠️ No se pudo obtener usuarios del microservicio, usando BD local")
-                userDao.getAll()
+                val error = remoteResult.exceptionOrNull()?.message ?: "Error desconocido"
+                Log.w("UserRepository", "⚠️ No se pudo obtener usuarios del microservicio: $error")
+                Log.w("UserRepository", "⚠️ Usando BD local como fallback")
+                val localUsers = userDao.getAll()
+                Log.d("UserRepository", "📦 Total usuarios en BD local (fallback): ${localUsers.size}")
+                localUsers
             }
         } catch (e: Exception) {
-            Log.e("UserRepository", "Error al obtener usuarios: ${e.message}", e)
+            Log.e("UserRepository", "💥 Error crítico al obtener usuarios: ${e.message}", e)
             // Fallback a BD local
-            userDao.getAll()
+            val localUsers = userDao.getAll()
+            Log.d("UserRepository", "📦 Total usuarios en BD local (error): ${localUsers.size}")
+            localUsers
         }
     }
 
