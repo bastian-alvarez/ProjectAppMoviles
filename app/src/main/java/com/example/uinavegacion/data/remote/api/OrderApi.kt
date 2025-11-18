@@ -14,5 +14,14 @@ interface OrderApi {
     
     @GET("orders/{id}")
     suspend fun getOrderById(@Path("id") id: Long): Response<OrderResponse>
+    
+    /**
+     * Obtener todas las órdenes (solo administradores)
+     */
+    @GET("orders")
+    suspend fun getAllOrders(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 100
+    ): Response<List<OrderResponse>>
 }
 

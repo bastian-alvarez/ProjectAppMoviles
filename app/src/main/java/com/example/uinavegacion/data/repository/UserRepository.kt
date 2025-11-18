@@ -7,12 +7,14 @@ import com.example.uinavegacion.data.local.user.UserEntity
 import com.example.uinavegacion.data.remote.repository.AuthRemoteRepository
 import com.example.uinavegacion.data.remote.dto.LoginRequest
 import com.example.uinavegacion.data.remote.dto.RegisterRequest
+import com.example.uinavegacion.data.remote.admin.AdminUserRemoteRepository
 
 //orquesta todas las reglas de negocio para el login/ registro sobre el DAO comun
 class UserRepository(
     private val userDao: UserDao, //inyectando el DAO
     private val authRemoteRepository: AuthRemoteRepository = AuthRemoteRepository(),
-    private val userRemoteRepository: com.example.uinavegacion.data.remote.user.UserRemoteRepository = com.example.uinavegacion.data.remote.user.UserRemoteRepository()
+    private val userRemoteRepository: com.example.uinavegacion.data.remote.user.UserRemoteRepository = com.example.uinavegacion.data.remote.user.UserRemoteRepository(),
+    private val adminUserRemoteRepository: AdminUserRemoteRepository = AdminUserRemoteRepository()
 ){
     //manipular login (email y pass coincidan) - ahora usa microservicio
     suspend fun login(email: String, password: String): Result<UserEntity>{
@@ -163,9 +165,9 @@ class UserRepository(
      */
     suspend fun getAllUsers(): List<UserEntity> {
         return try {
-            // 1. Intentar obtener usuarios del microservicio
-            Log.d("UserRepository", "Obteniendo usuarios del microservicio...")
-            val remoteResult = userRemoteRepository.listUsers()
+            // 1. Intentar obtener usuarios del microservicio usando endpoint de admin
+            Log.d("UserRepository", "📋 Obteniendo usuarios del microservicio (admin endpoint)...")
+            val remoteResult = adminUserRemoteRepository.listAllUsers()
             
             if (remoteResult.isSuccess) {
                 val remoteUsers = remoteResult.getOrNull() ?: emptyList()
@@ -226,6 +228,7 @@ class UserRepository(
     //bloquear/desbloquear usuario
     /**
      * Bloquea/desbloquea un usuario en el microservicio y BD local
+     * Usa los endpoints de administrador /api/admin/users/{id}/block o /unblock
      */
     suspend fun toggleBlockStatus(userId: Long, isBlocked: Boolean): Result<Unit> {
         return try {
@@ -234,7 +237,7 @@ class UserRepository(
                 return Result.failure(Exception("Usuario no encontrado"))
             }
             
-            // 1. Actualizar en microservicio
+            // 1. Actualizar en microservicio usando endpoint de admin
             // Usar remoteId si existe, sino usar el ID local
             val idToUse = if (!user.remoteId.isNullOrBlank()) {
                 user.remoteId
@@ -242,8 +245,13 @@ class UserRepository(
                 user.id.toString()
             }
             
-            Log.d("UserRepository", "Bloqueando/desbloqueando usuario en microservicio: ${user.email} (ID: $idToUse)")
-            val remoteResult = userRemoteRepository.toggleBlock(idToUse, isBlocked)
+            Log.d("UserRepository", "${if (isBlocked) "🚫 Bloqueando" else "✅ Desbloqueando"} usuario en microservicio: ${user.email} (ID: $idToUse)")
+            
+            val remoteResult = if (isBlocked) {
+                adminUserRemoteRepository.blockUser(idToUse)
+            } else {
+                adminUserRemoteRepository.unblockUser(idToUse)
+            }
             
             if (remoteResult.isSuccess) {
                 Log.d("UserRepository", "✓ Usuario ${if (isBlocked) "bloqueado" else "desbloqueado"} en microservicio")
@@ -291,8 +299,8 @@ class UserRepository(
                 user.id.toString()
             }
             
-            Log.d("UserRepository", "Eliminando usuario del microservicio: ${user.email} (ID: $idToUse)")
-            val remoteResult = userRemoteRepository.deleteUser(idToUse)
+            Log.d("UserRepository", "🗑️ Eliminando usuario del microservicio (admin endpoint): ${user.email} (ID: $idToUse)")
+            val remoteResult = adminUserRemoteRepository.deleteUser(idToUse)
             
             if (remoteResult.isSuccess) {
                 Log.d("UserRepository", "✓ Usuario eliminado del microservicio")
