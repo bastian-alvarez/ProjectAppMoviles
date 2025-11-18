@@ -45,6 +45,20 @@ interface UserService {
     
     @DELETE("api/usuarios/{id}")
     suspend fun deleteUser(@Path("id") id: String)
+    
+    /**
+     * Obtener perfil del usuario autenticado
+     * Usa el token JWT del header Authorization
+     */
+    @GET("api/users/me")
+    suspend fun getMyProfile(): UserResponse
+    
+    /**
+     * Actualizar foto de perfil del usuario autenticado
+     * Usa el token JWT del header Authorization
+     */
+    @PUT("api/users/me/photo")
+    suspend fun updateMyPhoto(@Body request: UpdatePhotoRequest): UserResponse
 }
 
 data class UserLoginRequest(
@@ -72,6 +86,10 @@ data class UserUpdateRequest(
 data class UserChangePasswordRequest(
     val passwordActual: String,
     val passwordNueva: String
+)
+
+data class UpdatePhotoRequest(
+    val profilePhotoUri: String
 )
 
 data class UserResponse(

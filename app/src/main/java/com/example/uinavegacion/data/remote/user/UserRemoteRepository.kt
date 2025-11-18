@@ -71,6 +71,18 @@ class UserRemoteRepository(
     
     suspend fun deleteUser(remoteId: String): Result<Unit> =
         runCatching { service.deleteUser(remoteId) }
+    
+    /**
+     * Obtener perfil del usuario autenticado
+     */
+    suspend fun getMyProfile(): Result<UserResponse> =
+        runCatching { service.getMyProfile() }
+    
+    /**
+     * Actualizar foto de perfil del usuario autenticado
+     */
+    suspend fun updateMyPhoto(photoUri: String): Result<UserResponse> =
+        runCatching { service.updateMyPhoto(UpdatePhotoRequest(photoUri)) }
 }
 
 

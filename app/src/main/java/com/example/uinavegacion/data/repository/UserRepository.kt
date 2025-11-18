@@ -148,13 +148,36 @@ class UserRepository(
     }
 
     //actualizar foto de perfil
+    /**
+     * Actualiza la foto de perfil del usuario
+     * Usa el endpoint específico /api/users/me/photo del microservicio
+     */
     suspend fun updateProfilePhoto(userId: Long, photoUri: String?): Result<UserEntity> {
         return try {
+            Log.d("UserRepository", "📸 Actualizando foto de perfil...")
+            
+            // 1. Si hay foto, subirla al microservicio
+            if (photoUri != null && photoUri.isNotBlank()) {
+                val remoteResult = userRemoteRepository.updateMyPhoto(photoUri)
+                
+                if (remoteResult.isSuccess) {
+                    Log.d("UserRepository", "✅ Foto subida al microservicio exitosamente")
+                } else {
+                    Log.w("UserRepository", "⚠️ No se pudo subir al microservicio: ${remoteResult.exceptionOrNull()?.message}")
+                }
+            }
+            
+            // 2. Actualizar en BD local
             userDao.updateProfilePhoto(userId, photoUri)
+            Log.d("UserRepository", "✅ Foto actualizada en BD local")
+            
+            // 3. Retornar usuario actualizado
             val updatedUser = userDao.getById(userId)
                 ?: return Result.failure(Exception("Usuario no encontrado después de actualizar"))
+            
             Result.success(updatedUser)
         } catch (e: Exception) {
+            Log.e("UserRepository", "❌ Error al actualizar foto: ${e.message}", e)
             Result.failure(e)
         }
     }
