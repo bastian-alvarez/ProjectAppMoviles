@@ -66,3 +66,4 @@ public class Licencia {
   public void setAsignadaEn(Instant asignadaEn) { this.asignadaEn = asignadaEn; }
 }
 
+

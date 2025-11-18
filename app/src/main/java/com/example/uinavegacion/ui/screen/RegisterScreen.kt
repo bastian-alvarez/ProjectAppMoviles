@@ -159,11 +159,11 @@ fun RegisterScreen(nav: NavHostController) {
                     value = registerState.phone,
                     onValueChange = viewModel::onPhoneChange,
                     label = { Text("Teléfono Celular *", style = MaterialTheme.typography.bodyMedium) },
-                    placeholder = { Text("+56 9 1234 5678", style = MaterialTheme.typography.bodySmall) },
+                    placeholder = { Text("+569 7777 7777", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     isError = registerState.phoneError != null,
                     supportingText = registerState.phoneError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } }
-                        ?: { Text("Formato: +56 9 XXXX XXXX", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        ?: { Text("Formato: +569 XXXX XXXX", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
                     ),

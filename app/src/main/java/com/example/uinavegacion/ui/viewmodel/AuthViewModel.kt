@@ -290,18 +290,78 @@ class AuthViewModel(
         recomputeRegisterCanSubmit()
     }
     
-    // Función para formatear el teléfono a +56 9 XXXX XXXX
+    // Función para formatear el teléfono a +569 XXXX XXXX
     private fun formatChileanPhone(input: String): String {
-        // Extraer solo los dígitos
-        val digits = input.filter { it.isDigit() }
+        // Si el input contiene "+569" o "+56 9", mantener el prefijo y formatear el resto
+        val normalized = input.replace(" ", "").replace("+", "")
         
         // Si está vacío, retornar vacío
-        if (digits.isEmpty()) return ""
+        if (normalized.isEmpty()) return ""
         
-        // Construir el formato según la cantidad de dígitos
+        // Si empieza con "569", formatear como +569 XXXX XXXX
+        if (normalized.startsWith("569")) {
+            val digits = normalized.substring(3) // Quitar "569"
+            
+            return when {
+                digits.isEmpty() -> "+569"
+                digits.length <= 4 -> "+569 $digits"
+                else -> {
+                    val first4 = digits.substring(0, 4)
+                    val last4 = digits.substring(4).take(4)
+                    "+569 $first4 $last4"
+                }
+            }
+        }
+        
+        // Si empieza con "56" pero no con "569", formatear como +56 9 XXXX XXXX (formato antiguo)
+        if (normalized.startsWith("56")) {
+            val digits = normalized.substring(2) // Quitar "56"
+            
+            return when {
+                digits.isEmpty() -> "+56"
+                digits.length == 1 -> "+56 $digits"
+                else -> {
+                    val mobilePrefix = digits[0] // 9
+                    val remaining = digits.substring(1)
+                    
+                    when {
+                        remaining.isEmpty() -> "+56 $mobilePrefix"
+                        remaining.length <= 4 -> "+56 $mobilePrefix $remaining"
+                        else -> {
+                            val first4 = remaining.substring(0, 4)
+                            val last4 = remaining.substring(4).take(4)
+                            "+56 $mobilePrefix $first4 $last4"
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Si empieza con "+" pero no con "56", mantener el "+" y formatear
+        if (input.startsWith("+")) {
+            val withoutPlus = input.substring(1).replace(" ", "")
+            return "+$withoutPlus"
+        }
+        
+        // Si solo tiene dígitos, asumir que es el número completo y formatear
+        val digits = normalized.filter { it.isDigit() }
+        
         return when {
+            digits.isEmpty() -> ""
             digits.length <= 2 -> "+$digits"
             digits.length == 3 -> "+${digits.substring(0, 2)} ${digits[2]}"
+            digits.startsWith("569") -> {
+                val remaining = digits.substring(3)
+                when {
+                    remaining.isEmpty() -> "+569"
+                    remaining.length <= 4 -> "+569 $remaining"
+                    else -> {
+                        val first4 = remaining.substring(0, 4)
+                        val last4 = remaining.substring(4).take(4)
+                        "+569 $first4 $last4"
+                    }
+                }
+            }
             digits.length <= 11 -> {
                 val countryCode = digits.substring(0, 2) // 56
                 val mobilePrefix = digits.getOrNull(2) ?: "" // 9
@@ -320,11 +380,24 @@ class AuthViewModel(
             else -> {
                 // Si tiene más de 11 dígitos, tomar solo los primeros 11
                 val trimmed = digits.take(11)
-                val countryCode = trimmed.substring(0, 2)
-                val mobilePrefix = trimmed[2]
-                val first4 = trimmed.substring(3, 7)
-                val last4 = trimmed.substring(7)
-                "+$countryCode $mobilePrefix $first4 $last4"
+                if (trimmed.startsWith("569")) {
+                    val remaining = trimmed.substring(3)
+                    when {
+                        remaining.isEmpty() -> "+569"
+                        remaining.length <= 4 -> "+569 $remaining"
+                        else -> {
+                            val first4 = remaining.substring(0, 4)
+                            val last4 = remaining.substring(4).take(4)
+                            "+569 $first4 $last4"
+                        }
+                    }
+                } else {
+                    val countryCode = trimmed.substring(0, 2)
+                    val mobilePrefix = trimmed[2]
+                    val first4 = trimmed.substring(3, 7)
+                    val last4 = trimmed.substring(7)
+                    "+$countryCode $mobilePrefix $first4 $last4"
+                }
             }
         }
     }
