@@ -34,6 +34,7 @@ import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.data.SessionManager
+import com.example.uinavegacion.utils.ImageUtils
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -91,15 +92,27 @@ fun ProfileEditScreen(nav: NavHostController) {
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            profilePhotoUri = photoUri.toString()
             scope.launch {
+                photoSavedMessage = "Procesando imagen..."
+                
+                // Convertir imagen a Base64
+                val base64Image = ImageUtils.uriToBase64(context, photoUri, maxSizeKB = 500)
+                
+                if (base64Image == null) {
+                    photoSavedMessage = "Error al procesar la imagen"
+                    return@launch
+                }
+                
+                // Guardar la imagen en Base64
+                profilePhotoUri = base64Image
+                
                 if (isAdmin && adminId != null) {
                     adminRepository.updateProfilePhoto(adminId!!, profilePhotoUri)
                     val updatedAdmin = db.adminDao().getById(adminId!!)
                     if (updatedAdmin != null) {
                         SessionManager.loginAdmin(updatedAdmin)
                     }
-                    photoSavedMessage = "Foto tomada y guardada"
+                    photoSavedMessage = "✅ Foto tomada y guardada"
                 } else if (userId != null) {
                     val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
                     if (result.isSuccess) {
@@ -107,7 +120,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                         if (updatedUser != null) {
                             SessionManager.loginUser(updatedUser)
                         }
-                        photoSavedMessage = "Foto tomada y guardada"
+                        photoSavedMessage = "✅ Foto tomada y guardada"
                     } else {
                         photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
                     }
@@ -123,15 +136,27 @@ fun ProfileEditScreen(nav: NavHostController) {
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            profilePhotoUri = uri.toString()
             scope.launch {
+                photoSavedMessage = "Procesando imagen..."
+                
+                // Convertir imagen a Base64
+                val base64Image = ImageUtils.uriToBase64(context, uri, maxSizeKB = 500)
+                
+                if (base64Image == null) {
+                    photoSavedMessage = "Error al procesar la imagen"
+                    return@launch
+                }
+                
+                // Guardar la imagen en Base64
+                profilePhotoUri = base64Image
+                
                 if (isAdmin && adminId != null) {
                     adminRepository.updateProfilePhoto(adminId!!, profilePhotoUri)
                     val updatedAdmin = db.adminDao().getById(adminId!!)
                     if (updatedAdmin != null) {
                         SessionManager.loginAdmin(updatedAdmin)
                     }
-                    photoSavedMessage = "Foto de galería guardada"
+                    photoSavedMessage = "✅ Foto de galería guardada"
                 } else if (userId != null) {
                     val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
                     if (result.isSuccess) {
@@ -139,7 +164,7 @@ fun ProfileEditScreen(nav: NavHostController) {
                         if (updatedUser != null) {
                             SessionManager.loginUser(updatedUser)
                         }
-                        photoSavedMessage = "Foto de galería guardada"
+                        photoSavedMessage = "✅ Foto de galería guardada"
                     } else {
                         photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
                     }
