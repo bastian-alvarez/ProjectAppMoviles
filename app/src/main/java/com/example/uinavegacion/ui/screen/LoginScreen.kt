@@ -32,6 +32,7 @@ import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
 import com.example.uinavegacion.ui.theme.AppColors
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 
 @Composable
 fun LoginScreenVm(
@@ -183,7 +184,16 @@ private fun LoginScreen(
                         keyboardType = KeyboardType.Email,
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppColors.TextWhite,
+                        unfocusedTextColor = AppColors.TextWhite,
+                        focusedBorderColor = AppColors.BrightBlue,
+                        unfocusedBorderColor = AppColors.LightBlue,
+                        focusedLabelColor = AppColors.Cyan,
+                        unfocusedLabelColor = AppColors.AccentBlue,
+                        cursorColor = AppColors.Cyan
+                    )
                 )
                 if(emailError != null){
                     Text(
@@ -206,7 +216,8 @@ private fun LoginScreen(
                         IconButton(onClick = { showPass = !showPass }) {
                             Icon(
                                 imageVector = if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                contentDescription = if (showPass) "Ocultar contraseña" else "Mostrar contraseña"
+                                contentDescription = if (showPass) "Ocultar contraseña" else "Mostrar contraseña",
+                                tint = AppColors.AccentBlue
                             )
                         }
                     },
@@ -215,7 +226,16 @@ private fun LoginScreen(
                         keyboardType = KeyboardType.Password,
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppColors.TextWhite,
+                        unfocusedTextColor = AppColors.TextWhite,
+                        focusedBorderColor = AppColors.BrightBlue,
+                        unfocusedBorderColor = AppColors.LightBlue,
+                        focusedLabelColor = AppColors.Cyan,
+                        unfocusedLabelColor = AppColors.AccentBlue,
+                        cursorColor = AppColors.Cyan
+                    )
                 )
                 if(passError != null){
                     Text(
@@ -282,7 +302,11 @@ private fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = AppColors.Cyan
+                    ),
+                    border = BorderStroke(2.dp, AppColors.Cyan)
                 ){
                     Text(
                         "Crear Cuenta",

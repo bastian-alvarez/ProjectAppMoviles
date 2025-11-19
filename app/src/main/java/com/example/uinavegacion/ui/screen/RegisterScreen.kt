@@ -34,6 +34,20 @@ import android.widget.Toast
 import com.example.uinavegacion.ui.theme.AppColors
 import androidx.compose.ui.draw.shadow
 
+// Función helper para colores de campos de texto
+@Composable
+private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = AppColors.TextWhite,
+    unfocusedTextColor = AppColors.TextWhite,
+    focusedBorderColor = AppColors.BrightBlue,
+    unfocusedBorderColor = AppColors.LightBlue,
+    focusedLabelColor = AppColors.Cyan,
+    unfocusedLabelColor = AppColors.AccentBlue,
+    cursorColor = AppColors.Cyan,
+    focusedTrailingIconColor = AppColors.AccentBlue,
+    unfocusedTrailingIconColor = AppColors.AccentBlue
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(nav: NavHostController) {
@@ -123,14 +137,11 @@ fun RegisterScreen(nav: NavHostController) {
                     placeholder = { Text("Ej: Gamer123", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     isError = registerState.nameError != null,
-                    supportingText = registerState.nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } }
-                        ?: { Text("Tu nombre de usuario", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    supportingText = registerState.nameError?.let { { Text(it, color = AppColors.Red, style = MaterialTheme.typography.bodySmall) } }
+                        ?: { Text("Tu nombre de usuario", style = MaterialTheme.typography.bodySmall, color = AppColors.AccentBlue) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
+                    colors = textFieldColors()
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -141,16 +152,13 @@ fun RegisterScreen(nav: NavHostController) {
                     label = { Text("Correo Electrónico", style = MaterialTheme.typography.bodyMedium) },
                     singleLine = true,
                     isError = registerState.emailError != null,
-                    supportingText = registerState.emailError?.let { { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) } },
+                    supportingText = registerState.emailError?.let { { Text(it, color = AppColors.Red, style = MaterialTheme.typography.bodySmall) } },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
+                    colors = textFieldColors()
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -169,10 +177,7 @@ fun RegisterScreen(nav: NavHostController) {
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
+                    colors = textFieldColors()
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -199,10 +204,7 @@ fun RegisterScreen(nav: NavHostController) {
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
+                    colors = textFieldColors()
                 )
                 
                 // Indicador de requisitos de contraseña
@@ -286,10 +288,7 @@ fun RegisterScreen(nav: NavHostController) {
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                    )
+                    colors = textFieldColors()
                 )
                 
                 // Mostrar error general si existe
@@ -323,10 +322,10 @@ fun RegisterScreen(nav: NavHostController) {
                         .height(48.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        containerColor = AppColors.BrightBlue,
+                        contentColor = AppColors.TextWhite,
+                        disabledContainerColor = AppColors.LightBlue.copy(alpha = 0.3f),
+                        disabledContentColor = AppColors.AccentBlue
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 2.dp,
@@ -356,12 +355,11 @@ fun RegisterScreen(nav: NavHostController) {
                         .height(44.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        containerColor = MaterialTheme.colorScheme.surface
+                        contentColor = AppColors.Cyan
                     ),
                     border = androidx.compose.foundation.BorderStroke(
-                        1.5.dp, 
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        2.dp, 
+                        AppColors.Cyan
                     )
                 ){
                     Text(
