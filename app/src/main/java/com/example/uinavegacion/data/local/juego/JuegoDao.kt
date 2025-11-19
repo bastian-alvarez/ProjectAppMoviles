@@ -99,4 +99,25 @@ interface JuegoDao {
     
     @Delete
     suspend fun delete(juego: JuegoEntity)
+    
+    // ==================== MÉTODOS DE CACHÉ ====================
+    
+    /**
+     * Elimina juegos cuya caché ha expirado
+     * @param expirationTimestamp Timestamp de expiración (ahora - TTL)
+     */
+    @Query("DELETE FROM juegos WHERE cachedAt < :expirationTimestamp")
+    suspend fun deleteExpired(expirationTimestamp: Long): Int
+    
+    /**
+     * Limpia toda la caché de juegos
+     */
+    @Query("DELETE FROM juegos")
+    suspend fun clearCache(): Int
+    
+    /**
+     * Actualiza el timestamp de caché de un juego
+     */
+    @Query("UPDATE juegos SET cachedAt = :timestamp WHERE id = :id")
+    suspend fun updateCachedAt(id: Long, timestamp: Long = System.currentTimeMillis())
 }

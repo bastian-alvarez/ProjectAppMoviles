@@ -1,36 +1,39 @@
 package com.example.uinavegacion.data.local.library
 
 import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.example.uinavegacion.data.local.user.UserEntity
 
-@Entity(
-    tableName = "biblioteca",
-    foreignKeys = [
-        ForeignKey(
-            entity = UserEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["userId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index(value = ["userId"])]
-)
+/**
+ * Entidad ultra-simplificada de Biblioteca - SOLO PARA CACHÉ
+ * Solo guarda qué juegos tiene el usuario (IDs)
+ * Detalles del juego se obtienen del microservicio
+ */
+@Entity(tableName = "biblioteca")
 data class LibraryEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
-    val userId: Long,           // Usuario propietario del juego
-    val juegoId: String,        // ID del juego comprado
-    val name: String,           // Nombre del juego
-    val price: Double,          // Precio pagado
-    val dateAdded: String,      // Fecha de compra
-    val status: String = "Disponible",  // Estado del juego
-    val genre: String = "Acción",       // Género del juego
-    val remoteGameId: String? = null,
+    
+    // Campos ESENCIALES
+    val userId: Long,                   // Usuario propietario
+    val juegoId: String,                // ID local del juego
+    val remoteGameId: String? = null,   // ID del juego en microservicio
+    val cachedAt: Long = System.currentTimeMillis(), // Para TTL
+    
+    // Campos MANTENIDOS solo para compatibilidad
+    val name: String = "",              // Obtener del microservicio idealmente
+    val price: Double = 0.0,
+    val dateAdded: String = "",
+    val status: String = "Disponible",
+    val genre: String = "Acción",
     val licenseId: String? = null,
     val licenseKey: String? = null,
     val licenseExpiresAt: String? = null,
     val licenseAssignedAt: String? = null
-)
+) {
+    /**
+     * Verifica si la caché ha expirado (15 minutos)
+     */
+    fun isExpired(ttlMs: Long = 15 * 60 * 1000L): Boolean {
+        return System.currentTimeMillis() - cachedAt > ttlMs
+    }
+}

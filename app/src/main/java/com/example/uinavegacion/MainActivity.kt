@@ -65,8 +65,17 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
     var isSyncing by remember { mutableStateOf(false) }
     var syncCompleted by remember { mutableStateOf(false) }
     
-    // Verificar si necesita sincronización inicial
+    // Limpieza de caché y sincronización inicial
     LaunchedEffect(Unit) {
+        // 1. SIEMPRE limpiar caché expirada al iniciar
+        try {
+            Log.d("AppRoot", "🧹 Limpiando caché expirada...")
+            com.example.uinavegacion.data.cache.CacheManager.cleanExpiredCache(db)
+        } catch (e: Exception) {
+            Log.e("AppRoot", "Error al limpiar caché: ${e.message}", e)
+        }
+        
+        // 2. Sincronización inicial (solo primera vez)
         if (!SyncPreferences.areGamesSynced(context)) {
             isSyncing = true
             kotlinx.coroutines.delay(500) // Pequeño delay para mostrar el splash

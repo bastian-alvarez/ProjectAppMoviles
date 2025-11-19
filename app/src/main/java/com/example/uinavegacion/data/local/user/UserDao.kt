@@ -115,5 +115,26 @@ interface UserDao{
     //actualizar remoteId
     @Query("UPDATE users SET remoteId = :remoteId WHERE id = :id")
     suspend fun updateRemoteId(id: Long, remoteId: String)
+    
+    // ==================== MÉTODOS DE CACHÉ ====================
+    
+    /**
+     * Elimina usuarios cuya caché ha expirado
+     * @param expirationTimestamp Timestamp de expiración (ahora - TTL)
+     */
+    @Query("DELETE FROM users WHERE cachedAt < :expirationTimestamp")
+    suspend fun deleteExpired(expirationTimestamp: Long): Int
+    
+    /**
+     * Limpia toda la caché de usuarios
+     */
+    @Query("DELETE FROM users")
+    suspend fun clearCache(): Int
+    
+    /**
+     * Actualiza el timestamp de caché de un usuario
+     */
+    @Query("UPDATE users SET cachedAt = :timestamp WHERE id = :id")
+    suspend fun updateCachedAt(id: Long, timestamp: Long = System.currentTimeMillis())
 
 }

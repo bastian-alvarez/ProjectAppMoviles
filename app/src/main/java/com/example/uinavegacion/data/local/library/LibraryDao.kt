@@ -34,4 +34,25 @@ interface LibraryDao {
 
     @Query("DELETE FROM biblioteca WHERE userId = :userId AND juegoId = :juegoId")
     suspend fun removeGameFromUser(userId: Long, juegoId: String)
+    
+    // ==================== MÉTODOS DE CACHÉ ====================
+    
+    /**
+     * Elimina entradas de biblioteca cuya caché ha expirado
+     * @param expirationTimestamp Timestamp de expiración (ahora - TTL)
+     */
+    @Query("DELETE FROM biblioteca WHERE cachedAt < :expirationTimestamp")
+    suspend fun deleteExpired(expirationTimestamp: Long): Int
+    
+    /**
+     * Limpia toda la caché de biblioteca
+     */
+    @Query("DELETE FROM biblioteca")
+    suspend fun clearCache(): Int
+    
+    /**
+     * Actualiza el timestamp de caché de una entrada
+     */
+    @Query("UPDATE biblioteca SET cachedAt = :timestamp WHERE id = :id")
+    suspend fun updateCachedAt(id: Long, timestamp: Long = System.currentTimeMillis())
 }
