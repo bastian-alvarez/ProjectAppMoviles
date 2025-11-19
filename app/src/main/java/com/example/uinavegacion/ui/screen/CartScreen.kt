@@ -37,6 +37,17 @@ import com.example.uinavegacion.ui.components.AnimatedIconButton
 import com.example.uinavegacion.ui.components.AnimatedTextButton
 import com.example.uinavegacion.ui.components.AnimatedFloatingActionButton
 import com.example.uinavegacion.data.SessionManager
+import com.example.uinavegacion.ui.theme.AppColors
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+
+// Colores del tema profesional
+private val DarkBlue = AppColors.DarkBlue
+private val MediumBlue = AppColors.MediumBlue
+private val LightBlue = AppColors.LightBlue
+private val AccentBlue = AppColors.AccentBlue
+private val BrightBlue = AppColors.BrightBlue
+private val Cyan = AppColors.Cyan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,12 +86,19 @@ fun CartScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = DarkBlue,
         topBar = { 
             TopAppBar(
-                title = { Text("Mi Carrito ($totalItems)", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Mi Carrito ($totalItems)", 
+                        fontWeight = FontWeight.Bold,
+                        color = androidx.compose.ui.graphics.Color.White
+                    ) 
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = DarkBlue,
+                    titleContentColor = androidx.compose.ui.graphics.Color.White
                 )
             ) 
         }
@@ -262,41 +280,67 @@ private fun EmptyCartContent(
     isTablet: Boolean = false
 ) {
     Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isTablet) 8.dp else 4.dp)
+        modifier = modifier.shadow(6.dp, RoundedCornerShape(16.dp)),
+        colors = CardDefaults.cardColors(containerColor = MediumBlue),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(if (isTablet) 48.dp else 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "🛒",
-                style = if (isTablet) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displayMedium
-            )
-            Spacer(Modifier.height(if (isTablet) 24.dp else 16.dp))
-            Text(
-                text = "Tu carrito está vacío",
-                style = if (isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(if (isTablet) 12.dp else 8.dp))
-            Text(
-                text = "Agrega algunos juegos para comenzar",
-                style = if (isTablet) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(if (isTablet) 24.dp else 16.dp))
-            Button(
-                onClick = onExploreGames,
-                modifier = Modifier.then(if (isTablet) Modifier.height(56.dp) else Modifier)
-            ) {
-                Text(
-                    "Explorar Juegos",
-                    style = if (isTablet) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(MediumBlue, LightBlue.copy(alpha = 0.8f))
+                    )
                 )
+                .padding(if (isTablet) 48.dp else 32.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    Icons.Default.ShoppingCart,
+                    contentDescription = null,
+                    modifier = Modifier.size(if (isTablet) 80.dp else 64.dp),
+                    tint = Cyan
+                )
+                Spacer(Modifier.height(if (isTablet) 24.dp else 16.dp))
+                Text(
+                    text = "Tu carrito está vacío",
+                    style = if (isTablet) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = androidx.compose.ui.graphics.Color.White
+                )
+                Spacer(Modifier.height(if (isTablet) 12.dp else 8.dp))
+                Text(
+                    text = "Agrega algunos juegos para comenzar",
+                    style = if (isTablet) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = AccentBlue
+                )
+                Spacer(Modifier.height(if (isTablet) 24.dp else 16.dp))
+                Button(
+                    onClick = onExploreGames,
+                    modifier = Modifier.then(if (isTablet) Modifier.height(56.dp) else Modifier),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BrightBlue,
+                        contentColor = androidx.compose.ui.graphics.Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Explore,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Explorar Juegos",
+                        style = if (isTablet) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

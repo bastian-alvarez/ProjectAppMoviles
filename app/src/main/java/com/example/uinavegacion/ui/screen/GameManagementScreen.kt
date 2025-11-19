@@ -1,5 +1,8 @@
 package com.example.uinavegacion.ui.screen
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,9 +29,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.local.juego.JuegoEntity
-import com.example.uinavegacion.data.local.categoria.CategoriaEntity
-import com.example.uinavegacion.data.local.genero.GeneroEntity
+// import com.example.uinavegacion.data.local.categoria.CategoriaEntity
+// import com.example.uinavegacion.data.local.genero.GeneroEntity
 import com.example.uinavegacion.data.repository.GameRepository
+import com.example.uinavegacion.data.remote.repository.AdminGameRepository
 import com.example.uinavegacion.ui.viewmodel.GameManagementViewModel
 import com.example.uinavegacion.ui.viewmodel.GameManagementViewModelFactory
 import android.widget.Toast
@@ -65,61 +69,13 @@ fun GameManagementScreen(navController: NavHostController) {
         try {
             android.util.Log.d("GameManagementScreen", "🔄 FORZANDO RECREACIÓN COMPLETA DE BASE DE DATOS")
             
-            // Primero, asegurar que existan todas las categorías y géneros necesarios
-            try {
-                android.util.Log.d("GameManagementScreen", "🏷️ Verificando y creando categorías y géneros...")
-                
-                // Crear las 5 categorías necesarias
-                val categoriasSeed = listOf(
-                    CategoriaEntity(nombre = "Acción", descripcion = "Juegos de alta intensidad y combate"),
-                    CategoriaEntity(nombre = "Aventura", descripcion = "Exploración y narrativa inmersiva"),
-                    CategoriaEntity(nombre = "RPG", descripcion = "Juegos de rol y desarrollo de personajes"),
-                    CategoriaEntity(nombre = "Deportes", descripcion = "Simulaciones deportivas"),
-                    CategoriaEntity(nombre = "Estrategia", descripcion = "Planificación y táctica")
-                )
-                
-                categoriasSeed.forEachIndexed { index, categoria ->
-                    try {
-                        val existing = db.categoriaDao().getById((index + 1).toLong())
-                        if (existing == null) {
-                            val catId = db.categoriaDao().insert(categoria)
-                            android.util.Log.d("GameManagementScreen", "✅ Categoría ${categoria.nombre} creada con ID: $catId")
-                        } else {
-                            android.util.Log.d("GameManagementScreen", "ℹ️ Categoría ${categoria.nombre} ya existe (ID: ${existing.id})")
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e("GameManagementScreen", "❌ Error con categoría ${categoria.nombre}: ${e.message}")
-                    }
-                }
-                
-                // Crear los 5 géneros necesarios
-                val generosSeed = listOf(
-                    GeneroEntity(nombre = "Plataformas", descripcion = "Juegos de salto y plataformas"),
-                    GeneroEntity(nombre = "Shooter", descripcion = "Juegos de disparos"),
-                    GeneroEntity(nombre = "Racing", descripcion = "Carreras y velocidad"),
-                    GeneroEntity(nombre = "Puzzle", descripcion = "Rompecabezas y lógica"),
-                    GeneroEntity(nombre = "MMORPG", descripcion = "Juegos masivos en línea")
-                )
-                
-                generosSeed.forEachIndexed { index, genero ->
-                    try {
-                        val existing = db.generoDao().getById((index + 1).toLong())
-                        if (existing == null) {
-                            val genId = db.generoDao().insert(genero)
-                            android.util.Log.d("GameManagementScreen", "✅ Género ${genero.nombre} creado con ID: $genId")
-                        } else {
-                            android.util.Log.d("GameManagementScreen", "ℹ️ Género ${genero.nombre} ya existe (ID: ${existing.id})")
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e("GameManagementScreen", "❌ Error con género ${genero.nombre}: ${e.message}")
-                    }
-                }
-                
-                android.util.Log.d("GameManagementScreen", "✅ Categorías y géneros verificados/creados")
-                
-            } catch (e: Exception) {
-                android.util.Log.e("GameManagementScreen", "❌ Error creando categorías/géneros: ${e.message}", e)
-            }
+            // DESHABILITADO: Categorías y géneros temporalmente no disponibles
+            // try {
+            //     android.util.Log.d("GameManagementScreen", "🏷️ Verificando y creando categorías y géneros...")
+            //     ... código comentado ...
+            // } catch (e: Exception) {
+            //     android.util.Log.e("GameManagementScreen", "❌ Error creando categorías/géneros: ${e.message}", e)
+            // }
             
             // Eliminar juegos existentes si los hay
             try {
@@ -131,19 +87,16 @@ fun GameManagementScreen(navController: NavHostController) {
             
             android.util.Log.d("GameManagementScreen", "💾 INSERTANDO CATÁLOGO COMPLETO DE JUEGOS PARA PC...")
             
-            // Obtener IDs reales de categorías por nombre
-            val categoriaAccion = db.categoriaDao().getByNombre("Acción")
-            val categoriaAventura = db.categoriaDao().getByNombre("Aventura")
-            val categoriaRPG = db.categoriaDao().getByNombre("RPG")
-            val categoriaDeportes = db.categoriaDao().getByNombre("Deportes")
-            val categoriaEstrategia = db.categoriaDao().getByNombre("Estrategia")
+            // DESHABILITADO: Usar IDs hardcodeados en lugar de categorías/géneros
+            // val categoriaAccion = db.categoriaDao().getByNombre("Acción")
+            // ... código comentado ...
             
             val categoriasMap = mapOf(
-                1L to (categoriaAccion?.id ?: 1L),
-                2L to (categoriaAventura?.id ?: 2L),
-                3L to (categoriaRPG?.id ?: 3L),
-                4L to (categoriaDeportes?.id ?: 4L),
-                5L to (categoriaEstrategia?.id ?: 5L)
+                1L to 1L,  // Hardcoded IDs
+                2L to 2L,
+                3L to 3L,
+                4L to 4L,
+                5L to 5L
             )
             
             android.util.Log.d("GameManagementScreen", "📁 IDs de categorías:")
@@ -257,6 +210,48 @@ fun GameManagementScreen(navController: NavHostController) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var gameToDelete by remember { mutableStateOf<JuegoEntity?>(null) }
     var showResetDialog by remember { mutableStateOf(false) }
+    
+    // Estado para subida de imagen
+    var uploadImageMessage by remember { mutableStateOf<String?>(null) }
+    var selectedGameForImage by remember { mutableStateOf<JuegoEntity?>(null) }
+    val adminGameRepository = remember { AdminGameRepository(context) }
+    
+    // Launcher para seleccionar imagen
+    val imageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null && selectedGameForImage != null) {
+            scope.launch {
+                uploadImageMessage = "Subiendo imagen..."
+                // Convertir remoteId a Long para la API
+                val gameId = selectedGameForImage!!.remoteId?.toLongOrNull() 
+                    ?: selectedGameForImage!!.id
+                
+                val result = adminGameRepository.uploadGameImage(gameId, uri)
+                if (result.isSuccess) {
+                    uploadImageMessage = "✅ Imagen subida exitosamente"
+                    // Refrescar lista de juegos
+                    viewModel.refreshGames()
+                } else {
+                    uploadImageMessage = "Error: ${result.exceptionOrNull()?.message}"
+                }
+                // Limpiar mensaje después de 3 segundos
+                kotlinx.coroutines.delay(3000)
+                uploadImageMessage = null
+                selectedGameForImage = null
+            }
+        }
+    }
+    
+    // Mostrar mensaje de subida de imagen
+    uploadImageMessage?.let { message ->
+        LaunchedEffect(message) {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
     
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -509,6 +504,10 @@ fun GameManagementScreen(navController: NavHostController) {
                                 onDelete = { 
                                     gameToDelete = game
                                     showDeleteDialog = true
+                                },
+                                onUploadImage = {
+                                    selectedGameForImage = game
+                                    imageLauncher.launch("image/*")
                                 }
                             )
                         }
@@ -788,7 +787,8 @@ private fun AddEditGameDialog(
 private fun GameManagementItem(
     game: JuegoEntity,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onUploadImage: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -901,6 +901,23 @@ private fun GameManagementItem(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Editar", style = MaterialTheme.typography.labelSmall)
+                }
+                Button(
+                    onClick = onUploadImage,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AdminCyan,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.size(width = 100.dp, height = 38.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Image,
+                        contentDescription = "Subir imagen",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Imagen", style = MaterialTheme.typography.labelSmall)
                 }
                 Button(
                     onClick = onDelete,

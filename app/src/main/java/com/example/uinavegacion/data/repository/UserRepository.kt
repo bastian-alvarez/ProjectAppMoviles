@@ -13,7 +13,6 @@ import com.example.uinavegacion.data.remote.admin.AdminUserRemoteRepository
 class UserRepository(
     private val userDao: UserDao, //inyectando el DAO
     private val authRemoteRepository: AuthRemoteRepository = AuthRemoteRepository(),
-    private val userRemoteRepository: com.example.uinavegacion.data.remote.user.UserRemoteRepository = com.example.uinavegacion.data.remote.user.UserRemoteRepository(),
     private val adminUserRemoteRepository: AdminUserRemoteRepository = AdminUserRemoteRepository()
 ){
     //manipular login (email y pass coincidan) - ahora usa microservicio
@@ -154,24 +153,13 @@ class UserRepository(
      */
     suspend fun updateProfilePhoto(userId: Long, photoUri: String?): Result<UserEntity> {
         return try {
-            Log.d("UserRepository", "📸 Actualizando foto de perfil...")
+            Log.d("UserRepository", "📸 Actualizando foto de perfil en cache local...")
             
-            // 1. Si hay foto, subirla al microservicio
-            if (photoUri != null && photoUri.isNotBlank()) {
-                val remoteResult = userRemoteRepository.updateMyPhoto(photoUri)
-                
-                if (remoteResult.isSuccess) {
-                    Log.d("UserRepository", "✅ Foto subida al microservicio exitosamente")
-                } else {
-                    Log.w("UserRepository", "⚠️ No se pudo subir al microservicio: ${remoteResult.exceptionOrNull()?.message}")
-                }
-            }
-            
-            // 2. Actualizar en BD local
+            // Actualizar en BD local (cache)
             userDao.updateProfilePhoto(userId, photoUri)
-            Log.d("UserRepository", "✅ Foto actualizada en BD local")
+            Log.d("UserRepository", "✅ Foto actualizada en cache local")
             
-            // 3. Retornar usuario actualizado
+            // Retornar usuario actualizado
             val updatedUser = userDao.getById(userId)
                 ?: return Result.failure(Exception("Usuario no encontrado después de actualizar"))
             
@@ -361,7 +349,7 @@ class UserRepository(
     /**
      * Sincroniza un usuario del microservicio con la BD local
      */
-    private suspend fun upsertRemoteUser(remote: com.example.uinavegacion.data.remote.user.UserResponse) {
+    private suspend fun upsertRemoteUser(remote: com.example.uinavegacion.data.remote.dto.UserResponse) {
         try {
             // Buscar si ya existe en BD local por email
             val existingUser = userDao.getByEmail(remote.email)
@@ -369,13 +357,13 @@ class UserRepository(
             if (existingUser != null) {
                 // Actualizar usuario existente
                 val updated = existingUser.copy(
-                    name = remote.nombre,
+                    name = remote.name,
                     email = remote.email,
-                    phone = remote.telefono ?: existingUser.phone,
-                    profilePhotoUri = remote.fotoPerfilUrl,
-                    gender = remote.genero ?: existingUser.gender,
-                    isBlocked = existingUser.isBlocked, // Mantener el estado de bloqueo local
-                    remoteId = remote.id
+                    phone = remote.phone ?: existingUser.phone,
+                    profilePhotoUri = remote.profilePhotoUri,
+                    gender = remote.gender ?: existingUser.gender,
+                    isBlocked = remote.isBlocked,
+                    remoteId = remote.id.toString()
                 )
                 userDao.insert(updated)
                 Log.d("UserRepository", "Usuario actualizado en BD local: ${remote.email}")
@@ -383,14 +371,14 @@ class UserRepository(
                 // Crear nuevo usuario
                 val newUser = UserEntity(
                     id = 0, // Room generará el ID local
-                    name = remote.nombre,
+                    name = remote.name,
                     email = remote.email,
-                    phone = remote.telefono ?: "",
+                    phone = remote.phone ?: "",
                     password = "", // No tenemos el password del microservicio
-                    profilePhotoUri = remote.fotoPerfilUrl,
-                    gender = remote.genero ?: "",
-                    isBlocked = false, // Por defecto no bloqueado
-                    remoteId = remote.id
+                    profilePhotoUri = remote.profilePhotoUri,
+                    gender = remote.gender ?: "",
+                    isBlocked = remote.isBlocked,
+                    remoteId = remote.id.toString()
                 )
                 userDao.insert(newUser)
                 Log.d("UserRepository", "Usuario creado en BD local: ${remote.email}")

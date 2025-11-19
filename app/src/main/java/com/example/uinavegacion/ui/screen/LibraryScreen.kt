@@ -24,6 +24,18 @@ import com.example.uinavegacion.ui.utils.rememberWindowInfo
 import com.example.uinavegacion.ui.utils.AdaptiveUtils
 import com.example.uinavegacion.ui.components.AnimatedButton
 import com.example.uinavegacion.ui.components.AnimatedOutlinedButton
+import com.example.uinavegacion.ui.theme.AppColors
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+
+// Colores del tema profesional
+private val DarkBlue = AppColors.DarkBlue
+private val MediumBlue = AppColors.MediumBlue
+private val LightBlue = AppColors.LightBlue
+private val AccentBlue = AppColors.AccentBlue
+private val BrightBlue = AppColors.BrightBlue
+private val Cyan = AppColors.Cyan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,19 +47,26 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
     val filteredGames = libraryViewModel.getGamesByStatus(selectedFilter)
     
     Scaffold(
+        containerColor = DarkBlue,
         topBar = { 
             TopAppBar(
-                title = { Text("Mi Biblioteca", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Mi Biblioteca", 
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    ) 
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = DarkBlue,
+                    titleContentColor = Color.White
                 ),
                 navigationIcon = {
                     IconButton(onClick = { nav.navigate(Route.Home.path) }) {
                         Icon(
                             Icons.Default.Home,
                             contentDescription = "Inicio",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = Color.White
                         )
                     }
                 }
@@ -65,9 +84,12 @@ fun LibraryScreen(nav: NavHostController, libraryViewModel: LibraryViewModel = v
         ) {
             // Estadísticas de la biblioteca - Adaptado para tablets
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(6.dp, RoundedCornerShape(16.dp)),
+                colors = CardDefaults.cardColors(containerColor = MediumBlue),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Row(
                     modifier = Modifier

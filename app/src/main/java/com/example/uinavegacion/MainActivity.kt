@@ -23,8 +23,6 @@ import com.example.uinavegacion.data.local.database.AppDatabase
 import android.app.Application
 import com.example.uinavegacion.data.local.user.UserDao
 import com.example.uinavegacion.data.local.juego.JuegoDao
-import com.example.uinavegacion.data.local.ordenCompra.OrdenCompraDao
-import com.example.uinavegacion.data.local.detalle.DetalleDao
 import com.example.uinavegacion.data.local.admin.AdminDao
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
@@ -100,12 +98,10 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades
         }
     }
 
-    // DAOs
+    // DAOs (solo los necesarios para caché mínima)
     val userDao: UserDao = db.userDao()
     val adminDao: AdminDao = db.adminDao()
     val gameDao: JuegoDao = db.juegoDao()
-    val orderDao: OrdenCompraDao = db.ordenCompraDao()
-    val orderDetailDao: DetalleDao = db.detalleDao()
 
     // Repositorios
     val userRepository = UserRepository(userDao)

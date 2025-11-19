@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -18,9 +20,18 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.data.SessionManager
 import com.example.uinavegacion.data.local.database.AppDatabase
+import com.example.uinavegacion.ui.theme.AppColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+// Colores del tema profesional
+private val DarkBlue = AppColors.DarkBlue
+private val MediumBlue = AppColors.MediumBlue
+private val LightBlue = AppColors.LightBlue
+private val AccentBlue = AppColors.AccentBlue
+private val BrightBlue = AppColors.BrightBlue
+private val Cyan = AppColors.Cyan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,17 +140,24 @@ fun ChangePasswordScreen(nav: NavHostController) {
     }
     
     Scaffold(
+        containerColor = DarkBlue,
         topBar = {
             TopAppBar(
-                title = { Text("Cambiar Contraseña", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Cambiar Contraseña", 
+                        fontWeight = FontWeight.Bold,
+                        color = androidx.compose.ui.graphics.Color.White
+                    ) 
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = DarkBlue,
+                    titleContentColor = androidx.compose.ui.graphics.Color.White,
+                    navigationIconContentColor = androidx.compose.ui.graphics.Color.White
                 ),
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.Default.ArrowBack, "Volver", tint = androidx.compose.ui.graphics.Color.White)
                     }
                 }
             )

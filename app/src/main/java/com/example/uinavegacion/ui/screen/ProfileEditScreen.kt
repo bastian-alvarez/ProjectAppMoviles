@@ -34,7 +34,7 @@ import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.data.SessionManager
-import com.example.uinavegacion.utils.ImageUtils
+import com.example.uinavegacion.data.remote.repository.UserRemoteRepository
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -59,6 +59,7 @@ fun ProfileEditScreen(nav: NavHostController) {
     val db = remember { AppDatabase.getInstance(context) }
     val userRepository = remember { UserRepository(db.userDao()) }
     val adminRepository = remember { AdminRepository(db.adminDao()) }
+    val userRemoteRepository = remember { UserRemoteRepository(context) }
     val scope = rememberCoroutineScope()
     
     // Determinar si es admin o usuario
@@ -93,36 +94,36 @@ fun ProfileEditScreen(nav: NavHostController) {
     ) { success ->
         if (success) {
             scope.launch {
-                photoSavedMessage = "Procesando imagen..."
-                
-                // Convertir imagen a Base64
-                val base64Image = ImageUtils.uriToBase64(context, photoUri, maxSizeKB = 500)
-                
-                if (base64Image == null) {
-                    photoSavedMessage = "Error al procesar la imagen"
-                    return@launch
-                }
-                
-                // Guardar la imagen en Base64
-                profilePhotoUri = base64Image
+                photoSavedMessage = "Subiendo imagen al servidor..."
                 
                 if (isAdmin && adminId != null) {
-                    adminRepository.updateProfilePhoto(adminId!!, profilePhotoUri)
+                    // Para admins: usar método local (Base64) temporalmente
+                    // TODO: Implementar endpoint de admin cuando esté disponible
+                    adminRepository.updateProfilePhoto(adminId!!, photoUri.toString())
                     val updatedAdmin = db.adminDao().getById(adminId!!)
                     if (updatedAdmin != null) {
                         SessionManager.loginAdmin(updatedAdmin)
                     }
                     photoSavedMessage = "✅ Foto tomada y guardada"
                 } else if (userId != null) {
-                    val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
+                    // Para usuarios: usar nuevo endpoint multipart
+                    val result = userRemoteRepository.uploadProfilePhoto(photoUri)
                     if (result.isSuccess) {
-                        val updatedUser = result.getOrNull()
-                        if (updatedUser != null) {
-                            SessionManager.loginUser(updatedUser)
+                        val userResponse = result.getOrNull()
+                        if (userResponse != null) {
+                            // Actualizar perfil local con nueva URL
+                            profilePhotoUri = userResponse.profilePhotoUri
+                            // Actualizar cache local
+                            userRepository.updateProfilePhoto(userId!!, userResponse.profilePhotoUri)
+                            // Recargar sesión
+                            val updatedUser = db.userDao().getById(userId!!)
+                            if (updatedUser != null) {
+                                SessionManager.loginUser(updatedUser)
+                            }
                         }
-                        photoSavedMessage = "✅ Foto tomada y guardada"
+                        photoSavedMessage = "✅ Foto tomada y subida al servidor"
                     } else {
-                        photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
+                        photoSavedMessage = "Error: ${result.exceptionOrNull()?.message ?: "No se pudo subir la foto"}"
                     }
                 } else {
                     photoSavedMessage = "Error: Usuario/Admin no identificado"
@@ -137,36 +138,36 @@ fun ProfileEditScreen(nav: NavHostController) {
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                photoSavedMessage = "Procesando imagen..."
-                
-                // Convertir imagen a Base64
-                val base64Image = ImageUtils.uriToBase64(context, uri, maxSizeKB = 500)
-                
-                if (base64Image == null) {
-                    photoSavedMessage = "Error al procesar la imagen"
-                    return@launch
-                }
-                
-                // Guardar la imagen en Base64
-                profilePhotoUri = base64Image
+                photoSavedMessage = "Subiendo imagen al servidor..."
                 
                 if (isAdmin && adminId != null) {
-                    adminRepository.updateProfilePhoto(adminId!!, profilePhotoUri)
+                    // Para admins: usar método local (Base64) temporalmente
+                    // TODO: Implementar endpoint de admin cuando esté disponible
+                    adminRepository.updateProfilePhoto(adminId!!, uri.toString())
                     val updatedAdmin = db.adminDao().getById(adminId!!)
                     if (updatedAdmin != null) {
                         SessionManager.loginAdmin(updatedAdmin)
                     }
                     photoSavedMessage = "✅ Foto de galería guardada"
                 } else if (userId != null) {
-                    val result = userRepository.updateProfilePhoto(userId!!, profilePhotoUri)
+                    // Para usuarios: usar nuevo endpoint multipart
+                    val result = userRemoteRepository.uploadProfilePhoto(uri)
                     if (result.isSuccess) {
-                        val updatedUser = result.getOrNull()
-                        if (updatedUser != null) {
-                            SessionManager.loginUser(updatedUser)
+                        val userResponse = result.getOrNull()
+                        if (userResponse != null) {
+                            // Actualizar perfil local con nueva URL
+                            profilePhotoUri = userResponse.profilePhotoUri
+                            // Actualizar cache local
+                            userRepository.updateProfilePhoto(userId!!, userResponse.profilePhotoUri)
+                            // Recargar sesión
+                            val updatedUser = db.userDao().getById(userId!!)
+                            if (updatedUser != null) {
+                                SessionManager.loginUser(updatedUser)
+                            }
                         }
-                        photoSavedMessage = "✅ Foto de galería guardada"
+                        photoSavedMessage = "✅ Foto de galería subida al servidor"
                     } else {
-                        photoSavedMessage = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto"
+                        photoSavedMessage = "Error: ${result.exceptionOrNull()?.message ?: "No se pudo subir la foto"}"
                     }
                 } else {
                     photoSavedMessage = "Error: Usuario/Admin no identificado"

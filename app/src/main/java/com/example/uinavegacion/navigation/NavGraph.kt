@@ -42,7 +42,7 @@ fun AppNavGraph(navController: NavHostController) {
     // Contexto y base de datos para LibraryViewModel
     val context = LocalContext.current
     val db = remember { AppDatabase.getInstance(context) }
-    val libraryRepository = remember { LibraryRepository(db.libraryDao(), LibraryPostRepository.create()) }
+    val libraryRepository = remember { LibraryRepository(db.libraryDao(), LibraryPostRepository()) }
 
     // ViewModel compartidos
     val cartViewModel: CartViewModel = viewModel()

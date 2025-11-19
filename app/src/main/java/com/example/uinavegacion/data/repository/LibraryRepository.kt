@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
  */
 class LibraryRepository(
     private val libraryDao: LibraryDao,
-    private val remoteRepository: LibraryPostRepository = LibraryPostRepository.create(),
+    private val remoteRepository: LibraryPostRepository = LibraryPostRepository(),
     private val libraryRemoteRepository: LibraryRemoteRepository = LibraryRemoteRepository()
 ) {
     
@@ -166,11 +166,12 @@ class LibraryRepository(
     suspend fun removeGameFromLibrary(userId: Long, juegoId: String): Result<Unit> {
         return try {
             val entry = libraryDao.findEntry(userId, juegoId)
-            entry?.licenseId?.let { licenseId ->
-                remoteRepository.releaseLicense(licenseId).onFailure {
-                    Log.w("LibraryRepository", "No se pudo liberar la licencia $licenseId: ${it.message}")
-                }
-            }
+            // DESHABILITADO: Sistema de licencias no disponible
+            // entry?.licenseId?.let { licenseId ->
+            //     remoteRepository.releaseLicense(licenseId).onFailure {
+            //         Log.w("LibraryRepository", "No se pudo liberar la licencia $licenseId: ${it.message}")
+            //     }
+            // }
             libraryDao.removeGameFromUser(userId, juegoId)
             Result.success(Unit)
         } catch (e: Exception) {
@@ -200,14 +201,17 @@ class LibraryRepository(
     }
 
     private suspend fun assignRemoteLicense(gameRemoteId: String, remoteUserId: String): LicenciaRemoteDto {
-        Log.d("LibraryRepository", "Solicitando licencias disponibles para juego remoto $gameRemoteId")
-        val availableLicenses = remoteRepository.fetchAvailableLicenses(gameRemoteId, limit = 1)
-            .getOrElse { throw it }
-        val license = availableLicenses.firstOrNull()
-            ?: throw IllegalStateException("No hay licencias disponibles para este juego")
-        Log.d("LibraryRepository", "Asignando licencia ${license.id} al usuario remoto $remoteUserId")
-        return remoteRepository.assignLicense(license.id, remoteUserId)
-            .getOrElse { throw it }
+        // DESHABILITADO: Sistema de licencias no disponible
+        Log.w("LibraryRepository", "Sistema de licencias temporalmente deshabilitado")
+        throw UnsupportedOperationException("Sistema de licencias no disponible")
+        // Log.d("LibraryRepository", "Solicitando licencias disponibles para juego remoto $gameRemoteId")
+        // val availableLicenses = remoteRepository.fetchAvailableLicenses(gameRemoteId, limit = 1)
+        //     .getOrElse { throw it }
+        // val license = availableLicenses.firstOrNull()
+        //     ?: throw IllegalStateException("No hay licencias disponibles para este juego")
+        // Log.d("LibraryRepository", "Asignando licencia ${license.id} al usuario remoto $remoteUserId")
+        // return remoteRepository.assignLicense(license.id, remoteUserId)
+        //     .getOrElse { throw it }
     }
 }
 

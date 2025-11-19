@@ -23,9 +23,9 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.GameRepository
-import com.example.uinavegacion.data.repository.ResenaRepository
+// import com.example.uinavegacion.data.repository.ResenaRepository
 import com.example.uinavegacion.data.SessionManager
-import com.example.uinavegacion.data.local.resena.ResenaEntity
+// import com.example.uinavegacion.data.local.resena.ResenaEntity
 import com.example.uinavegacion.navigation.*
 import com.example.uinavegacion.ui.model.toGame
 import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
@@ -50,12 +50,10 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
     val context = LocalContext.current.applicationContext
     val db = remember { AppDatabase.getInstance(context) }
     val gameRepository = remember { GameRepository(db.juegoDao()) }
-    val resenaRepository = remember { ResenaRepository(db.resenaDao()) }
+    // val resenaRepository = remember { ResenaRepository(db.resenaDao()) }
     val catalogViewModel: GameCatalogViewModel = viewModel(
         factory = GameCatalogViewModelFactory(
-            gameRepository = gameRepository,
-            categoriaDao = db.categoriaDao(),
-            generoDao = db.generoDao()
+            gameRepository = gameRepository
         )
     )
     
@@ -65,16 +63,16 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
     val successMessage by cartViewModel.successMessage.collectAsState()
     val scope = rememberCoroutineScope()
     
-    // Estado para reseñas
-    var resenas by remember { mutableStateOf<List<ResenaEntity>>(emptyList()) }
+    // Estado para reseñas (DESHABILITADO - funcionalidad no disponible)
+    // var resenas by remember { mutableStateOf<List<ResenaEntity>>(emptyList()) }
     var averageRating by remember { mutableStateOf(0.0) }
     var isLoadingResenas by remember { mutableStateOf(false) }
     
-    // Estado para formulario de reseña
+    // Estado para formulario de reseña (DESHABILITADO)
     var selectedRating by remember { mutableStateOf(0) }
     var comentarioText by remember { mutableStateOf("") }
     var showResenaForm by remember { mutableStateOf(false) }
-    var existingResena by remember { mutableStateOf<ResenaEntity?>(null) }
+    // var existingResena by remember { mutableStateOf<ResenaEntity?>(null) }
     
     val currentUser = SessionManager.getCurrentUser()
     val currentUserId = SessionManager.getCurrentUserId()
@@ -139,18 +137,19 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
     val currentQuantity = cartItems.find { it.id == game.id }?.quantity ?: 0
     val juegoIdLong = gameId.toLongOrNull() ?: 0L
     
-    // Cargar reseñas
+    // Cargar reseñas (DESHABILITADO - funcionalidad no disponible)
     LaunchedEffect(juegoIdLong) {
         isLoadingResenas = true
         try {
-            resenas = resenaRepository.getResenasByJuegoId(juegoIdLong)
-            averageRating = resenaRepository.getAverageRating(juegoIdLong)
+            // resenas = resenaRepository.getResenasByJuegoId(juegoIdLong)
+            // averageRating = resenaRepository.getAverageRating(juegoIdLong)
+            averageRating = 0.0
             
             // Verificar si el usuario ya hizo una reseña
-            currentUserId?.let { userId ->
-                existingResena = resenaRepository.getResenasByJuegoId(juegoIdLong)
-                    .find { it.userId == userId }
-            }
+            // currentUserId?.let { userId ->
+            //     existingResena = resenaRepository.getResenasByJuegoId(juegoIdLong)
+            //         .find { it.userId == userId }
+            // }
         } catch (e: Exception) {
             android.util.Log.e("GameDetailScreen", "Error cargando reseñas", e)
         } finally {
@@ -425,7 +424,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "(${resenas.size})",
+                                    text = "(0)", // resenas.size
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -435,8 +434,8 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                     
                     Spacer(Modifier.height(16.dp))
                     
-                    // Formulario de reseña (solo si el usuario está logueado y no ha hecho reseña)
-                    if (currentUser != null && existingResena == null) {
+                    // Formulario de reseña (DESHABILITADO - funcionalidad no disponible)
+                    if (false && currentUser != null) { // && existingResena == null
                         if (!showResenaForm) {
                             OutlinedButton(
                                 onClick = { showResenaForm = true },
@@ -521,30 +520,31 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                                         onClick = {
                                             if (selectedRating > 0 && comentarioText.isNotBlank() && currentUserId != null) {
                                                 scope.launch {
-                                                    val result = resenaRepository.addResena(
-                                                        userId = currentUserId,
-                                                        juegoId = juegoIdLong,
-                                                        calificacion = selectedRating,
-                                                        comentario = comentarioText
-                                                    )
-                                                    if (result.isSuccess) {
-                                                        // Recargar reseñas
-                                                        resenas = resenaRepository.getResenasByJuegoId(juegoIdLong)
-                                                        averageRating = resenaRepository.getAverageRating(juegoIdLong)
-                                                        existingResena = resenas.find { it.userId == currentUserId }
+                                                    // DESHABILITADO - funcionalidad de reseñas no disponible
+                                                    // val result = resenaRepository.addResena(
+                                                    //     userId = currentUserId,
+                                                    //     juegoId = juegoIdLong,
+                                                    //     calificacion = selectedRating,
+                                                    //     comentario = comentarioText
+                                                    // )
+                                                    // if (result.isSuccess) {
+                                                    //     // Recargar reseñas
+                                                    //     resenas = resenaRepository.getResenasByJuegoId(juegoIdLong)
+                                                    //     averageRating = resenaRepository.getAverageRating(juegoIdLong)
+                                                    //     existingResena = resenas.find { it.userId == currentUserId }
                                                         showResenaForm = false
                                                         selectedRating = 0
                                                         comentarioText = ""
                                                         snackbarHostState.showSnackbar(
-                                                            "Reseña agregada exitosamente",
+                                                            "Funcionalidad de reseñas no disponible",
                                                             duration = SnackbarDuration.Short
                                                         )
-                                                    } else {
-                                                        snackbarHostState.showSnackbar(
-                                                            result.exceptionOrNull()?.message ?: "Error al agregar reseña",
-                                                            duration = SnackbarDuration.Short
-                                                        )
-                                                    }
+                                                    // } else {
+                                                    //     snackbarHostState.showSnackbar(
+                                                    //         result.exceptionOrNull()?.message ?: "Error al agregar reseña",
+                                                    //         duration = SnackbarDuration.Short
+                                                    //     )
+                                                    // }
                                                 }
                                             } else {
                                                 scope.launch {
@@ -576,7 +576,7 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                         ) {
                             CircularProgressIndicator()
                         }
-                    } else if (resenas.isEmpty()) {
+                    } else if (true) { // resenas.isEmpty()
                         // Mensaje único y mejorado cuando no hay reseñas
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
@@ -620,47 +620,48 @@ fun GameDetailScreen(nav: NavHostController, gameId: String, cartViewModel: Cart
                                 }
                             }
                         }
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            resenas.forEach { resena ->
-                                ResenaCard(resena = resena)
-                            }
-                        }
-                    }
+                    } // else {
+                        // Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        //     resenas.forEach { resena ->
+                        //         ResenaCard(resena = resena)
+                        //     }
+                        // }
+                    // }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun ResenaCard(resena: ResenaEntity) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Estrellas
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                for (i in 1..5) {
-                    Icon(
-                        if (i <= resena.calificacion) Icons.Filled.Star else Icons.Outlined.Star,
-                        contentDescription = null,
-                        tint = if (i <= resena.calificacion) 
-                            MaterialTheme.colorScheme.primary 
-                        else 
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = resena.comentario,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
-}
+// DESHABILITADO - Funcionalidad de reseñas no disponible
+// @Composable
+// private fun ResenaCard(resena: ResenaEntity) {
+//     Card(
+//         modifier = Modifier.fillMaxWidth(),
+//         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+//     ) {
+//         Column(modifier = Modifier.padding(12.dp)) {
+//             // Estrellas
+//             Row(
+//                 horizontalArrangement = Arrangement.spacedBy(2.dp)
+//             ) {
+//                 for (i in 1..5) {
+//                     Icon(
+//                         if (i <= resena.calificacion) Icons.Filled.Star else Icons.Outlined.Star,
+//                         contentDescription = null,
+//                         tint = if (i <= resena.calificacion) 
+//                             MaterialTheme.colorScheme.primary 
+//                         else 
+//                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+//                         modifier = Modifier.size(16.dp)
+//                     )
+//                 }
+//             }
+//             Spacer(Modifier.height(8.dp))
+//             Text(
+//                 text = resena.comentario,
+//                 style = MaterialTheme.typography.bodyMedium
+//             )
+//         }
+//     }
+// }

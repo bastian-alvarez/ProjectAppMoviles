@@ -22,6 +22,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.uinavegacion.navigation.*
+import com.example.uinavegacion.ui.theme.AppColors
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+
+// Colores del tema profesional
+private val DarkBlue = AppColors.DarkBlue
+private val MediumBlue = AppColors.MediumBlue
+private val LightBlue = AppColors.LightBlue
+private val AccentBlue = AppColors.AccentBlue
+private val BrightBlue = AppColors.BrightBlue
+private val Cyan = AppColors.Cyan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,15 +41,19 @@ fun SettingsScreen(nav: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(DarkBlue)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         // Banner de configuración mejorado
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(6.dp, RoundedCornerShape(16.dp)),
+            colors = CardDefaults.cardColors(containerColor = MediumBlue),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Box(
                 modifier = Modifier

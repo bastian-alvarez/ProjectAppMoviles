@@ -2,7 +2,7 @@ package com.example.uinavegacion.data.remote.admin
 
 import android.util.Log
 import com.example.uinavegacion.data.remote.config.RetrofitClient
-import com.example.uinavegacion.data.remote.user.UserResponse
+import com.example.uinavegacion.data.remote.dto.UserResponse
 
 /**
  * Repositorio para operaciones de administrador sobre usuarios

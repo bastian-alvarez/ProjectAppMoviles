@@ -65,8 +65,8 @@ fun GamesScreen(
     val catalogViewModel: GameCatalogViewModel = viewModel(
         factory = GameCatalogViewModelFactory(
             gameRepository = gameRepository,
-            categoriaDao = db.categoriaDao(),
-            generoDao = db.generoDao()
+            // categoriaDao = db.categoriaDao(),
+            // generoDao = db.generoDao()
         )
     )
     val catalogGames by catalogViewModel.games.collectAsState()

@@ -52,7 +52,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
         AdminStatsRepository(
             userDao = db.userDao(),
             juegoDao = db.juegoDao(),
-            ordenCompraDao = db.ordenCompraDao(),
+            // ordenCompraDao = db.ordenCompraDao(),  // DESHABILITADO
             adminDao = db.adminDao()
         )
     }
@@ -63,9 +63,9 @@ fun AdminDashboardScreen(navController: NavHostController) {
     )
     val gameCatalogViewModel: GameCatalogViewModel = viewModel(
         factory = GameCatalogViewModelFactory(
-            gameRepository = gameRepository,
-            categoriaDao = db.categoriaDao(),
-            generoDao = db.generoDao()
+            gameRepository = gameRepository
+            // categoriaDao = db.categoriaDao(),  // DESHABILITADO
+            // generoDao = db.generoDao()  // DESHABILITADO
         )
     )
     

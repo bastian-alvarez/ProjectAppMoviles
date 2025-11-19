@@ -23,6 +23,18 @@ import coil.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.*
 import com.example.uinavegacion.data.SessionManager
+import com.example.uinavegacion.ui.theme.AppColors
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+
+// Colores del tema profesional
+private val DarkBlue = AppColors.DarkBlue
+private val MediumBlue = AppColors.MediumBlue
+private val LightBlue = AppColors.LightBlue
+private val AccentBlue = AppColors.AccentBlue
+private val BrightBlue = AppColors.BrightBlue
+private val Cyan = AppColors.Cyan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,12 +68,19 @@ fun ProfileScreen(nav: NavHostController) {
         }
     }
     Scaffold(
+        containerColor = DarkBlue,
         topBar = { 
             TopAppBar(
-                title = { Text("Mi Perfil", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Mi Perfil", 
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    ) 
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = DarkBlue,
+                    titleContentColor = Color.White
                 )
             ) 
         }
@@ -75,8 +94,12 @@ fun ProfileScreen(nav: NavHostController) {
         ) {
             // Información del usuario
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(6.dp, RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MediumBlue),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),

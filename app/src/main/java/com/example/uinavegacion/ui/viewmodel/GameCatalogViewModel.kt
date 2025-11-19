@@ -2,8 +2,8 @@ package com.example.uinavegacion.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.uinavegacion.data.local.categoria.CategoriaDao
-import com.example.uinavegacion.data.local.genero.GeneroDao
+// import com.example.uinavegacion.data.local.categoria.CategoriaDao
+// import com.example.uinavegacion.data.local.genero.GeneroDao
 import com.example.uinavegacion.data.repository.GameRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,9 +37,9 @@ data class CatalogGameUi(
 )
 
 class GameCatalogViewModel(
-    private val gameRepository: GameRepository,
-    private val categoriaDao: CategoriaDao,
-    private val generoDao: GeneroDao
+    private val gameRepository: GameRepository
+    // private val categoriaDao: CategoriaDao,
+    // private val generoDao: GeneroDao
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(true)
@@ -48,27 +48,9 @@ class GameCatalogViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val categoriesMapFlow = categoriaDao.observeAll()
-        .map { list -> list.associate { it.id to it.nombre } }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyMap()
-        )
-
-    private val genresMapFlow = generoDao.observeAll()
-        .map { list -> list.associate { it.id to it.nombre } }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyMap()
-        )
-
-    val games: StateFlow<List<CatalogGameUi>> = combine(
-        gameRepository.observeAllGames(),
-        categoriesMapFlow,
-        genresMapFlow
-    ) { games, categoriesMap, genresMap ->
+    // Temporalmente sin mapeo de categorías y géneros
+    val games: StateFlow<List<CatalogGameUi>> = gameRepository.observeAllGames()
+        .map { games ->
         games.map { entity ->
             CatalogGameUi(
                 id = entity.id,
@@ -76,9 +58,9 @@ class GameCatalogViewModel(
                 descripcion = entity.descripcion,
                 precio = entity.precio,
                 stock = entity.stock,
-                imagenUrl = entity.imageUrl,
-                categoriaNombre = categoriesMap[entity.categoriaId] ?: "Categoría ${entity.categoriaId}",
-                generoNombre = genresMap[entity.generoId] ?: "Género ${entity.generoId}",
+                    imagenUrl = entity.imagenUrl ?: "",
+                    categoriaNombre = "Categoría ${entity.categoriaId}",
+                    generoNombre = "Género ${entity.generoId}",
                 activo = entity.activo,
                 descuento = entity.descuento,
                 remoteId = entity.remoteId
@@ -103,8 +85,8 @@ class GameCatalogViewModel(
             initialValue = emptyList()
         )
 
-    val categories: StateFlow<List<String>> = categoriesMapFlow
-        .map { map -> map.values.filter { it.isNotBlank() }.sorted() }
+    // Categorías temporalmente deshabilitadas
+    val categories: StateFlow<List<String>> = MutableStateFlow<List<String>>(emptyList())
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

@@ -4,8 +4,7 @@ import android.util.Log
 import com.example.uinavegacion.data.local.juego.JuegoDao
 import com.example.uinavegacion.data.local.juego.JuegoEntity
 import com.example.uinavegacion.data.remote.api.CreateGameRequest
-import com.example.uinavegacion.data.remote.catalogo.CatalogoGameResponse
-import com.example.uinavegacion.data.remote.catalogo.CatalogoRemoteRepository
+import com.example.uinavegacion.data.remote.dto.GameResponse
 import com.example.uinavegacion.data.remote.repository.GameCatalogRemoteRepository
 import kotlinx.coroutines.flow.Flow
 import kotlin.math.absoluteValue
@@ -15,7 +14,6 @@ import kotlin.math.absoluteValue
  */
 class GameRepository(
     private val juegoDao: JuegoDao,
-    private val catalogoRepository: CatalogoRemoteRepository = CatalogoRemoteRepository(),
     private val gameCatalogRepository: GameCatalogRemoteRepository = GameCatalogRemoteRepository()
 ) {
     
@@ -28,7 +26,7 @@ class GameRepository(
 
     suspend fun syncWithRemote(includeInactive: Boolean = false): Result<Unit> {
         Log.d("GameRepository", "Sincronizando catálogo con microservicio remoto")
-        return catalogoRepository.fetchGames(includeInactive = includeInactive)
+        return gameCatalogRepository.getAllGames()
             .mapCatching { response ->
                 Log.d("GameRepository", "Recibidos ${response.size} juegos del catálogo remoto")
                 juegoDao.deleteAll()
@@ -406,28 +404,20 @@ class GameRepository(
     }
 }
 
-private fun CatalogoGameResponse.toEntity(): JuegoEntity {
-    val descripcionFallback = "Información provista por catálogo remoto"
-    val fecha = fechaLanzamiento ?: "N/D"
-    val categoria = categoriaId?.toLongOrNull() ?: 1L
-    val genero = generoId?.toLongOrNull() ?: 1L
-
+private fun GameResponse.toEntity(): JuegoEntity {
     return JuegoEntity(
-        id = remoteIdToLong(id),
-        nombre = nombreJuego,
-        descripcion = descripcionFallback,
+        id = 0L, // Autogenerate
+        nombre = nombre,
+        descripcion = descripcion ?: "Información del juego",
         precio = precio,
-        stock = 20,
-        imagenUrl = fotoJuego,
-        desarrollador = "Catálogo Remoto",
-        fechaLanzamiento = fecha,
-        categoriaId = categoria,
-        generoId = genero,
-        activo = estadoId?.equals("ACTIVO", ignoreCase = true) ?: true,
-        descuento = 0,
-        remoteId = id
+        stock = stock,
+        imagenUrl = imagenUrl,
+        desarrollador = desarrollador ?: "Desconocido",
+        fechaLanzamiento = fechaLanzamiento ?: "N/D",
+        categoriaId = categoriaId ?: 1L,
+        generoId = generoId ?: 1L,
+        activo = activo,
+        descuento = descuento ?: 0,
+        remoteId = id.toString()
     )
 }
-
-private fun remoteIdToLong(remoteId: String): Long =
-    remoteId.hashCode().toLong().absoluteValue + 1_000_000_000L

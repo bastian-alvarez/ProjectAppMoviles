@@ -51,8 +51,8 @@ fun HomeScreen(nav: NavHostController, cartViewModel: CartViewModel = viewModel(
     val catalogViewModel: GameCatalogViewModel = viewModel(
         factory = GameCatalogViewModelFactory(
             gameRepository = gameRepository,
-            categoriaDao = db.categoriaDao(),
-            generoDao = db.generoDao()
+            // categoriaDao = db.categoriaDao(),
+            // generoDao = db.generoDao()
         )
     )
 
