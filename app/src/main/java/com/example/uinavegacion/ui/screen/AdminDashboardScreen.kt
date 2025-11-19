@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +14,8 @@ import kotlinx.coroutines.withContext
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +31,14 @@ import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModel
 import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModelFactory
 import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
 import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModelFactory
+
+// 🎨 Colores del tema Admin (azul oscuro profesional)
+private val AdminDarkBlue = Color(0xFF0D1B2A)
+private val AdminMediumBlue = Color(0xFF1B263B)
+private val AdminLightBlue = Color(0xFF415A77)
+private val AdminAccentBlue = Color(0xFF778DA9)
+private val AdminBrightBlue = Color(0xFF4A90E2)
+private val AdminCyan = Color(0xFF00D9FF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,166 +91,208 @@ fun AdminDashboardScreen(navController: NavHostController) {
             android.util.Log.e("AdminDashboard", "Error al refrescar estadísticas", e)
         }
     }
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(AdminDarkBlue, AdminMediumBlue)
+                )
+            )
     ) {
-        // Header compacto
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header moderno con gradiente
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(8.dp, RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = AdminMediumBlue
+                    ),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Icon(
-                        Icons.Default.AdminPanelSettings,
-                        contentDescription = "Admin",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Column {
-                        Text(
-                            text = "Panel Admin",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(AdminMediumBlue, AdminLightBlue)
+                                )
+                            )
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(AdminBrightBlue, RoundedCornerShape(14.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.AdminPanelSettings,
+                                    contentDescription = "Admin",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "Panel Administrativo",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "Sistema de Gestión Integral",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = AdminCyan
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { navController.navigate(Route.Home.path) },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(AdminBrightBlue.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        ) {
+                            Icon(
+                                Icons.Default.ExitToApp,
+                                contentDescription = "Salir",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Estadísticas en grid moderno 2x2
+            item {
+                Text(
+                    text = "📊 Estadísticas del Sistema",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Usuarios
+                        StatCard(
+                            title = "Usuarios",
+                            value = if (isLoading) "..." else "${dashboardStats.totalUsers}",
+                            icon = Icons.Default.People,
+                            containerColor = AdminBrightBlue,
+                            contentColor = Color.White,
+                            modifier = Modifier.weight(1f)
                         )
-                        Text(
-                            text = "Gestión de plataforma",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        
+                        // Juegos
+                        StatCard(
+                            title = "Juegos",
+                            value = if (combinedGamesLoading) "..." else "$realtimeGamesCount",
+                            icon = Icons.Default.Games,
+                            containerColor = Color(0xFF6A5ACD),
+                            contentColor = Color.White,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Órdenes
+                        StatCard(
+                            title = "Órdenes",
+                            value = if (isLoading) "..." else "${dashboardStats.totalOrders}",
+                            icon = Icons.Default.ShoppingCart,
+                            containerColor = Color(0xFF1E88E5),
+                            contentColor = Color.White,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        // Admins
+                        StatCard(
+                            title = "Admins",
+                            value = if (isLoading) "..." else "${dashboardStats.totalAdmins}",
+                            icon = Icons.Default.Security,
+                            containerColor = AdminLightBlue,
+                            contentColor = Color.White,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
-                IconButton(
-                    onClick = { navController.navigate(Route.Home.path) },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ExitToApp,
-                        contentDescription = "Salir",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
             }
-        }
 
-        // Estadísticas en grid compacto 2x2
-        item {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Usuarios
-                    StatCard(
-                        title = "Usuarios",
-                        value = if (isLoading) "..." else "${dashboardStats.totalUsers}",
-                        icon = Icons.Default.People,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    // Juegos
-                    StatCard(
-                        title = "Juegos",
-                        value = if (combinedGamesLoading) "..." else "$realtimeGamesCount",
-                        icon = Icons.Default.Games,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Órdenes
-                    StatCard(
-                        title = "Órdenes",
-                        value = if (isLoading) "..." else "${dashboardStats.totalOrders}",
-                        icon = Icons.Default.ShoppingCart,
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    // Admins
-                    StatCard(
-                        title = "Admins",
-                        value = if (isLoading) "..." else "${dashboardStats.totalAdmins}",
-                        icon = Icons.Default.Security,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-
-        // Acciones rápidas
-        item {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // Acciones rápidas
+            item {
                 Text(
-                    text = "Acciones Rápidas",
+                    text = "⚡ Acciones Rápidas",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
-                
-                // Gestión de juegos
-                ActionCard(
-                    title = "Gestionar Juegos",
-                    subtitle = "Catálogo completo",
-                    icon = Icons.Default.Games,
-                    onClick = { navController.navigate(Route.AdminGames.path) }
-                )
-                
-                // Gestión de usuarios
-                ActionCard(
-                    title = "Gestionar Usuarios",
-                    subtitle = "Lista de usuarios",
-                    icon = Icons.Default.People,
-                    onClick = { navController.navigate(Route.AdminUsers.path) }
-                )
-                
-                // Moderación de reseñas (solo para moderadores)
-                if (SessionManager.isModerator()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Gestión de juegos
                     ActionCard(
-                        title = "Moderar Reseñas",
-                        subtitle = "Revisar y eliminar reseñas",
-                        icon = Icons.Default.Edit,
-                        onClick = { navController.navigate(Route.Moderation.path) }
+                        title = "Gestionar Juegos",
+                        subtitle = "Catálogo completo del sistema",
+                        icon = Icons.Default.Games,
+                        onClick = { navController.navigate(Route.AdminGames.path) }
                     )
-                }
+                    
+                    // Gestión de usuarios
+                    ActionCard(
+                        title = "Gestionar Usuarios",
+                        subtitle = "Control de usuarios registrados",
+                        icon = Icons.Default.People,
+                        onClick = { navController.navigate(Route.AdminUsers.path) }
+                    )
+                    
+                    // Moderación de reseñas (solo para moderadores)
+                    if (SessionManager.isModerator()) {
+                        ActionCard(
+                            title = "Moderar Reseñas",
+                            subtitle = "Revisar y eliminar contenido",
+                            icon = Icons.Default.Edit,
+                            onClick = { navController.navigate(Route.Moderation.path) }
+                        )
+                    }
                 
-                // Sincronización de datos con microservicios
-                var showSyncDialog by remember { mutableStateOf(false) }
-                var syncMessage by remember { mutableStateOf("") }
-                var isSyncing by remember { mutableStateOf(false) }
-                
-                // Verificar si ya está sincronizado
-                val alreadySynced = remember { com.example.uinavegacion.data.SyncPreferences.areGamesSynced(context) }
-                
-                ActionCard(
-                    title = if (alreadySynced) "Re-sincronizar Datos" else "Sincronizar Datos",
-                    subtitle = if (alreadySynced) "Volver a exportar juegos" else "Exportar juegos locales a Laragon",
-                    icon = Icons.Default.Sync,
-                    onClick = { showSyncDialog = true }
-                )
+                    // Sincronización de datos con microservicios
+                    var showSyncDialog by remember { mutableStateOf(false) }
+                    var syncMessage by remember { mutableStateOf("") }
+                    var isSyncing by remember { mutableStateOf(false) }
+                    
+                    // Verificar si ya está sincronizado
+                    val alreadySynced = remember { com.example.uinavegacion.data.SyncPreferences.areGamesSynced(context) }
+                    
+                    ActionCard(
+                        title = if (alreadySynced) "Re-sincronizar Datos" else "Sincronizar Datos",
+                        subtitle = if (alreadySynced) "Volver a exportar datos al servidor" else "Exportar juegos al microservicio",
+                        icon = Icons.Default.Sync,
+                        onClick = { showSyncDialog = true }
+                    )
                 
                 if (showSyncDialog) {
                     AlertDialog(
@@ -300,6 +353,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
                         }
                     )
                 }
+                }
             }
         }
     }
@@ -315,35 +369,57 @@ private fun StatCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .shadow(6.dp, RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            containerColor,
+                            containerColor.copy(alpha = 0.85f)
+                        )
+                    )
+                )
         ) {
-            Icon(
-                icon,
-                contentDescription = title,
-                tint = contentColor,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = contentColor
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = contentColor.copy(alpha = 0.8f)
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(contentColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = title,
+                        tint = contentColor,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = contentColor
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = contentColor.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
@@ -356,47 +432,72 @@ private fun ActionCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(14.dp)),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AdminMediumBlue
         ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            AdminMediumBlue,
+                            AdminLightBlue.copy(alpha = 0.8f)
+                        )
+                    )
+                )
+                .padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Icon(
-                icon,
-                contentDescription = title,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(AdminBrightBlue.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = title,
+                    tint = AdminCyan,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = AdminAccentBlue
                 )
             }
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = "Ir",
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                modifier = Modifier.size(20.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(AdminBrightBlue.copy(alpha = 0.3f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = "Ir",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.uinavegacion.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +14,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +32,15 @@ import com.example.uinavegacion.data.repository.GameRepository
 import com.example.uinavegacion.ui.viewmodel.GameManagementViewModel
 import com.example.uinavegacion.ui.viewmodel.GameManagementViewModelFactory
 import android.widget.Toast
+
+// 🎨 Colores del tema Admin (azul oscuro profesional)
+private val AdminDarkBlue = Color(0xFF0D1B2A)
+private val AdminMediumBlue = Color(0xFF1B263B)
+private val AdminLightBlue = Color(0xFF415A77)
+private val AdminAccentBlue = Color(0xFF778DA9)
+private val AdminBrightBlue = Color(0xFF4A90E2)
+private val AdminCyan = Color(0xFF00D9FF)
+private val AdminPurple = Color(0xFF6A5ACD)
 
 /**
  * Pantalla de gestión de juegos para administradores
@@ -250,14 +263,16 @@ fun GameManagementScreen(navController: NavHostController) {
                 title = { 
                     Text(
                         "Gestión de Juegos",
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     ) 
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = "Volver",
+                            tint = Color.White
                         )
                     }
                 },
@@ -266,7 +281,8 @@ fun GameManagementScreen(navController: NavHostController) {
                     IconButton(onClick = { showResetDialog = true }) {
                         Icon(
                             Icons.Default.Refresh,
-                            contentDescription = "Restablecer catálogo"
+                            contentDescription = "Restablecer catálogo",
+                            tint = Color.White
                         )
                     }
                     IconButton(onClick = { 
@@ -275,10 +291,14 @@ fun GameManagementScreen(navController: NavHostController) {
                     }) {
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = "Agregar juego"
+                            contentDescription = "Agregar juego",
+                            tint = Color.White
                         )
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = AdminMediumBlue
+                )
             )
         },
         floatingActionButton = {
@@ -286,56 +306,89 @@ fun GameManagementScreen(navController: NavHostController) {
                 onClick = { 
                     gameToEdit = null
                     showDialog = true
-                }
+                },
+                containerColor = AdminBrightBlue,
+                contentColor = Color.White
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar juego")
             }
-        }
+        },
+        containerColor = AdminDarkBlue
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(AdminDarkBlue, AdminMediumBlue)
+                    )
+                )
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Estadísticas rápidas
+            // Estadísticas modernas
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(6.dp, RoundedCornerShape(16.dp)),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = AdminMediumBlue
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(AdminMediumBlue, AdminLightBlue)
+                            )
+                        )
+                        .padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${games.size}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .background(AdminBrightBlue.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "${games.size}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             "Total Juegos",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = AdminAccentBlue,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${games.sumOf { it.stock }}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .background(AdminPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "${games.sumOf { it.stock }}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             "Stock Total",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = AdminAccentBlue,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -736,15 +789,22 @@ private fun GameManagementItem(
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(14.dp)),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = AdminMediumBlue
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(AdminMediumBlue, AdminLightBlue.copy(alpha = 0.8f))
+                    )
+                )
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -754,76 +814,108 @@ private fun GameManagementItem(
                     Text(
                         game.nombre,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.White
                     )
                     if (!game.activo) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.errorContainer
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFFF5252)
                         ) {
                             Text(
                                 "INACTIVO",
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     game.descripcion,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = AdminAccentBlue,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row {
-                    Text(
-                        "$${game.precio}",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        "Stock: ${game.stock}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (game.stock > 0) 
-                            MaterialTheme.colorScheme.onSurfaceVariant 
-                        else 
-                            MaterialTheme.colorScheme.error
-                    )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(AdminBrightBlue.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            "$${game.precio}",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = AdminCyan
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                if (game.stock > 0) AdminBrightBlue.copy(alpha = 0.3f) else Color(0xFFFF5252).copy(alpha = 0.3f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            "Stock: ${game.stock}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (game.stock > 0) Color.White else Color(0xFFFF5252)
+                        )
+                    }
                 }
             }
             
-            // Acciones
-            Row {
-                IconButton(
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // Acciones modernas
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Button(
                     onClick = onEdit,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
-                    )
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AdminBrightBlue,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.size(width = 100.dp, height = 38.dp)
                 ) {
                     Icon(
                         Icons.Default.Edit,
-                        contentDescription = "Editar"
+                        contentDescription = "Editar",
+                        modifier = Modifier.size(18.dp)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Editar", style = MaterialTheme.typography.labelSmall)
                 }
-                IconButton(
+                Button(
                     onClick = onDelete,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF5252),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.size(width = 100.dp, height = 38.dp)
                 ) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Eliminar"
+                        contentDescription = "Eliminar",
+                        modifier = Modifier.size(18.dp)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Eliminar", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

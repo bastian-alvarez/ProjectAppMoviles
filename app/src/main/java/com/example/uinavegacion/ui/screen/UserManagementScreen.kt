@@ -15,6 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -26,6 +29,16 @@ import com.example.uinavegacion.data.local.user.UserEntity
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.ui.viewmodel.UserManagementViewModel
 import com.example.uinavegacion.ui.viewmodel.UserManagementViewModelFactory
+
+// 🎨 Colores del tema Admin (azul oscuro profesional)
+private val AdminDarkBlue = Color(0xFF0D1B2A)
+private val AdminMediumBlue = Color(0xFF1B263B)
+private val AdminLightBlue = Color(0xFF415A77)
+private val AdminAccentBlue = Color(0xFF778DA9)
+private val AdminBrightBlue = Color(0xFF4A90E2)
+private val AdminCyan = Color(0xFF00D9FF)
+private val AdminGreen = Color(0xFF00E676)
+private val AdminRed = Color(0xFFFF5252)
 
 /**
  * Pantalla de gestión de usuarios para administradores
@@ -65,14 +78,16 @@ fun UserManagementScreen(navController: NavHostController) {
                 title = { 
                     Text(
                         "Gestión de Usuarios",
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     ) 
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = "Volver",
+                            tint = Color.White
                         )
                     }
                 },
@@ -82,43 +97,53 @@ fun UserManagementScreen(navController: NavHostController) {
                     }) {
                         Icon(
                             Icons.Default.Refresh,
-                            contentDescription = "Actualizar"
+                            contentDescription = "Actualizar",
+                            tint = Color.White
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = AdminMediumBlue
+                )
             )
-        }
+        },
+        containerColor = AdminDarkBlue
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(AdminDarkBlue, AdminMediumBlue)
+                    )
+                )
                 .padding(paddingValues)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            // Estadísticas compactas
+            // Estadísticas modernas
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 StatCard(
                     value = "${users.size}",
                     label = "Total",
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = AdminBrightBlue,
+                    contentColor = Color.White,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     value = "${users.count { !it.isBlocked }}",
                     label = "Activos",
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    containerColor = AdminGreen,
+                    contentColor = Color.White,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     value = "${users.count { it.isBlocked }}",
                     label = "Bloqueados",
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    containerColor = AdminRed,
+                    contentColor = Color.White,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -429,33 +454,48 @@ fun UserManagementScreen(navController: NavHostController) {
 private fun StatCard(
     value: String,
     label: String,
-    containerColor: androidx.compose.ui.graphics.Color,
-    contentColor: androidx.compose.ui.graphics.Color,
+    containerColor: Color,
+    contentColor: Color,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .shadow(4.dp, RoundedCornerShape(14.dp)),
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(10.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            containerColor,
+                            containerColor.copy(alpha = 0.85f)
+                        )
+                    )
+                )
         ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = contentColor
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = contentColor.copy(alpha = 0.8f)
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = contentColor
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = contentColor.copy(alpha = 0.95f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
@@ -467,32 +507,44 @@ private fun CompactUserItem(
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(14.dp)),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (user.isBlocked) 
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                AdminRed.copy(alpha = 0.2f)
             else 
-                MaterialTheme.colorScheme.surface
+                AdminMediumBlue
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .background(
+                    Brush.horizontalGradient(
+                        colors = if (user.isBlocked) {
+                            listOf(AdminRed.copy(alpha = 0.3f), AdminRed.copy(alpha = 0.2f))
+                        } else {
+                            listOf(AdminMediumBlue, AdminLightBlue.copy(alpha = 0.8f))
+                        }
+                    )
+                )
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar compacto
+            // Avatar moderno
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(56.dp)
+                    .shadow(3.dp, CircleShape)
                     .clip(CircleShape)
                     .background(
                         if (user.isBlocked) 
-                            MaterialTheme.colorScheme.errorContainer
+                            AdminRed
                         else 
-                            MaterialTheme.colorScheme.primaryContainer,
+                            AdminBrightBlue,
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -502,14 +554,14 @@ private fun CompactUserItem(
                         Icon(
                             Icons.Default.Block,
                             contentDescription = "Bloqueado",
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(24.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
                         )
                     } else {
                         Text(
                             user.name.take(1).uppercase(),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -518,42 +570,40 @@ private fun CompactUserItem(
             
             Spacer(modifier = Modifier.width(12.dp))
             
-            // Información compacta
+            // Información moderna
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         user.name,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        color = Color.White,
                         modifier = Modifier.weight(1f, fill = false)
                     )
                     Surface(
                         color = if (user.isBlocked) 
-                            MaterialTheme.colorScheme.error 
+                            AdminRed 
                         else 
-                            MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(4.dp)
+                            AdminGreen,
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             if (user.isBlocked) "BLOQUEADO" else "ACTIVO",
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (user.isBlocked) 
-                                MaterialTheme.colorScheme.onError 
-                            else 
-                                MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.Bold
+                            color = Color.White,
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -561,13 +611,13 @@ private fun CompactUserItem(
                     Icon(
                         Icons.Default.Email,
                         contentDescription = null,
-                        modifier = Modifier.size(12.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(14.dp),
+                        tint = AdminAccentBlue
                     )
                     Text(
                         user.email,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AdminAccentBlue,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -576,55 +626,57 @@ private fun CompactUserItem(
             
             Spacer(modifier = Modifier.width(8.dp))
             
-            // Botones de acción
+            // Botones de acción modernos
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Botón de Bloquear/Desbloquear
                 Button(
                     onClick = onToggleBlock,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (user.isBlocked) 
-                            MaterialTheme.colorScheme.primary
+                            AdminGreen
                         else 
-                            MaterialTheme.colorScheme.error,
-                        contentColor = if (user.isBlocked) 
-                            MaterialTheme.colorScheme.onPrimary
-                        else 
-                            MaterialTheme.colorScheme.onError
+                            AdminRed,
+                        contentColor = Color.White
                     ),
-                    modifier = Modifier.height(36.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.height(40.dp)
                 ) {
                     Icon(
                         if (user.isBlocked) Icons.Default.CheckCircle else Icons.Default.Block,
                         contentDescription = if (user.isBlocked) "Desbloquear" else "Bloquear",
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         if (user.isBlocked) "Desbloquear" else "Bloquear",
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
                 
                 // Botón de Eliminar
-                OutlinedButton(
+                Button(
                     onClick = onDelete,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AdminDarkBlue,
+                        contentColor = AdminRed
                     ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                    modifier = Modifier.height(32.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, AdminRed),
+                    modifier = Modifier.height(36.dp)
                 ) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Eliminar",
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         "Eliminar",
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
