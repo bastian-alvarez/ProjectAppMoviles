@@ -29,6 +29,9 @@ import com.example.uinavegacion.data.local.database.AppDatabase
 import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
+import com.example.uinavegacion.ui.theme.AppColors
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun LoginScreenVm(
@@ -131,10 +134,7 @@ private fun LoginScreen(
             .fillMaxSize()
             .background(
                 brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.colorScheme.background
-                    )
+                    colors = listOf(AppColors.DarkBlue, AppColors.MediumBlue)
                 )
             ),
         contentAlignment = Alignment.Center
@@ -142,10 +142,12 @@ private fun LoginScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .padding(16.dp),
+                .padding(16.dp)
+                .shadow(12.dp, RoundedCornerShape(20.dp)),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = AppColors.MediumBlue
             )
         ) {
             Column(
@@ -159,13 +161,13 @@ private fun LoginScreen(
                     text = "GameStore Pro",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = AppColors.Cyan
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Inicia sesión en tu cuenta",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    color = AppColors.AccentBlue,
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(32.dp))
@@ -232,7 +234,11 @@ private fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.BrightBlue,
+                        contentColor = AppColors.TextWhite
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     if(isSubmitting){
                         CircularProgressIndicator(

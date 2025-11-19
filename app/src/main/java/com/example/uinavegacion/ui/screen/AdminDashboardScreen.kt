@@ -32,13 +32,15 @@ import com.example.uinavegacion.ui.viewmodel.AdminDashboardViewModelFactory
 import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModel
 import com.example.uinavegacion.ui.viewmodel.GameCatalogViewModelFactory
 
-// 🎨 Colores del tema Admin (azul oscuro profesional)
-private val AdminDarkBlue = Color(0xFF0D1B2A)
-private val AdminMediumBlue = Color(0xFF1B263B)
-private val AdminLightBlue = Color(0xFF415A77)
-private val AdminAccentBlue = Color(0xFF778DA9)
-private val AdminBrightBlue = Color(0xFF4A90E2)
-private val AdminCyan = Color(0xFF00D9FF)
+import com.example.uinavegacion.ui.theme.AppColors
+
+// Usar colores centralizados
+private val AdminDarkBlue = AppColors.DarkBlue
+private val AdminMediumBlue = AppColors.MediumBlue
+private val AdminLightBlue = AppColors.LightBlue
+private val AdminAccentBlue = AppColors.AccentBlue
+private val AdminBrightBlue = AppColors.BrightBlue
+private val AdminCyan = AppColors.Cyan
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,7 +182,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
             // Estadísticas en grid moderno 2x2
             item {
                 Text(
-                    text = "📊 Estadísticas del Sistema",
+                    text = "Estadísticas del Sistema",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -244,7 +246,7 @@ fun AdminDashboardScreen(navController: NavHostController) {
             // Acciones rápidas
             item {
                 Text(
-                    text = "⚡ Acciones Rápidas",
+                    text = "Acciones Rápidas",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,

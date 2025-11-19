@@ -31,6 +31,8 @@ import com.example.uinavegacion.data.repository.AdminRepository
 import com.example.uinavegacion.ui.viewmodel.AuthViewModel
 import com.example.uinavegacion.ui.viewmodel.AuthViewModelFactory
 import android.widget.Toast
+import com.example.uinavegacion.ui.theme.AppColors
+import androidx.compose.ui.draw.shadow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,10 +76,7 @@ fun RegisterScreen(nav: NavHostController) {
             .fillMaxSize()
             .background(
                 brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.colorScheme.background
-                    )
+                    colors = listOf(AppColors.DarkBlue, AppColors.MediumBlue)
                 )
             ),
         contentAlignment = Alignment.Center
@@ -86,10 +85,11 @@ fun RegisterScreen(nav: NavHostController) {
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.9f)
-                .padding(vertical = 24.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                .padding(vertical = 24.dp)
+                .shadow(12.dp, RoundedCornerShape(20.dp)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                containerColor = AppColors.MediumBlue
             ),
             shape = RoundedCornerShape(20.dp)
         ) {
@@ -105,12 +105,12 @@ fun RegisterScreen(nav: NavHostController) {
                     text = "GameStore Pro",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = AppColors.Cyan
                 )
                 Text(
                     text = "Crea tu cuenta nueva",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    color = AppColors.AccentBlue,
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(20.dp))

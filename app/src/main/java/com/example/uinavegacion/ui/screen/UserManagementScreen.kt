@@ -30,15 +30,17 @@ import com.example.uinavegacion.data.repository.UserRepository
 import com.example.uinavegacion.ui.viewmodel.UserManagementViewModel
 import com.example.uinavegacion.ui.viewmodel.UserManagementViewModelFactory
 
-// 🎨 Colores del tema Admin (azul oscuro profesional)
-private val AdminDarkBlue = Color(0xFF0D1B2A)
-private val AdminMediumBlue = Color(0xFF1B263B)
-private val AdminLightBlue = Color(0xFF415A77)
-private val AdminAccentBlue = Color(0xFF778DA9)
-private val AdminBrightBlue = Color(0xFF4A90E2)
-private val AdminCyan = Color(0xFF00D9FF)
-private val AdminGreen = Color(0xFF00E676)
-private val AdminRed = Color(0xFFFF5252)
+import com.example.uinavegacion.ui.theme.AppColors
+
+// Usar colores centralizados
+private val AdminDarkBlue = AppColors.DarkBlue
+private val AdminMediumBlue = AppColors.MediumBlue
+private val AdminLightBlue = AppColors.LightBlue
+private val AdminAccentBlue = AppColors.AccentBlue
+private val AdminBrightBlue = AppColors.BrightBlue
+private val AdminCyan = AppColors.Cyan
+private val AdminGreen = AppColors.Green
+private val AdminRed = AppColors.Red
 
 /**
  * Pantalla de gestión de usuarios para administradores
